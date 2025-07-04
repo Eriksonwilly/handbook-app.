@@ -1,11 +1,12 @@
 import streamlit as st
 
-col1, col2 = st.columns([1, 3])
-with col1:
-    st.image("imagenes/LOGO CONTRUCTORA DEJ6.png", width=100)
-with col2:
-    st.title("CONSORCIO DEJ")
-st.markdown("---")
+# Quitamos la imagen problemática y usamos solo texto
+st.markdown("""
+<div style="text-align: center; padding: 20px; background-color: #003366; color: white; border-radius: 10px; margin-bottom: 20px;">
+    <h1>️ CONSORCIO DEJ</h1>
+    <p>Ingeniería y Construcción</p>
+</div>
+""", unsafe_allow_html=True)
 
 # Autenticación simple (ejemplo)
 def login():
