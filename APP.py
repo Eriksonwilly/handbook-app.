@@ -126,11 +126,50 @@ else:
                 'empuje_suelo': empuje_suelo,
                 'fs_volcamiento': fs_volcamiento,
                 'volumen': volumen,
-                'ka': ka
+                'ka': ka,
+                'momento_volcador': momento_volcador,
+                'momento_estabilizador': momento_estabilizador
             }
             
             st.success("¡Cálculos básicos completados exitosamente!")
             st.balloons()
+            
+            # MOSTRAR RESULTADOS INMEDIATAMENTE DESPUÉS DEL CÁLCULO
+            st.subheader("📊 Resultados del Cálculo Básico")
+            
+            # Mostrar resultados en columnas
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.metric("Peso del Muro", f"{peso_muro:.2f} kN")
+                st.metric("Empuje del Suelo", f"{empuje_suelo:.2f} kN")
+                st.metric("Volumen", f"{volumen:.2f} m³")
+                st.metric("Coeficiente Ka", f"{ka:.3f}")
+            
+            with col2:
+                st.metric("Factor de Seguridad", f"{fs_volcamiento:.2f}")
+                st.metric("Momento Volcador", f"{momento_volcador:.2f} kN·m")
+                st.metric("Momento Estabilizador", f"{momento_estabilizador:.2f} kN·m")
+                st.metric("Altura", f"{altura:.1f} m")
+            
+            # Análisis de estabilidad
+            st.subheader("🔍 Análisis de Estabilidad")
+            if fs_volcamiento > 1.5:
+                st.success(f"✅ El muro es estable al volcamiento (FS = {fs_volcamiento:.2f} > 1.5)")
+            else:
+                st.error(f"⚠️ El muro requiere revisión de estabilidad (FS = {fs_volcamiento:.2f} < 1.5)")
+            
+            # Gráfico básico
+            st.subheader("📈 Gráfico de Fuerzas")
+            datos = pd.DataFrame({
+                'Fuerza': ['Peso Muro', 'Empuje Suelo'],
+                'Valor (kN)': [peso_muro, empuje_suelo]
+            })
+            
+            fig = px.bar(datos, x='Fuerza', y='Valor (kN)', 
+                        title="Comparación de Fuerzas - Plan Gratuito",
+                        color='Fuerza')
+            st.plotly_chart(fig)
 
     elif opcion == "📊 Análisis Completo":
         if st.session_state['plan'] == "gratuito":
@@ -235,12 +274,40 @@ else:
                 
                 st.success("¡Análisis completo ejecutado exitosamente!")
                 st.balloons()
+                
+                # MOSTRAR RESULTADOS COMPLETOS INMEDIATAMENTE
+                st.subheader("📊 Resultados del Análisis Completo")
+                
+                # Mostrar resultados en columnas
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.metric("Coeficiente Ka", f"{ka:.3f}")
+                    st.metric("Ancho de Zapata (Bz)", f"{Bz:.2f} m")
+                    st.metric("Peralte de Zapata (hz)", f"{hz:.2f} m")
+                    st.metric("Espesor del Muro (b)", f"{b:.2f} m")
+                    st.metric("Longitud de Puntera (r)", f"{r:.2f} m")
+                    st.metric("Longitud de Talón (t)", f"{t:.2f} m")
+                
+                with col2:
+                    st.metric("Empuje Activo (Ea)", f"{Ea:.2f} tn/m")
+                    st.metric("Peso del Muro", f"{W_muro:.2f} tn/m")
+                    st.metric("Peso de la Zapata", f"{W_zapata:.2f} tn/m")
+                    st.metric("Peso del Relleno", f"{W_relleno:.2f} tn/m")
+                    st.metric("Factor de Seguridad", f"{FS_volcamiento:.2f}")
+                    st.metric("Altura Equivalente (hs)", f"{hs:.3f} m")
+                
+                # Análisis de estabilidad
+                st.subheader("🔍 Análisis de Estabilidad")
+                if FS_volcamiento > 2.0:
+                    st.success(f"✅ El muro cumple con los requisitos de estabilidad al volcamiento (FS = {FS_volcamiento:.2f} > 2.0)")
+                else:
+                    st.error(f"⚠️ El muro requiere revisión de dimensiones (FS = {FS_volcamiento:.2f} < 2.0)")
 
     elif opcion == "📄 Generar Reporte":
         st.title("Generar Reporte Técnico")
         
         if st.session_state['plan'] == "gratuito":
-            st.warning("⚠️ Reportes detallados requieren plan premium")
             if 'resultados_basicos' in st.session_state:
                 resultados = st.session_state['resultados_basicos']
                 
@@ -248,34 +315,57 @@ else:
                 reporte_basico = f"""
 # REPORTE BÁSICO - MURO DE CONTENCIÓN
 ## CONSORCIO DEJ
+### Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}
 
-### Datos de Entrada:
+### DATOS DE ENTRADA:
 - Altura del muro: {resultados['altura']:.2f} m
 - Base del muro: {resultados['base']:.2f} m
 - Espesor del muro: {resultados['espesor']:.2f} m
+- Longitud del muro: {resultados['longitud']:.2f} m
+- Peso específico del hormigón: 24.0 kN/m³
+- Peso específico del suelo: 18.0 kN/m³
+- Ángulo de fricción del suelo: 30.0°
 
-### Resultados del Cálculo:
+### RESULTADOS DEL CÁLCULO:
 - Peso del muro: {resultados['peso_muro']:.2f} kN
 - Empuje del suelo: {resultados['empuje_suelo']:.2f} kN
 - Factor de seguridad al volcamiento: {resultados['fs_volcamiento']:.2f}
 - Volumen de hormigón: {resultados['volumen']:.2f} m³
+- Coeficiente de empuje activo (Ka): {resultados['ka']:.3f}
+- Momento volcador: {resultados['momento_volcador']:.2f} kN·m
+- Momento estabilizador: {resultados['momento_estabilizador']:.2f} kN·m
 
-### Análisis:
+### ANÁLISIS DE ESTABILIDAD:
 """
                 
                 if resultados['fs_volcamiento'] > 1.5:
-                    reporte_basico += "✅ El muro es estable al volcamiento."
+                    reporte_basico += "✅ El muro es estable al volcamiento (FS > 1.5)"
                 else:
-                    reporte_basico += "⚠️ El muro requiere revisión de estabilidad."
+                    reporte_basico += "⚠️ El muro requiere revisión de estabilidad (FS < 1.5)"
                 
-                st.text_area("Reporte Básico", reporte_basico, height=400)
+                reporte_basico += f"""
+
+### CONCLUSIONES:
+El análisis básico indica que el muro de contención {'cumple' if resultados['fs_volcamiento'] > 1.5 else 'no cumple'} con los requisitos mínimos de estabilidad al volcamiento.
+
+### NOTA:
+Este es un reporte básico del plan gratuito. Para análisis más detallados, considere actualizar al plan premium.
+
+---
+Generado por: CONSORCIO DEJ
+Plan: Gratuito
+"""
+                
+                st.text_area("Reporte Básico", reporte_basico, height=500)
                 
                 st.download_button(
                     label="📥 Descargar Reporte Básico",
                     data=reporte_basico,
-                    file_name="reporte_basico_muro_contencion.txt",
+                    file_name=f"reporte_basico_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
                     mime="text/plain"
                 )
+            else:
+                st.warning("⚠️ No hay resultados disponibles. Realiza primero los cálculos básicos.")
         else:
             # Reporte premium completo
             if 'resultados_completos' in st.session_state:
@@ -285,6 +375,7 @@ else:
 # REPORTE TÉCNICO COMPLETO - MURO DE CONTENCIÓN
 ## CONSORCIO DEJ
 ### Análisis según Teoría de Rankine
+### Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}
 
 ### 1. COEFICIENTES DE PRESIÓN:
 - Coeficiente de empuje activo (Ka): {resultados['ka']:.3f}
@@ -308,28 +399,46 @@ else:
 - Momento estabilizador: {resultados['M_estabilizador']:.2f} tn·m/m
 - Factor de seguridad al volcamiento: {resultados['FS_volcamiento']:.2f}
 
-### 5. CONCLUSIONES:
+### 5. VERIFICACIONES:
 """
                 
                 if resultados['FS_volcamiento'] > 2.0:
-                    reporte_premium += "✅ El muro cumple con los requisitos de estabilidad al volcamiento."
+                    reporte_premium += "✅ El muro cumple con los requisitos de estabilidad al volcamiento (FS > 2.0)"
                 else:
-                    reporte_premium += "⚠️ El muro requiere revisión de dimensiones."
+                    reporte_premium += "⚠️ El muro requiere revisión de dimensiones (FS < 2.0)"
                 
-                st.text_area("Reporte Premium", reporte_premium, height=500)
+                reporte_premium += f"""
+
+### 6. CONCLUSIONES:
+El análisis completo según la teoría de Rankine indica que el muro de contención {'cumple' if resultados['FS_volcamiento'] > 2.0 else 'no cumple'} con todos los requisitos de estabilidad.
+
+### 7. RECOMENDACIONES:
+- Verificar la capacidad portante del suelo
+- Revisar el diseño del refuerzo estructural
+- Considerar efectos sísmicos si aplica
+- Realizar inspecciones periódicas durante la construcción
+
+---
+Generado por: CONSORCIO DEJ
+Plan: Premium
+Método: Teoría de Rankine
+"""
+                
+                st.text_area("Reporte Premium", reporte_premium, height=600)
                 
                 st.download_button(
                     label="📥 Descargar Reporte Premium",
                     data=reporte_premium,
-                    file_name="reporte_premium_muro_contencion.txt",
+                    file_name=f"reporte_premium_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
                     mime="text/plain"
                 )
+            else:
+                st.warning("⚠️ No hay resultados disponibles. Realiza primero el análisis completo.")
 
     elif opcion == "📈 Gráficos":
         st.title("Gráficos y Visualizaciones")
         
         if st.session_state['plan'] == "gratuito":
-            st.warning("⚠️ Gráficos avanzados requieren plan premium")
             if 'resultados_basicos' in st.session_state:
                 resultados = st.session_state['resultados_basicos']
                 
@@ -343,6 +452,18 @@ else:
                             title="Comparación de Fuerzas - Plan Gratuito",
                             color='Fuerza')
                 st.plotly_chart(fig)
+                
+                # Gráfico de momentos
+                datos_momentos = pd.DataFrame({
+                    'Momento': ['Volcador', 'Estabilizador'],
+                    'Valor (kN·m)': [resultados['momento_volcador'], resultados['momento_estabilizador']]
+                })
+                
+                fig2 = px.pie(datos_momentos, values='Valor (kN·m)', names='Momento',
+                             title="Distribución de Momentos - Plan Gratuito")
+                st.plotly_chart(fig2)
+            else:
+                st.warning("⚠️ No hay resultados disponibles. Realiza primero los cálculos básicos.")
         else:
             # Gráficos premium
             if 'resultados_completos' in st.session_state:
@@ -385,6 +506,8 @@ else:
                 fig3 = px.bar(pd.DataFrame(dimensiones), x='Dimensión', y='Valor (m)',
                              title="Dimensiones Calculadas del Muro")
                 st.plotly_chart(fig3)
+            else:
+                st.warning("⚠️ No hay resultados disponibles. Realiza primero el análisis completo.")
 
     elif opcion == "ℹ️ Acerca de":
         st.title("Acerca de CONSORCIO DEJ")
@@ -397,9 +520,9 @@ else:
         
         **Características del Plan Gratuito:**
         - ✅ Cálculos básicos de estabilidad
-        - ✅ Resultados simples
-        - ✅ Reporte básico
-        - ✅ Gráfico simple
+        - ✅ Resultados simples con gráficos
+        - ✅ Reporte básico descargable
+        - ✅ Análisis de factor de seguridad
         
         **Características del Plan Premium:**
         - ⭐ Análisis completo con teoría de Rankine
