@@ -621,7 +621,7 @@ Método: Teoría de Rankine
         ### 🏗️ CONSORCIO DEJ
         **Información de Contacto:**
         
-        📧 Email: consorciodedj@gmail.com  
+        📧 Email: dejconstruct@gmail.com  
         📱 Teléfono: +51 967573364  
         🌐 Web: www.gruposelectiva.com  
         📍 Dirección: [Jose Luis Bustamante Rivero - Arequipa]
