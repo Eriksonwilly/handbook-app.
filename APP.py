@@ -83,22 +83,26 @@ def dibujar_muro_streamlit(dimensiones, h1, Df, qsc):
         if x < Bz and y < hz+h1+hm:
             ax.scatter(x, y, c='#F57F17', s=15, alpha=0.6)
     
-    # Dibujar sobrecarga con flechas mejoradas
-    flechas_x = np.linspace(r+b+0.1, Bz-0.1, 12)
+    # Dibujar sobrecarga con flechas mejoradas y profesionales
+    flechas_x = np.linspace(r+b+0.1, Bz-0.1, 15)
     for i, x in enumerate(flechas_x):
-        color_flecha = '#E53935' if i % 2 == 0 else '#F44336'
-        ax.arrow(x, hz+h1+hm+0.6, 0, -0.4, head_width=0.08, head_length=0.15, 
-                fc=color_flecha, ec=color_flecha, linewidth=3, alpha=0.8)
+        color_flecha = '#D32F2F' if i % 3 == 0 else '#F44336' if i % 3 == 1 else '#E53935'
+        ax.arrow(x, hz+h1+hm+0.7, 0, -0.5, head_width=0.1, head_length=0.2, 
+                fc=color_flecha, ec=color_flecha, linewidth=4, alpha=0.9)
     
-    # Texto de sobrecarga con fondo
-    ax.text(Bz/2, hz+h1+hm+0.8, f'SOBRECARGA: {qsc} kg/m²', 
-            ha='center', fontsize=14, fontweight='bold', 
-            bbox=dict(boxstyle="round,pad=0.3", facecolor='#FFEBEE', 
-                     edgecolor='#E53935', linewidth=2))
+    # Texto de sobrecarga con fondo profesional
+    ax.text(Bz/2, hz+h1+hm+1.0, f'SOBRECARGA APLICADA: {qsc} kg/m²', 
+            ha='center', fontsize=16, fontweight='bold', 
+            bbox=dict(boxstyle="round,pad=0.5", facecolor='#FFEBEE', 
+                     edgecolor='#D32F2F', linewidth=3, alpha=0.95))
+    
+    # Agregar línea de nivel del terreno
+    ax.axhline(y=hz, color='#795548', linewidth=3, linestyle='-', alpha=0.8)
+    ax.text(Bz+0.3, hz, 'NIVEL DEL TERRENO', fontsize=12, fontweight='bold', 
+            color='#795548', rotation=90, va='center')
     
     # Añadir dimensiones con estilo profesional
-    dimension_style = dict(arrowstyle='<->', color='#1976D2', linewidth=3, 
-                          connectionstyle="arc3,rad=0.1")
+    dimension_style = dict(arrowstyle='<->', color='#1976D2', linewidth=3)
     
     # Dimensiones horizontales
     ax.annotate('', xy=(0, hz/2), xytext=(r, hz/2), arrowprops=dimension_style)
@@ -702,12 +706,25 @@ Plan: Gratuito
                 
                 st.text_area("Reporte Básico", reporte_basico, height=500)
                 
-                st.download_button(
-                    label="📥 Descargar Reporte Básico",
-                    data=reporte_basico,
-                    file_name=f"reporte_basico_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
-                    mime="text/plain"
-                )
+                # Botones para el reporte básico
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.download_button(
+                        label="📥 Descargar Reporte Básico",
+                        data=reporte_basico,
+                        file_name=f"reporte_basico_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
+                        mime="text/plain"
+                    )
+                
+                with col2:
+                    if st.button("🖨️ Generar Reporte en Pantalla", type="primary"):
+                        st.success("✅ Reporte básico generado exitosamente")
+                        st.balloons()
+                        
+                        # Mostrar el reporte en formato expandible
+                        with st.expander("📋 VER REPORTE BÁSICO COMPLETO", expanded=True):
+                            st.markdown(reporte_basico)
             else:
                 st.warning("⚠️ No hay resultados disponibles. Realiza primero los cálculos básicos.")
         else:
@@ -723,6 +740,7 @@ Plan: Gratuito
 
 ### 1. COEFICIENTES DE PRESIÓN:
 - Coeficiente de empuje activo (Ka): {resultados['ka']:.3f}
+- Coeficiente de empuje pasivo (Kp): {resultados['kp']:.3f}
 - Altura equivalente por sobrecarga (hs): {resultados['hs']:.3f} m
 
 ### 2. DIMENSIONES CALCULADAS:
@@ -731,51 +749,131 @@ Plan: Gratuito
 - Espesor del muro (b): {resultados['b']:.2f} m
 - Longitud de puntera (r): {resultados['r']:.2f} m
 - Longitud de talón (t): {resultados['t']:.2f} m
+- Altura del talud (h1): {resultados['h1']:.2f} m
+- Profundidad de desplante (Df): {resultados['Df']:.2f} m
 
-### 3. ANÁLISIS DE ESTABILIDAD:
-- Empuje activo (Ea): {resultados['Ea']:.2f} tn/m
+### 3. ANÁLISIS DE EMPUJES:
+- Empuje activo por relleno: {resultados['Ea_relleno']:.2f} tn/m
+- Empuje activo por sobrecarga: {resultados['Ea_sobrecarga']:.2f} tn/m
+- Empuje activo total: {resultados['Ea_total']:.2f} tn/m
+- Empuje pasivo: {resultados['Ep']:.2f} tn/m
+
+### 4. ANÁLISIS DE PESOS:
 - Peso del muro: {resultados['W_muro']:.2f} tn/m
 - Peso de la zapata: {resultados['W_zapata']:.2f} tn/m
 - Peso del relleno: {resultados['W_relleno']:.2f} tn/m
+- Peso total: {resultados['W_total']:.2f} tn/m
 
-### 4. MOMENTOS:
+### 5. MOMENTOS Y FACTORES DE SEGURIDAD:
 - Momento volcador: {resultados['M_volcador']:.2f} tn·m/m
 - Momento estabilizador: {resultados['M_estabilizador']:.2f} tn·m/m
 - Factor de seguridad al volcamiento: {resultados['FS_volcamiento']:.2f}
+- Factor de seguridad al deslizamiento: {resultados['FS_deslizamiento']:.2f}
 
-### 5. VERIFICACIONES:
+### 6. VERIFICACIÓN DE PRESIONES:
+- Presión máxima: {resultados['q_max_kg_cm2']:.2f} kg/cm²
+- Presión mínima: {resultados['q_min_kg_cm2']:.2f} kg/cm²
+- Excentricidad: {resultados['e']:.3f} m
+- Hay tensiones: {'Sí' if resultados['tension'] else 'No'}
+
+### 7. VERIFICACIONES DE ESTABILIDAD:
 """
                 
-                if resultados['FS_volcamiento'] > 2.0:
-                    reporte_premium += "✅ El muro cumple con los requisitos de estabilidad al volcamiento (FS > 2.0)"
-                else:
-                    reporte_premium += "⚠️ El muro requiere revisión de dimensiones (FS < 2.0)"
+                # Verificaciones de estabilidad
+                cumple_volcamiento = resultados['FS_volcamiento'] >= 2.0
+                cumple_deslizamiento = resultados['FS_deslizamiento'] >= 1.5
+                cumple_presion = resultados['q_max_kg_cm2'] <= 2.5  # Asumiendo q_adm = 2.5 kg/cm²
+                cumple_excentricidad = resultados['e'] <= resultados['Bz'] / 6
+                sin_tensiones = not resultados['tension']
                 
                 reporte_premium += f"""
+**Verificación al Volcamiento:**
+- Factor de seguridad calculado: {resultados['FS_volcamiento']:.2f}
+- Factor mínimo requerido: 2.0
+- Estado: {'✅ CUMPLE' if cumple_volcamiento else '⚠️ NO CUMPLE'}
 
-### 6. CONCLUSIONES:
-El análisis completo según la teoría de Rankine indica que el muro de contención {'cumple' if resultados['FS_volcamiento'] > 2.0 else 'no cumple'} con todos los requisitos de estabilidad.
+**Verificación al Deslizamiento:**
+- Factor de seguridad calculado: {resultados['FS_deslizamiento']:.2f}
+- Factor mínimo requerido: 1.5
+- Estado: {'✅ CUMPLE' if cumple_deslizamiento else '⚠️ NO CUMPLE'}
 
-### 7. RECOMENDACIONES:
-- Verificar la capacidad portante del suelo
-- Revisar el diseño del refuerzo estructural
-- Considerar efectos sísmicos si aplica
+**Verificación de Presiones:**
+- Presión máxima: {resultados['q_max_kg_cm2']:.2f} kg/cm²
+- Presión admisible: 2.5 kg/cm²
+- Estado: {'✅ CUMPLE' if cumple_presion else '⚠️ NO CUMPLE'}
+
+**Verificación de Excentricidad:**
+- Excentricidad calculada: {resultados['e']:.3f} m
+- Límite (B/6): {resultados['Bz']/6:.3f} m
+- Estado: {'✅ CUMPLE' if cumple_excentricidad else '⚠️ NO CUMPLE'}
+
+**Verificación de Tensiones:**
+- Hay tensiones: {'Sí' if resultados['tension'] else 'No'}
+- Estado: {'✅ CUMPLE' if sin_tensiones else '⚠️ NO CUMPLE'}
+
+### 8. RESULTADO FINAL:
+"""
+                
+                cumple_todo = cumple_volcamiento and cumple_deslizamiento and cumple_presion and cumple_excentricidad and sin_tensiones
+                
+                if cumple_todo:
+                    reporte_premium += """
+🎉 **EL MURO CUMPLE CON TODOS LOS REQUISITOS DE ESTABILIDAD**
+
+El análisis completo según la teoría de Rankine indica que el muro de contención 
+es estructuralmente seguro y cumple con todas las verificaciones requeridas.
+"""
+                else:
+                    reporte_premium += """
+⚠️ **EL MURO NO CUMPLE CON TODOS LOS REQUISITOS**
+
+Se recomienda revisar las dimensiones del muro o las propiedades del suelo 
+para mejorar los factores de seguridad y cumplir con las especificaciones.
+"""
+
+                reporte_premium += f"""
+
+### 9. RECOMENDACIONES TÉCNICAS:
+- Verificar la capacidad portante del suelo en campo
+- Revisar el diseño del refuerzo estructural según ACI 318
+- Considerar efectos sísmicos según la normativa local
 - Realizar inspecciones periódicas durante la construcción
+- Monitorear deformaciones durante el servicio
+- Verificar drenaje del relleno para evitar presiones hidrostáticas
+
+### 10. INFORMACIÓN DEL PROYECTO:
+- Empresa: CONSORCIO DEJ
+- Método de análisis: Teoría de Rankine
+- Fecha de análisis: {datetime.now().strftime('%d/%m/%Y %H:%M')}
+- Plan: Premium
+- Software: Streamlit + Python
 
 ---
-Generado por: CONSORCIO DEJ
-Plan: Premium
-Método: Teoría de Rankine
+**Este reporte fue generado automáticamente por el sistema de análisis de muros de contención de CONSORCIO DEJ.**
+**Para consultas técnicas, contacte a nuestro equipo de ingeniería.**
 """
                 
                 st.text_area("Reporte Premium", reporte_premium, height=600)
                 
-                st.download_button(
-                    label="📥 Descargar Reporte Premium",
-                    data=reporte_premium,
-                    file_name=f"reporte_premium_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
-                    mime="text/plain"
-                )
+                # Botones para el reporte
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.download_button(
+                        label="📥 Descargar Reporte Premium",
+                        data=reporte_premium,
+                        file_name=f"reporte_premium_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
+                        mime="text/plain"
+                    )
+                
+                with col2:
+                    if st.button("🖨️ Generar Reporte en Pantalla", type="primary"):
+                        st.success("✅ Reporte técnico generado exitosamente")
+                        st.balloons()
+                        
+                        # Mostrar el reporte en formato expandible
+                        with st.expander("📋 VER REPORTE TÉCNICO COMPLETO", expanded=True):
+                            st.markdown(reporte_premium)
             else:
                 st.warning("⚠️ No hay resultados disponibles. Realiza primero el análisis completo.")
 
