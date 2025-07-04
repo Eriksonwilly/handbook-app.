@@ -2,7 +2,7 @@ import streamlit as st
 
 col1, col2 = st.columns([1, 3])
 with col1:
-    st.image("imagenes/LOGO CONTRUCTORA DEJ6.png", width=100)
+    st.image("imagenes/LOGO CONSTRUCTORA DEJ6.png", width=100)
 with col2:
     st.title("CONSORCIO DEJ")
 st.markdown("---")
