@@ -47,6 +47,13 @@ if not st.session_state['logged_in']:
 else:
     st.success(f"Bienvenido, {st.session_state['user']}!")
     
+    # Botón para cerrar sesión
+    if st.sidebar.button("🚪 Cerrar Sesión"):
+        st.session_state['logged_in'] = False
+        st.session_state['user'] = None
+        st.session_state['plan'] = None
+        st.rerun()
+    
     # Sidebar para navegación
     st.sidebar.title("📋 Menú Principal")
     
@@ -166,10 +173,38 @@ else:
                 'Valor (kN)': [peso_muro, empuje_suelo]
             })
             
+            # Gráfico de barras mejorado
             fig = px.bar(datos, x='Fuerza', y='Valor (kN)', 
                         title="Comparación de Fuerzas - Plan Gratuito",
-                        color='Fuerza')
-            st.plotly_chart(fig)
+                        color='Fuerza',
+                        color_discrete_map={'Peso Muro': '#2E8B57', 'Empuje Suelo': '#DC143C'})
+            
+            # Personalizar el gráfico
+            fig.update_layout(
+                xaxis_title="Tipo de Fuerza",
+                yaxis_title="Valor (kN)",
+                showlegend=True,
+                height=400
+            )
+            
+            # Agregar valores en las barras
+            fig.update_traces(texttemplate='%{y:.1f}', textposition='outside')
+            
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Gráfico de momentos
+            st.subheader("📊 Gráfico de Momentos")
+            datos_momentos = pd.DataFrame({
+                'Momento': ['Volcador', 'Estabilizador'],
+                'Valor (kN·m)': [momento_volcador, momento_estabilizador]
+            })
+            
+            fig2 = px.pie(datos_momentos, values='Valor (kN·m)', names='Momento',
+                         title="Distribución de Momentos - Plan Gratuito",
+                         color_discrete_map={'Volcador': '#FF6B6B', 'Estabilizador': '#4ECDC4'})
+            
+            fig2.update_traces(textposition='inside', textinfo='percent+label')
+            st.plotly_chart(fig2, use_container_width=True)
 
     elif opcion == "📊 Análisis Completo":
         if st.session_state['plan'] == "gratuito":
@@ -450,8 +485,17 @@ Método: Teoría de Rankine
                 
                 fig = px.bar(datos, x='Fuerza', y='Valor (kN)', 
                             title="Comparación de Fuerzas - Plan Gratuito",
-                            color='Fuerza')
-                st.plotly_chart(fig)
+                            color='Fuerza',
+                            color_discrete_map={'Peso Muro': '#2E8B57', 'Empuje Suelo': '#DC143C'})
+                
+                fig.update_layout(
+                    xaxis_title="Tipo de Fuerza",
+                    yaxis_title="Valor (kN)",
+                    height=400
+                )
+                
+                fig.update_traces(texttemplate='%{y:.1f}', textposition='outside')
+                st.plotly_chart(fig, use_container_width=True)
                 
                 # Gráfico de momentos
                 datos_momentos = pd.DataFrame({
@@ -460,8 +504,11 @@ Método: Teoría de Rankine
                 })
                 
                 fig2 = px.pie(datos_momentos, values='Valor (kN·m)', names='Momento',
-                             title="Distribución de Momentos - Plan Gratuito")
-                st.plotly_chart(fig2)
+                             title="Distribución de Momentos - Plan Gratuito",
+                             color_discrete_map={'Volcador': '#FF6B6B', 'Estabilizador': '#4ECDC4'})
+                
+                fig2.update_traces(textposition='inside', textinfo='percent+label+value')
+                st.plotly_chart(fig2, use_container_width=True)
             else:
                 st.warning("⚠️ No hay resultados disponibles. Realiza primero los cálculos básicos.")
         else:
@@ -480,9 +527,23 @@ Método: Teoría de Rankine
                     })
                     
                     fig1 = px.bar(datos_fuerzas, x='Fuerza', y='Valor (tn/m)',
-                                 title="Análisis de Fuerzas",
-                                 color='Fuerza')
-                    st.plotly_chart(fig1)
+                                 title="Análisis de Fuerzas - Plan Premium",
+                                 color='Fuerza',
+                                 color_discrete_map={
+                                     'Empuje Activo': '#DC143C',
+                                     'Peso Muro': '#2E8B57',
+                                     'Peso Zapata': '#4169E1',
+                                     'Peso Relleno': '#FF8C00'
+                                 })
+                    
+                    fig1.update_layout(
+                        xaxis_title="Tipo de Fuerza",
+                        yaxis_title="Valor (tn/m)",
+                        height=400
+                    )
+                    
+                    fig1.update_traces(texttemplate='%{y:.2f}', textposition='outside')
+                    st.plotly_chart(fig1, use_container_width=True)
                 
                 with col2:
                     # Gráfico de momentos
@@ -492,11 +553,14 @@ Método: Teoría de Rankine
                     })
                     
                     fig2 = px.pie(datos_momentos, values='Valor (tn·m/m)', names='Momento',
-                                 title="Distribución de Momentos")
-                    st.plotly_chart(fig2)
+                                 title="Distribución de Momentos - Plan Premium",
+                                 color_discrete_map={'Volcador': '#FF6B6B', 'Estabilizador': '#4ECDC4'})
+                    
+                    fig2.update_traces(textposition='inside', textinfo='percent+label+value')
+                    st.plotly_chart(fig2, use_container_width=True)
                 
                 # Gráfico de dimensiones
-                st.subheader("Dimensiones del Muro")
+                st.subheader("📏 Dimensiones del Muro")
                 dimensiones = {
                     'Dimensión': ['Bz', 'hz', 'b', 'r', 't'],
                     'Valor (m)': [resultados['Bz'], resultados['hz'], resultados['b'], 
@@ -504,8 +568,24 @@ Método: Teoría de Rankine
                 }
                 
                 fig3 = px.bar(pd.DataFrame(dimensiones), x='Dimensión', y='Valor (m)',
-                             title="Dimensiones Calculadas del Muro")
-                st.plotly_chart(fig3)
+                             title="Dimensiones Calculadas del Muro - Plan Premium",
+                             color='Dimensión',
+                             color_discrete_map={
+                                 'Bz': '#FF1493',
+                                 'hz': '#00CED1',
+                                 'b': '#32CD32',
+                                 'r': '#FFD700',
+                                 't': '#FF6347'
+                             })
+                
+                fig3.update_layout(
+                    xaxis_title="Dimensión",
+                    yaxis_title="Valor (m)",
+                    height=400
+                )
+                
+                fig3.update_traces(texttemplate='%{y:.2f}', textposition='outside')
+                st.plotly_chart(fig3, use_container_width=True)
             else:
                 st.warning("⚠️ No hay resultados disponibles. Realiza primero el análisis completo.")
 
@@ -560,5 +640,19 @@ Método: Teoría de Rankine
     if st.session_state['plan'] == "gratuito":
         st.sidebar.info("🆓 Plan Gratuito - Funciones limitadas")
         st.sidebar.write("Para acceder a todas las funciones, actualiza a Premium")
+        
+        # Información sobre cómo acceder al plan premium
+        st.sidebar.markdown("---")
+        st.sidebar.subheader("🔑 Acceso Premium")
+        st.sidebar.write("**Usuario:** premium")
+        st.sidebar.write("**Contraseña:** premium")
+        st.sidebar.info("Cierra sesión y vuelve a iniciar con las credenciales premium")
     else:
         st.sidebar.success("⭐ Plan Premium - Acceso completo")
+        
+        # Información para administradores
+        st.sidebar.markdown("---")
+        st.sidebar.subheader("👨‍💼 Panel de Administrador")
+        st.sidebar.write("**Usuario actual:** " + st.session_state['user'])
+        st.sidebar.write("**Plan:** Premium")
+        st.sidebar.success("Acceso completo a todas las funciones")
