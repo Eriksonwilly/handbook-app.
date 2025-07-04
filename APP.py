@@ -29,7 +29,9 @@ def dibujar_muro_streamlit(dimensiones, h1, Df, qsc):
     matplotlib.figure.Figure
         Figura con el dibujo del muro
     """
-    fig, ax = plt.subplots(figsize=(12, 10))
+    # Configurar estilo profesional
+    plt.style.use('default')
+    fig, ax = plt.subplots(figsize=(14, 12))
     
     # Extraer dimensiones
     Bz = dimensiones['Bz']
@@ -39,72 +41,136 @@ def dibujar_muro_streamlit(dimensiones, h1, Df, qsc):
     t = dimensiones['t']
     hm = dimensiones['hm']
     
-    # Dibujar zapata
-    ax.add_patch(Rectangle((0, 0), Bz, hz, facecolor='#B2EBF2', edgecolor='black', linewidth=2))
+    # Colores profesionales mejorados
+    color_zapata = '#4FC3F7'  # Azul claro profesional
+    color_muro = '#FF5722'    # Naranja vibrante
+    color_relleno = '#FFC107' # Amarillo dorado
+    color_suelo = '#8D6E63'   # Marrón tierra
+    color_agua = '#81C784'    # Verde agua
+    color_acero = '#607D8B'   # Gris acero
     
-    # Dibujar muro
-    ax.add_patch(Rectangle((r, hz), b, h1, facecolor='#FFCDD2', edgecolor='black', linewidth=2))
+    # Dibujar suelo de cimentación con gradiente
+    suelo_gradient = np.linspace(0.3, 0.8, 50)
+    for i, alpha in enumerate(suelo_gradient):
+        y_pos = -Df + (i * Df / 50)
+        ax.add_patch(Rectangle((-1, y_pos), Bz+2, Df/50, 
+                              facecolor=color_suelo, edgecolor='none', alpha=alpha))
+    
+    # Dibujar zapata con efecto 3D
+    ax.add_patch(Rectangle((0, 0), Bz, hz, facecolor=color_zapata, 
+                          edgecolor='#1565C0', linewidth=3))
+    
+    # Dibujar muro principal con gradiente
+    for i in range(10):
+        alpha = 0.7 + (i * 0.03)
+        ax.add_patch(Rectangle((r, hz + i*h1/10), b, h1/10, 
+                              facecolor=color_muro, edgecolor='#D84315', 
+                              linewidth=1, alpha=alpha))
     
     # Dibujar parte superior del muro
-    ax.add_patch(Rectangle((r, hz + h1), b, hm, facecolor='#FFCDD2', edgecolor='black', linewidth=2))
+    ax.add_patch(Rectangle((r, hz + h1), b, hm, facecolor=color_muro, 
+                          edgecolor='#D84315', linewidth=3))
     
-    # Dibujar relleno
+    # Dibujar relleno con patrón
     relleno_pts = [(r+b, hz), (Bz, hz), (Bz, hz+h1+hm), (r+b, hz+h1+hm)]
-    ax.add_patch(Polygon(relleno_pts, facecolor='#FFF9C4', edgecolor='black', alpha=0.7, linewidth=2))
+    ax.add_patch(Polygon(relleno_pts, facecolor=color_relleno, 
+                        edgecolor='#F57F17', linewidth=2, alpha=0.8))
     
-    # Dibujar suelo
-    ax.add_patch(Rectangle((-1, -Df), Bz+2, Df, facecolor='#D7CCC8', edgecolor='black', alpha=0.5, linewidth=2))
+    # Agregar patrón de relleno (puntos)
+    for i in range(20):
+        x = r + b + (i * t / 20) + np.random.normal(0, 0.02)
+        y = hz + np.random.uniform(0, h1+hm)
+        if x < Bz and y < hz+h1+hm:
+            ax.scatter(x, y, c='#F57F17', s=15, alpha=0.6)
     
-    # Dibujar sobrecarga
-    flechas_x = np.linspace(r+b+0.1, Bz-0.1, 10)
-    for x in flechas_x:
-        ax.arrow(x, hz+h1+hm+0.5, 0, -0.3, head_width=0.05, head_length=0.1, fc='red', ec='red', linewidth=2)
-    ax.text(Bz/2, hz+h1+hm+0.7, f'qsc = {qsc} kg/m²', ha='center', fontsize=12, fontweight='bold')
+    # Dibujar sobrecarga con flechas mejoradas
+    flechas_x = np.linspace(r+b+0.1, Bz-0.1, 12)
+    for i, x in enumerate(flechas_x):
+        color_flecha = '#E53935' if i % 2 == 0 else '#F44336'
+        ax.arrow(x, hz+h1+hm+0.6, 0, -0.4, head_width=0.08, head_length=0.15, 
+                fc=color_flecha, ec=color_flecha, linewidth=3, alpha=0.8)
     
-    # Añadir dimensiones
-    ax.annotate('', xy=(0, hz/2), xytext=(r, hz/2), arrowprops=dict(arrowstyle='<->', color='blue', linewidth=2))
-    ax.text(r/2, hz/2-0.1, f'r = {r}m', ha='center', fontsize=10, fontweight='bold', color='blue')
+    # Texto de sobrecarga con fondo
+    ax.text(Bz/2, hz+h1+hm+0.8, f'SOBRECARGA: {qsc} kg/m²', 
+            ha='center', fontsize=14, fontweight='bold', 
+            bbox=dict(boxstyle="round,pad=0.3", facecolor='#FFEBEE', 
+                     edgecolor='#E53935', linewidth=2))
     
-    ax.annotate('', xy=(r, hz/2), xytext=(r+b, hz/2), arrowprops=dict(arrowstyle='<->', color='blue', linewidth=2))
-    ax.text(r+b/2, hz/2-0.1, f'b = {b}m', ha='center', fontsize=10, fontweight='bold', color='blue')
+    # Añadir dimensiones con estilo profesional
+    dimension_style = dict(arrowstyle='<->', color='#1976D2', linewidth=3, 
+                          connectionstyle="arc3,rad=0.1")
     
-    ax.annotate('', xy=(r+b, hz/2), xytext=(Bz, hz/2), arrowprops=dict(arrowstyle='<->', color='blue', linewidth=2))
-    ax.text(r+b+t/2, hz/2-0.1, f't = {t}m', ha='center', fontsize=10, fontweight='bold', color='blue')
+    # Dimensiones horizontales
+    ax.annotate('', xy=(0, hz/2), xytext=(r, hz/2), arrowprops=dimension_style)
+    ax.text(r/2, hz/2-0.15, f'r = {r}m', ha='center', fontsize=11, fontweight='bold', 
+            color='#1976D2', bbox=dict(boxstyle="round,pad=0.2", facecolor='white', 
+                                      edgecolor='#1976D2', alpha=0.9))
     
-    ax.annotate('', xy=(r+b/2, hz), xytext=(r+b/2, hz+h1), arrowprops=dict(arrowstyle='<->', color='blue', linewidth=2))
-    ax.text(r+b/2-0.15, hz+h1/2, f'h1 = {h1}m', ha='right', fontsize=10, fontweight='bold', color='blue')
+    ax.annotate('', xy=(r, hz/2), xytext=(r+b, hz/2), arrowprops=dimension_style)
+    ax.text(r+b/2, hz/2-0.15, f'b = {b}m', ha='center', fontsize=11, fontweight='bold', 
+            color='#1976D2', bbox=dict(boxstyle="round,pad=0.2", facecolor='white', 
+                                      edgecolor='#1976D2', alpha=0.9))
     
-    ax.annotate('', xy=(r+b/2, hz+h1), xytext=(r+b/2, hz+h1+hm), arrowprops=dict(arrowstyle='<->', color='blue', linewidth=2))
-    ax.text(r+b/2-0.15, hz+h1+hm/2, f'hm = {hm}m', ha='right', fontsize=10, fontweight='bold', color='blue')
+    ax.annotate('', xy=(r+b, hz/2), xytext=(Bz, hz/2), arrowprops=dimension_style)
+    ax.text(r+b+t/2, hz/2-0.15, f't = {t}m', ha='center', fontsize=11, fontweight='bold', 
+            color='#1976D2', bbox=dict(boxstyle="round,pad=0.2", facecolor='white', 
+                                      edgecolor='#1976D2', alpha=0.9))
     
-    ax.annotate('', xy=(r+b/2, 0), xytext=(r+b/2, -Df), arrowprops=dict(arrowstyle='<->', color='blue', linewidth=2))
-    ax.text(r+b/2-0.15, -Df/2, f'Df = {Df}m', ha='right', fontsize=10, fontweight='bold', color='blue')
+    # Dimensiones verticales
+    ax.annotate('', xy=(r+b/2, hz), xytext=(r+b/2, hz+h1), arrowprops=dimension_style)
+    ax.text(r+b/2-0.2, hz+h1/2, f'h1 = {h1}m', ha='right', fontsize=11, fontweight='bold', 
+            color='#1976D2', bbox=dict(boxstyle="round,pad=0.2", facecolor='white', 
+                                      edgecolor='#1976D2', alpha=0.9))
     
-    ax.annotate('', xy=(0, 0), xytext=(0, hz), arrowprops=dict(arrowstyle='<->', color='blue', linewidth=2))
-    ax.text(-0.15, hz/2, f'hz = {hz}m', ha='right', fontsize=10, fontweight='bold', color='blue')
+    ax.annotate('', xy=(r+b/2, hz+h1), xytext=(r+b/2, hz+h1+hm), arrowprops=dimension_style)
+    ax.text(r+b/2-0.2, hz+h1+hm/2, f'hm = {hm}m', ha='right', fontsize=11, fontweight='bold', 
+            color='#1976D2', bbox=dict(boxstyle="round,pad=0.2", facecolor='white', 
+                                      edgecolor='#1976D2', alpha=0.9))
     
-    ax.annotate('', xy=(0, 0), xytext=(Bz, 0), arrowprops=dict(arrowstyle='<->', color='blue', linewidth=2))
-    ax.text(Bz/2, -0.2, f'Bz = {Bz}m', ha='center', fontsize=10, fontweight='bold', color='blue')
+    ax.annotate('', xy=(r+b/2, 0), xytext=(r+b/2, -Df), arrowprops=dimension_style)
+    ax.text(r+b/2-0.2, -Df/2, f'Df = {Df}m', ha='right', fontsize=11, fontweight='bold', 
+            color='#1976D2', bbox=dict(boxstyle="round,pad=0.2", facecolor='white', 
+                                      edgecolor='#1976D2', alpha=0.9))
+    
+    ax.annotate('', xy=(0, 0), xytext=(0, hz), arrowprops=dimension_style)
+    ax.text(-0.2, hz/2, f'hz = {hz}m', ha='right', fontsize=11, fontweight='bold', 
+            color='#1976D2', bbox=dict(boxstyle="round,pad=0.2", facecolor='white', 
+                                      edgecolor='#1976D2', alpha=0.9))
+    
+    ax.annotate('', xy=(0, 0), xytext=(Bz, 0), arrowprops=dimension_style)
+    ax.text(Bz/2, -0.3, f'Bz = {Bz}m', ha='center', fontsize=11, fontweight='bold', 
+            color='#1976D2', bbox=dict(boxstyle="round,pad=0.2", facecolor='white', 
+                                      edgecolor='#1976D2', alpha=0.9))
     
     # Ajustar límites del gráfico
-    ax.set_xlim(-1, Bz+1)
-    ax.set_ylim(-Df-0.5, hz+h1+hm+1)
+    ax.set_xlim(-1.5, Bz+1.5)
+    ax.set_ylim(-Df-0.8, hz+h1+hm+1.2)
     
-    # Ajustar aspecto y títulos
+    # Configurar aspecto y títulos profesionales
     ax.set_aspect('equal')
-    ax.set_title('Diseño de Muro de Contención - CONSORCIO DEJ', fontsize=16, fontweight='bold', pad=20)
-    ax.set_xlabel('Distancia (m)', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Altura (m)', fontsize=12, fontweight='bold')
+    ax.set_title('DISEÑO PROFESIONAL DE MURO DE CONTENCIÓN\nCONSORCIO DEJ - Ingeniería y Construcción', 
+                fontsize=18, fontweight='bold', pad=30, color='#1565C0')
+    ax.set_xlabel('Distancia (metros)', fontsize=14, fontweight='bold', color='#424242')
+    ax.set_ylabel('Altura (metros)', fontsize=14, fontweight='bold', color='#424242')
     
-    # Agregar leyenda
+    # Agregar leyenda profesional
     from matplotlib.patches import Patch
     legend_elements = [
-        Patch(facecolor='#B2EBF2', edgecolor='black', label='Zapata'),
-        Patch(facecolor='#FFCDD2', edgecolor='black', label='Muro'),
-        Patch(facecolor='#FFF9C4', edgecolor='black', label='Relleno'),
-        Patch(facecolor='#D7CCC8', edgecolor='black', label='Suelo')
+        Patch(facecolor=color_zapata, edgecolor='#1565C0', label='ZAPATA DE CIMENTACIÓN'),
+        Patch(facecolor=color_muro, edgecolor='#D84315', label='MURO DE CONTENCIÓN'),
+        Patch(facecolor=color_relleno, edgecolor='#F57F17', label='MATERIAL DE RELLENO'),
+        Patch(facecolor=color_suelo, edgecolor='#5D4037', label='SUELO DE CIMENTACIÓN')
     ]
-    ax.legend(handles=legend_elements, loc='upper right', fontsize=10)
+    ax.legend(handles=legend_elements, loc='upper right', fontsize=12, 
+             frameon=True, fancybox=True, shadow=True, 
+             title='ELEMENTOS ESTRUCTURALES', title_fontsize=13)
+    
+    # Agregar grid sutil
+    ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
+    
+    # Configurar fondo
+    ax.set_facecolor('#FAFAFA')
+    fig.patch.set_facecolor('white')
     
     plt.tight_layout()
     return fig
@@ -347,9 +413,9 @@ else:
             if st.button("🔬 Ejecutar Análisis Completo", type="primary"):
                 # Cálculos completos basados en TAREA_DE_PROGRAMACION2.py
                 
-                # Coeficiente de empuje activo
+                # Coeficiente de empuje activo (fórmula correcta de Rankine)
                 phi_relleno_rad = math.radians(phi_relleno)
-                ka = (1 - math.sin(phi_relleno_rad)) / (1 + math.sin(phi_relleno_rad))
+                ka = math.tan(math.radians(45 - phi_relleno/2))**2
                 
                 # Altura equivalente por sobrecarga
                 hs = qsc / gamma_relleno
@@ -376,25 +442,76 @@ else:
                 t = Bz - r - b
                 t = round(t * 100) / 100
                 
-                # Cálculos de estabilidad
-                # Empuje activo
-                Ea = 0.5 * (gamma_relleno/1000) * h1**2 * ka
+                # Cálculos de estabilidad completos (basados en AVANCE2.PY)
                 
-                # Peso del muro
+                # 1. Empujes activos
+                Ea_relleno = 0.5 * ka * (gamma_relleno/1000) * h1**2
+                Ea_sobrecarga = ka * (qsc/1000) * h1  # Convertir kg/m² a tn/m²
+                Ea_total = Ea_relleno + Ea_sobrecarga
+                
+                # 2. Empuje pasivo (si aplica)
+                phi_cimentacion_rad = math.radians(phi_cimentacion)
+                kp = math.tan(math.radians(45 + phi_cimentacion/2))**2
+                Ep = 0.5 * kp * (gamma_cimentacion/1000) * Df**2
+                
+                # 3. Pesos de cada elemento
                 W_muro = b * h1 * (gamma_concreto/1000)
                 W_zapata = Bz * hz * (gamma_concreto/1000)
                 W_relleno = t * h1 * (gamma_relleno/1000)
                 
-                # Momentos
-                M_volcador = Ea * h1 / 3
-                M_estabilizador = W_muro * (r + b/2) + W_zapata * Bz/2 + W_relleno * (r + b + t/2)
+                # 4. Posiciones de los pesos (brazos de momento)
+                x_muro = r + b/2
+                x_zapata = Bz/2
+                x_relleno = r + b + t/2
                 
-                # Factor de seguridad al volcamiento
+                # 5. Momentos estabilizadores
+                Mr_muro = W_muro * x_muro
+                Mr_zapata = W_zapata * x_zapata
+                Mr_relleno = W_relleno * x_relleno
+                Mr_pasivo = Ep * Df/3
+                M_estabilizador = Mr_muro + Mr_zapata + Mr_relleno + Mr_pasivo
+                
+                # 6. Momentos volcadores
+                Mv_relleno = Ea_relleno * h1/3
+                Mv_sobrecarga = Ea_sobrecarga * h1/2
+                M_volcador = Mv_relleno + Mv_sobrecarga
+                
+                # 7. Factor de seguridad al volcamiento
                 FS_volcamiento = M_estabilizador / M_volcador
+                
+                # 8. Verificación al deslizamiento
+                mu = math.tan(phi_cimentacion_rad)  # Coeficiente de fricción
+                Fr_friccion = mu * (W_muro + W_zapata + W_relleno)
+                Fr_pasivo = Ep
+                Fr_total = Fr_friccion + Fr_pasivo
+                Fd_total = Ea_total
+                FS_deslizamiento = Fr_total / Fd_total
+                
+                # 9. Verificación de presiones sobre el suelo
+                W_total = W_muro + W_zapata + W_relleno
+                
+                # Posición de la resultante vertical
+                sum_momentos_verticales = Mr_muro + Mr_zapata + Mr_relleno
+                x_barra = sum_momentos_verticales / W_total
+                
+                # Excentricidad
+                e = abs(x_barra - Bz/2)
+                
+                # Presiones máxima y mínima
+                q_max = (W_total / Bz) * (1 + 6*e/Bz)
+                q_min = (W_total / Bz) * (1 - 6*e/Bz)
+                
+                # Verificar si hay tensiones
+                tension = q_min < 0
+                
+                # Convertir a kg/cm²
+                q_max_kg_cm2 = q_max * 0.1  # tn/m² a kg/cm²
+                q_min_kg_cm2 = q_min * 0.1
                 
                 # Guardar resultados completos
                 st.session_state['resultados_completos'] = {
                     'ka': ka,
+                    'kp': kp,
                     'hs': hs,
                     'Bz': Bz,
                     'hz': hz,
@@ -405,13 +522,22 @@ else:
                     'h1': h1,
                     'Df': Df,
                     'qsc': qsc,
-                    'Ea': Ea,
+                    'Ea_relleno': Ea_relleno,
+                    'Ea_sobrecarga': Ea_sobrecarga,
+                    'Ea_total': Ea_total,
+                    'Ep': Ep,
                     'W_muro': W_muro,
                     'W_zapata': W_zapata,
                     'W_relleno': W_relleno,
+                    'W_total': W_total,
                     'M_volcador': M_volcador,
                     'M_estabilizador': M_estabilizador,
-                    'FS_volcamiento': FS_volcamiento
+                    'FS_volcamiento': FS_volcamiento,
+                    'FS_deslizamiento': FS_deslizamiento,
+                    'q_max_kg_cm2': q_max_kg_cm2,
+                    'q_min_kg_cm2': q_min_kg_cm2,
+                    'e': e,
+                    'tension': tension
                 }
                 
                 st.success("¡Análisis completo ejecutado exitosamente!")
@@ -432,19 +558,64 @@ else:
                     st.metric("Longitud de Talón (t)", f"{t:.2f} m")
                 
                 with col2:
-                    st.metric("Empuje Activo (Ea)", f"{Ea:.2f} tn/m")
-                    st.metric("Peso del Muro", f"{W_muro:.2f} tn/m")
-                    st.metric("Peso de la Zapata", f"{W_zapata:.2f} tn/m")
-                    st.metric("Peso del Relleno", f"{W_relleno:.2f} tn/m")
-                    st.metric("Factor de Seguridad", f"{FS_volcamiento:.2f}")
-                    st.metric("Altura Equivalente (hs)", f"{hs:.3f} m")
+                    st.metric("Empuje Activo Total", f"{Ea_total:.2f} tn/m")
+                    st.metric("Empuje Pasivo", f"{Ep:.2f} tn/m")
+                    st.metric("Peso Total", f"{W_total:.2f} tn/m")
+                    st.metric("FS Deslizamiento", f"{FS_deslizamiento:.2f}")
+                    st.metric("Presión Máxima", f"{q_max_kg_cm2:.2f} kg/cm²")
+                    st.metric("Excentricidad", f"{e:.3f} m")
                 
-                # Análisis de estabilidad
-                st.subheader("🔍 Análisis de Estabilidad")
-                if FS_volcamiento > 2.0:
-                    st.success(f"✅ El muro cumple con los requisitos de estabilidad al volcamiento (FS = {FS_volcamiento:.2f} > 2.0)")
+                # Análisis de estabilidad completo
+                st.subheader("🔍 Análisis de Estabilidad Completo")
+                
+                # Verificación al volcamiento
+                col1, col2 = st.columns(2)
+                with col1:
+                    if FS_volcamiento >= 2.0:
+                        st.success(f"✅ **Volcamiento:** CUMPLE (FS = {FS_volcamiento:.2f} ≥ 2.0)")
+                    else:
+                        st.error(f"⚠️ **Volcamiento:** NO CUMPLE (FS = {FS_volcamiento:.2f} < 2.0)")
+                
+                with col2:
+                    if FS_deslizamiento >= 1.5:
+                        st.success(f"✅ **Deslizamiento:** CUMPLE (FS = {FS_deslizamiento:.2f} ≥ 1.5)")
+                    else:
+                        st.error(f"⚠️ **Deslizamiento:** NO CUMPLE (FS = {FS_deslizamiento:.2f} < 1.5)")
+                
+                # Verificación de presiones
+                st.subheader("📊 Verificación de Presiones sobre el Suelo")
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.metric("Presión Máxima", f"{q_max_kg_cm2:.2f} kg/cm²")
+                    if q_max_kg_cm2 <= sigma_adm:
+                        st.success(f"✅ ≤ {sigma_adm} kg/cm²")
+                    else:
+                        st.error(f"⚠️ > {sigma_adm} kg/cm²")
+                
+                with col2:
+                    st.metric("Presión Mínima", f"{q_min_kg_cm2:.2f} kg/cm²")
+                    if not tension:
+                        st.success("✅ Sin tensiones")
+                    else:
+                        st.error("⚠️ Hay tensiones")
+                
+                with col3:
+                    st.metric("Excentricidad", f"{e:.3f} m")
+                    e_limite = Bz / 6
+                    if e <= e_limite:
+                        st.success(f"✅ ≤ B/6 ({e_limite:.3f} m)")
+                    else:
+                        st.error(f"⚠️ > B/6 ({e_limite:.3f} m)")
+                
+                # Resumen final
+                cumple_todo = (FS_volcamiento >= 2.0 and FS_deslizamiento >= 1.5 and 
+                              q_max_kg_cm2 <= sigma_adm and not tension and e <= e_limite)
+                
+                if cumple_todo:
+                    st.success("🎉 **RESULTADO FINAL:** El muro CUMPLE con todos los requisitos de estabilidad")
                 else:
-                    st.error(f"⚠️ El muro requiere revisión de dimensiones (FS = {FS_volcamiento:.2f} < 2.0)")
+                    st.error("⚠️ **RESULTADO FINAL:** El muro NO CUMPLE con todos los requisitos. Se recomienda revisar dimensiones.")
                 
                 # Gráfico del muro de contención
                 st.subheader("🏗️ Visualización del Muro de Contención")
@@ -659,9 +830,9 @@ Método: Teoría de Rankine
                 
                 with col1:
                     datos_fuerzas = pd.DataFrame({
-                        'Fuerza': ['Empuje Activo', 'Peso Muro', 'Peso Zapata', 'Peso Relleno'],
-                        'Valor (tn/m)': [resultados['Ea'], resultados['W_muro'], 
-                                        resultados['W_zapata'], resultados['W_relleno']]
+                        'Fuerza': ['Empuje Activo', 'Empuje Pasivo', 'Peso Total'],
+                        'Valor (tn/m)': [resultados['Ea_total'], resultados['Ep'], 
+                                        resultados['W_total']]
                     })
                     
                     fig1 = px.bar(datos_fuerzas, x='Fuerza', y='Valor (tn/m)',
@@ -669,9 +840,8 @@ Método: Teoría de Rankine
                                  color='Fuerza',
                                  color_discrete_map={
                                      'Empuje Activo': '#DC143C',
-                                     'Peso Muro': '#2E8B57',
-                                     'Peso Zapata': '#4169E1',
-                                     'Peso Relleno': '#FF8C00'
+                                     'Empuje Pasivo': '#2E8B57',
+                                     'Peso Total': '#4169E1'
                                  })
                     
                     fig1.update_layout(
