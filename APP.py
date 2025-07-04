@@ -1,14 +1,28 @@
 import streamlit as st
+import math
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+from datetime import datetime
 
-# Quitamos la imagen problemática y usamos solo texto
+# Configuración de la página
+st.set_page_config(
+    page_title="CONSORCIO DEJ - Muros de Contención",
+    page_icon="🏗️",
+    layout="wide"
+)
+
+# Header con fondo amarillo
 st.markdown("""
-<div style="text-align: center; padding: 20px; background-color: #003366; color: white; border-radius: 10px; margin-bottom: 20px;">
-    <h1>️ CONSORCIO DEJ</h1>
-    <p>Ingeniería y Construcción</p>
+<div style="text-align: center; padding: 20px; background-color: #FFD700; color: #2F2F2F; border-radius: 10px; margin-bottom: 20px; border: 2px solid #FFA500;">
+    <h1>🏗️ CONSORCIO DEJ</h1>
+    <p style="font-size: 18px; font-weight: bold;">Ingeniería y Construcción</p>
+    <p style="font-size: 14px;">Diseño y Análisis de Muros de Contención</p>
 </div>
 """, unsafe_allow_html=True)
 
-# Autenticación simple (ejemplo)
+# Autenticación simple
 def login():
     st.title("Iniciar Sesión")
     username = st.text_input("Usuario")
@@ -17,6 +31,11 @@ def login():
         if username == "demo" and password == "demo":
             st.session_state['logged_in'] = True
             st.session_state['user'] = username
+            st.session_state['plan'] = "gratuito"
+        elif username == "premium" and password == "premium":
+            st.session_state['logged_in'] = True
+            st.session_state['user'] = username
+            st.session_state['plan'] = "premium"
         else:
             st.error("Usuario o contraseña incorrectos")
 
@@ -27,33 +46,396 @@ if not st.session_state['logged_in']:
     login()
 else:
     st.success(f"Bienvenido, {st.session_state['user']}!")
-    st.title("Cálculo de Muro de Contención")
-
-    # Entradas del usuario
-    altura = st.number_input("Altura del muro (m)", min_value=1.0, max_value=10.0, value=3.0)
-    base = st.number_input("Base del muro (m)", min_value=0.5, max_value=5.0, value=1.0)
-    peso_especifico = st.number_input("Peso específico del material (kN/m³)", min_value=10.0, max_value=30.0, value=24.0)
-
-    if st.button("Calcular"):
-        volumen = altura * base * 1  # Suponiendo 1 metro de longitud
-        peso = volumen * peso_especifico
-        st.success(f"El peso del muro es: {peso:.2f} kN")
-
-    # Modo gratis vs pago (ejemplo)
-    if st.session_state['user'] == "demo":
-        st.info("Estás en modo gratis. Para más funciones, suscríbete.")
+    
+    # Sidebar para navegación
+    st.sidebar.title("📋 Menú Principal")
+    
+    # Mostrar plan actual
+    if st.session_state['plan'] == "gratuito":
+        st.sidebar.info("🆓 Plan Gratuito")
     else:
-        st.success("Modo premium activado.")
+        st.sidebar.success("⭐ Plan Premium")
+    
+    opcion = st.sidebar.selectbox("Selecciona una opción", 
+                                 ["🏗️ Cálculo Básico", "📊 Análisis Completo", "📄 Generar Reporte", "📈 Gráficos", "ℹ️ Acerca de", "✉️ Contacto"])
 
-st.info("Introduce los datos del muro de contención para calcular su peso aproximado.")
+    if opcion == "🏗️ Cálculo Básico":
+        st.title("Cálculo Básico de Muro de Contención")
+        st.info("Plan gratuito: Cálculos básicos de estabilidad")
+        
+        # Pestañas para diferentes tipos de cálculos
+        tab1, tab2, tab3 = st.tabs(["📏 Dimensiones", "🏗️ Materiales", "⚖️ Cargas"])
+        
+        with tab1:
+            st.subheader("Dimensiones del Muro")
+            col1, col2 = st.columns(2)
+            with col1:
+                altura = st.number_input("Altura del muro (m)", min_value=1.0, max_value=15.0, value=3.0, step=0.1)
+                base = st.number_input("Base del muro (m)", min_value=0.5, max_value=8.0, value=1.0, step=0.1)
+            with col2:
+                espesor = st.number_input("Espesor del muro (m)", min_value=0.2, max_value=2.0, value=0.3, step=0.05)
+                longitud = st.number_input("Longitud del muro (m)", min_value=1.0, max_value=100.0, value=10.0, step=0.5)
+        
+        with tab2:
+            st.subheader("Propiedades de los Materiales")
+            col1, col2 = st.columns(2)
+            with col1:
+                peso_especifico = st.number_input("Peso específico del hormigón (kN/m³)", min_value=20.0, max_value=30.0, value=24.0, step=0.5)
+                resistencia_concreto = st.number_input("Resistencia del hormigón (MPa)", min_value=15.0, max_value=50.0, value=25.0, step=1.0)
+            with col2:
+                peso_suelo = st.number_input("Peso específico del suelo (kN/m³)", min_value=15.0, max_value=22.0, value=18.0, step=0.5)
+                angulo_friccion = st.number_input("Ángulo de fricción del suelo (°)", min_value=20.0, max_value=45.0, value=30.0, step=1.0)
+        
+        with tab3:
+            st.subheader("Cargas y Factores de Seguridad")
+            col1, col2 = st.columns(2)
+            with col1:
+                sobrecarga = st.number_input("Sobrecarga (kN/m²)", min_value=0.0, max_value=50.0, value=10.0, step=1.0)
+                factor_seguridad = st.number_input("Factor de seguridad", min_value=1.2, max_value=3.0, value=1.5, step=0.1)
+            with col2:
+                sismo = st.checkbox("Considerar sismo")
+                viento = st.checkbox("Considerar viento")
+        
+        # Botón para calcular
+        if st.button("🚀 Calcular Muro de Contención", type="primary"):
+            # Cálculos básicos
+            volumen = altura * base * espesor * longitud
+            peso_muro = volumen * peso_especifico
+            
+            # Cálculo del empuje del suelo
+            angulo_rad = math.radians(angulo_friccion)
+            ka = math.tan(math.radians(45 - angulo_friccion/2))**2  # Coeficiente de empuje activo
+            empuje_suelo = 0.5 * peso_suelo * altura**2 * ka * longitud
+            
+            # Cálculo del momento volcador
+            momento_volcador = empuje_suelo * altura / 3
+            
+            # Cálculo del momento estabilizador
+            momento_estabilizador = peso_muro * base / 2
+            
+            # Factor de seguridad al volcamiento
+            fs_volcamiento = momento_estabilizador / momento_volcador
+            
+            # Guardar resultados en session state
+            st.session_state['resultados_basicos'] = {
+                'altura': altura,
+                'base': base,
+                'espesor': espesor,
+                'longitud': longitud,
+                'peso_muro': peso_muro,
+                'empuje_suelo': empuje_suelo,
+                'fs_volcamiento': fs_volcamiento,
+                'volumen': volumen,
+                'ka': ka
+            }
+            
+            st.success("¡Cálculos básicos completados exitosamente!")
+            st.balloons()
 
-st.sidebar.title("Menú")
-opcion = st.sidebar.selectbox("Selecciona una opción", ["Cálculo de muro", "Acerca de", "Contacto"])
+    elif opcion == "📊 Análisis Completo":
+        if st.session_state['plan'] == "gratuito":
+            st.warning("⚠️ Esta función requiere plan premium. Actualiza tu cuenta para acceder a análisis completos.")
+            st.info("Plan gratuito incluye: Cálculos básicos, resultados simples")
+            st.info("Plan premium incluye: Análisis completo, reportes detallados, gráficos avanzados")
+        else:
+            st.title("Análisis Completo de Muro de Contención")
+            st.success("⭐ Plan Premium: Análisis completo con teoría de Rankine")
+            
+            # Datos de entrada completos
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.subheader("Dimensiones")
+                h1 = st.number_input("Altura del talud (m)", value=2.8, step=0.1)
+                Df = st.number_input("Profundidad de desplante (m)", value=1.2, step=0.1)
+                hm = st.number_input("Altura de coronación (m)", value=0.8, step=0.1)
+                
+                st.subheader("Materiales")
+                gamma_relleno = st.number_input("Densidad del relleno (kg/m³)", value=1800, step=50)
+                phi_relleno = st.number_input("Ángulo de fricción del relleno (°)", value=30, step=1)
+                gamma_concreto = st.number_input("Peso específico del concreto (kg/m³)", value=2400, step=50)
+                
+            with col2:
+                st.subheader("Propiedades del Suelo")
+                gamma_cimentacion = st.number_input("Densidad del suelo de cimentación (kg/m³)", value=1700, step=50)
+                phi_cimentacion = st.number_input("Ángulo de fricción del suelo (°)", value=25, step=1)
+                cohesion = st.number_input("Cohesión del suelo (t/m²)", value=1.0, step=0.1)
+                sigma_adm = st.number_input("Capacidad portante del suelo (kg/cm²)", value=2.5, step=0.1)
+                
+                st.subheader("Cargas")
+                qsc = st.number_input("Sobrecarga (kg/m²)", value=1000, step=100)
+                fc = st.number_input("Resistencia del concreto (kg/cm²)", value=210, step=10)
+                fy = st.number_input("Resistencia del acero (kg/cm²)", value=4200, step=100)
+            
+            if st.button("🔬 Ejecutar Análisis Completo", type="primary"):
+                # Cálculos completos basados en TAREA_DE_PROGRAMACION2.py
+                
+                # Coeficiente de empuje activo
+                phi_relleno_rad = math.radians(phi_relleno)
+                ka = (1 - math.sin(phi_relleno_rad)) / (1 + math.sin(phi_relleno_rad))
+                
+                # Altura equivalente por sobrecarga
+                hs = qsc / gamma_relleno
+                
+                # Factor kc para concreto
+                kc = 14.28  # Para fc = 210 kg/cm²
+                
+                # Dimensiones calculadas
+                Bz = (h1 + Df) * (1 + hs/(h1 + Df)) * math.sqrt(ka)
+                Bz = round(Bz, 2)
+                
+                hz = math.sqrt(((h1 + Df)**2 * (1 + hs/(h1 + Df))) / (9 * kc))
+                hz = round(hz * 100) / 100
+                hz = max(0.4, hz)
+                
+                b = math.sqrt(((h1 + hm)**2 * (1 + hs/(h1 + hm))) / (10 * kc))
+                b = round(b * 100) / 100
+                b = max(0.35, b)
+                
+                r = (2 * Bz - 3 * b) / 6
+                r = round(r * 100) / 100
+                r = max(0.7, r)
+                
+                t = Bz - r - b
+                t = round(t * 100) / 100
+                
+                # Cálculos de estabilidad
+                # Empuje activo
+                Ea = 0.5 * (gamma_relleno/1000) * h1**2 * ka
+                
+                # Peso del muro
+                W_muro = b * h1 * (gamma_concreto/1000)
+                W_zapata = Bz * hz * (gamma_concreto/1000)
+                W_relleno = t * h1 * (gamma_relleno/1000)
+                
+                # Momentos
+                M_volcador = Ea * h1 / 3
+                M_estabilizador = W_muro * (r + b/2) + W_zapata * Bz/2 + W_relleno * (r + b + t/2)
+                
+                # Factor de seguridad al volcamiento
+                FS_volcamiento = M_estabilizador / M_volcador
+                
+                # Guardar resultados completos
+                st.session_state['resultados_completos'] = {
+                    'ka': ka,
+                    'hs': hs,
+                    'Bz': Bz,
+                    'hz': hz,
+                    'b': b,
+                    'r': r,
+                    't': t,
+                    'Ea': Ea,
+                    'W_muro': W_muro,
+                    'W_zapata': W_zapata,
+                    'W_relleno': W_relleno,
+                    'M_volcador': M_volcador,
+                    'M_estabilizador': M_estabilizador,
+                    'FS_volcamiento': FS_volcamiento
+                }
+                
+                st.success("¡Análisis completo ejecutado exitosamente!")
+                st.balloons()
 
-if opcion == "Cálculo de muro":
-    # Aquí va el código del cálculo
-    pass
-elif opcion == "Acerca de":
-    st.write("Esta app fue desarrollada por Consorcio DEJ.")
-elif opcion == "Contacto":
-    st.write("Email: contacto@consorciodej.com")
+    elif opcion == "📄 Generar Reporte":
+        st.title("Generar Reporte Técnico")
+        
+        if st.session_state['plan'] == "gratuito":
+            st.warning("⚠️ Reportes detallados requieren plan premium")
+            if 'resultados_basicos' in st.session_state:
+                resultados = st.session_state['resultados_basicos']
+                
+                # Reporte básico gratuito
+                reporte_basico = f"""
+# REPORTE BÁSICO - MURO DE CONTENCIÓN
+## CONSORCIO DEJ
+
+### Datos de Entrada:
+- Altura del muro: {resultados['altura']:.2f} m
+- Base del muro: {resultados['base']:.2f} m
+- Espesor del muro: {resultados['espesor']:.2f} m
+
+### Resultados del Cálculo:
+- Peso del muro: {resultados['peso_muro']:.2f} kN
+- Empuje del suelo: {resultados['empuje_suelo']:.2f} kN
+- Factor de seguridad al volcamiento: {resultados['fs_volcamiento']:.2f}
+- Volumen de hormigón: {resultados['volumen']:.2f} m³
+
+### Análisis:
+"""
+                
+                if resultados['fs_volcamiento'] > 1.5:
+                    reporte_basico += "✅ El muro es estable al volcamiento."
+                else:
+                    reporte_basico += "⚠️ El muro requiere revisión de estabilidad."
+                
+                st.text_area("Reporte Básico", reporte_basico, height=400)
+                
+                st.download_button(
+                    label="📥 Descargar Reporte Básico",
+                    data=reporte_basico,
+                    file_name="reporte_basico_muro_contencion.txt",
+                    mime="text/plain"
+                )
+        else:
+            # Reporte premium completo
+            if 'resultados_completos' in st.session_state:
+                resultados = st.session_state['resultados_completos']
+                
+                reporte_premium = f"""
+# REPORTE TÉCNICO COMPLETO - MURO DE CONTENCIÓN
+## CONSORCIO DEJ
+### Análisis según Teoría de Rankine
+
+### 1. COEFICIENTES DE PRESIÓN:
+- Coeficiente de empuje activo (Ka): {resultados['ka']:.3f}
+- Altura equivalente por sobrecarga (hs): {resultados['hs']:.3f} m
+
+### 2. DIMENSIONES CALCULADAS:
+- Ancho de zapata (Bz): {resultados['Bz']:.2f} m
+- Peralte de zapata (hz): {resultados['hz']:.2f} m
+- Espesor del muro (b): {resultados['b']:.2f} m
+- Longitud de puntera (r): {resultados['r']:.2f} m
+- Longitud de talón (t): {resultados['t']:.2f} m
+
+### 3. ANÁLISIS DE ESTABILIDAD:
+- Empuje activo (Ea): {resultados['Ea']:.2f} tn/m
+- Peso del muro: {resultados['W_muro']:.2f} tn/m
+- Peso de la zapata: {resultados['W_zapata']:.2f} tn/m
+- Peso del relleno: {resultados['W_relleno']:.2f} tn/m
+
+### 4. MOMENTOS:
+- Momento volcador: {resultados['M_volcador']:.2f} tn·m/m
+- Momento estabilizador: {resultados['M_estabilizador']:.2f} tn·m/m
+- Factor de seguridad al volcamiento: {resultados['FS_volcamiento']:.2f}
+
+### 5. CONCLUSIONES:
+"""
+                
+                if resultados['FS_volcamiento'] > 2.0:
+                    reporte_premium += "✅ El muro cumple con los requisitos de estabilidad al volcamiento."
+                else:
+                    reporte_premium += "⚠️ El muro requiere revisión de dimensiones."
+                
+                st.text_area("Reporte Premium", reporte_premium, height=500)
+                
+                st.download_button(
+                    label="📥 Descargar Reporte Premium",
+                    data=reporte_premium,
+                    file_name="reporte_premium_muro_contencion.txt",
+                    mime="text/plain"
+                )
+
+    elif opcion == "📈 Gráficos":
+        st.title("Gráficos y Visualizaciones")
+        
+        if st.session_state['plan'] == "gratuito":
+            st.warning("⚠️ Gráficos avanzados requieren plan premium")
+            if 'resultados_basicos' in st.session_state:
+                resultados = st.session_state['resultados_basicos']
+                
+                # Gráfico básico gratuito
+                datos = pd.DataFrame({
+                    'Fuerza': ['Peso Muro', 'Empuje Suelo'],
+                    'Valor (kN)': [resultados['peso_muro'], resultados['empuje_suelo']]
+                })
+                
+                fig = px.bar(datos, x='Fuerza', y='Valor (kN)', 
+                            title="Comparación de Fuerzas - Plan Gratuito",
+                            color='Fuerza')
+                st.plotly_chart(fig)
+        else:
+            # Gráficos premium
+            if 'resultados_completos' in st.session_state:
+                resultados = st.session_state['resultados_completos']
+                
+                # Gráfico de fuerzas
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    datos_fuerzas = pd.DataFrame({
+                        'Fuerza': ['Empuje Activo', 'Peso Muro', 'Peso Zapata', 'Peso Relleno'],
+                        'Valor (tn/m)': [resultados['Ea'], resultados['W_muro'], 
+                                        resultados['W_zapata'], resultados['W_relleno']]
+                    })
+                    
+                    fig1 = px.bar(datos_fuerzas, x='Fuerza', y='Valor (tn/m)',
+                                 title="Análisis de Fuerzas",
+                                 color='Fuerza')
+                    st.plotly_chart(fig1)
+                
+                with col2:
+                    # Gráfico de momentos
+                    datos_momentos = pd.DataFrame({
+                        'Momento': ['Volcador', 'Estabilizador'],
+                        'Valor (tn·m/m)': [resultados['M_volcador'], resultados['M_estabilizador']]
+                    })
+                    
+                    fig2 = px.pie(datos_momentos, values='Valor (tn·m/m)', names='Momento',
+                                 title="Distribución de Momentos")
+                    st.plotly_chart(fig2)
+                
+                # Gráfico de dimensiones
+                st.subheader("Dimensiones del Muro")
+                dimensiones = {
+                    'Dimensión': ['Bz', 'hz', 'b', 'r', 't'],
+                    'Valor (m)': [resultados['Bz'], resultados['hz'], resultados['b'], 
+                                 resultados['r'], resultados['t']]
+                }
+                
+                fig3 = px.bar(pd.DataFrame(dimensiones), x='Dimensión', y='Valor (m)',
+                             title="Dimensiones Calculadas del Muro")
+                st.plotly_chart(fig3)
+
+    elif opcion == "ℹ️ Acerca de":
+        st.title("Acerca de CONSORCIO DEJ")
+        st.write("""
+        ### 🏗️ CONSORCIO DEJ
+        **Ingeniería y Construcción Especializada**
+        
+        Esta aplicación fue desarrollada para facilitar el cálculo y diseño de muros de contención
+        utilizando métodos reconocidos en ingeniería geotécnica.
+        
+        **Características del Plan Gratuito:**
+        - ✅ Cálculos básicos de estabilidad
+        - ✅ Resultados simples
+        - ✅ Reporte básico
+        - ✅ Gráfico simple
+        
+        **Características del Plan Premium:**
+        - ⭐ Análisis completo con teoría de Rankine
+        - ⭐ Cálculos de dimensiones automáticos
+        - ⭐ Reportes técnicos detallados
+        - ⭐ Gráficos avanzados y visualizaciones
+        - ⭐ Verificaciones de estabilidad completas
+        
+        **Desarrollado con:** Python, Streamlit, Plotly
+        **Normativas:** Aplicación de la teoría de Rankine para muros de contención
+        """)
+
+    elif opcion == "✉️ Contacto":
+        st.title("Contacto")
+        st.write("""
+        ### 🏗️ CONSORCIO DEJ
+        **Información de Contacto:**
+        
+        📧 Email: contacto@consorciodej.com  
+        📱 Teléfono: +123 456 7890  
+        🌐 Web: www.consorciodej.com  
+        📍 Dirección: [Tu dirección aquí]
+        
+        **Horarios de Atención:**
+        Lunes a Viernes: 8:00 AM - 6:00 PM
+        
+        **Servicios:**
+        - Diseño de muros de contención
+        - Análisis geotécnico
+        - Ingeniería estructural
+        - Construcción especializada
+        """)
+
+    # Mostrar plan actual en sidebar
+    if st.session_state['plan'] == "gratuito":
+        st.sidebar.info("🆓 Plan Gratuito - Funciones limitadas")
+        st.sidebar.write("Para acceder a todas las funciones, actualiza a Premium")
+    else:
+        st.sidebar.success("⭐ Plan Premium - Acceso completo")
