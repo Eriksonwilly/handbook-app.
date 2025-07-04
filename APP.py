@@ -5,6 +5,109 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle, Polygon
+
+# Función para dibujar el muro de contención
+def dibujar_muro_streamlit(dimensiones, h1, Df, qsc):
+    """
+    Dibuja el muro de contención con las dimensiones calculadas para Streamlit.
+    
+    Parámetros:
+    -----------
+    dimensiones : dict
+        Diccionario con las dimensiones calculadas del muro
+    h1 : float
+        Altura del talud (m)
+    Df : float
+        Profundidad de desplante (m)
+    qsc : float
+        Sobrecarga (kg/m²)
+    
+    Retorna:
+    --------
+    matplotlib.figure.Figure
+        Figura con el dibujo del muro
+    """
+    fig, ax = plt.subplots(figsize=(12, 10))
+    
+    # Extraer dimensiones
+    Bz = dimensiones['Bz']
+    hz = dimensiones['hz']
+    b = dimensiones['b']
+    r = dimensiones['r']
+    t = dimensiones['t']
+    hm = dimensiones['hm']
+    
+    # Dibujar zapata
+    ax.add_patch(Rectangle((0, 0), Bz, hz, facecolor='#B2EBF2', edgecolor='black', linewidth=2))
+    
+    # Dibujar muro
+    ax.add_patch(Rectangle((r, hz), b, h1, facecolor='#FFCDD2', edgecolor='black', linewidth=2))
+    
+    # Dibujar parte superior del muro
+    ax.add_patch(Rectangle((r, hz + h1), b, hm, facecolor='#FFCDD2', edgecolor='black', linewidth=2))
+    
+    # Dibujar relleno
+    relleno_pts = [(r+b, hz), (Bz, hz), (Bz, hz+h1+hm), (r+b, hz+h1+hm)]
+    ax.add_patch(Polygon(relleno_pts, facecolor='#FFF9C4', edgecolor='black', alpha=0.7, linewidth=2))
+    
+    # Dibujar suelo
+    ax.add_patch(Rectangle((-1, -Df), Bz+2, Df, facecolor='#D7CCC8', edgecolor='black', alpha=0.5, linewidth=2))
+    
+    # Dibujar sobrecarga
+    flechas_x = np.linspace(r+b+0.1, Bz-0.1, 10)
+    for x in flechas_x:
+        ax.arrow(x, hz+h1+hm+0.5, 0, -0.3, head_width=0.05, head_length=0.1, fc='red', ec='red', linewidth=2)
+    ax.text(Bz/2, hz+h1+hm+0.7, f'qsc = {qsc} kg/m²', ha='center', fontsize=12, fontweight='bold')
+    
+    # Añadir dimensiones
+    ax.annotate('', xy=(0, hz/2), xytext=(r, hz/2), arrowprops=dict(arrowstyle='<->', color='blue', linewidth=2))
+    ax.text(r/2, hz/2-0.1, f'r = {r}m', ha='center', fontsize=10, fontweight='bold', color='blue')
+    
+    ax.annotate('', xy=(r, hz/2), xytext=(r+b, hz/2), arrowprops=dict(arrowstyle='<->', color='blue', linewidth=2))
+    ax.text(r+b/2, hz/2-0.1, f'b = {b}m', ha='center', fontsize=10, fontweight='bold', color='blue')
+    
+    ax.annotate('', xy=(r+b, hz/2), xytext=(Bz, hz/2), arrowprops=dict(arrowstyle='<->', color='blue', linewidth=2))
+    ax.text(r+b+t/2, hz/2-0.1, f't = {t}m', ha='center', fontsize=10, fontweight='bold', color='blue')
+    
+    ax.annotate('', xy=(r+b/2, hz), xytext=(r+b/2, hz+h1), arrowprops=dict(arrowstyle='<->', color='blue', linewidth=2))
+    ax.text(r+b/2-0.15, hz+h1/2, f'h1 = {h1}m', ha='right', fontsize=10, fontweight='bold', color='blue')
+    
+    ax.annotate('', xy=(r+b/2, hz+h1), xytext=(r+b/2, hz+h1+hm), arrowprops=dict(arrowstyle='<->', color='blue', linewidth=2))
+    ax.text(r+b/2-0.15, hz+h1+hm/2, f'hm = {hm}m', ha='right', fontsize=10, fontweight='bold', color='blue')
+    
+    ax.annotate('', xy=(r+b/2, 0), xytext=(r+b/2, -Df), arrowprops=dict(arrowstyle='<->', color='blue', linewidth=2))
+    ax.text(r+b/2-0.15, -Df/2, f'Df = {Df}m', ha='right', fontsize=10, fontweight='bold', color='blue')
+    
+    ax.annotate('', xy=(0, 0), xytext=(0, hz), arrowprops=dict(arrowstyle='<->', color='blue', linewidth=2))
+    ax.text(-0.15, hz/2, f'hz = {hz}m', ha='right', fontsize=10, fontweight='bold', color='blue')
+    
+    ax.annotate('', xy=(0, 0), xytext=(Bz, 0), arrowprops=dict(arrowstyle='<->', color='blue', linewidth=2))
+    ax.text(Bz/2, -0.2, f'Bz = {Bz}m', ha='center', fontsize=10, fontweight='bold', color='blue')
+    
+    # Ajustar límites del gráfico
+    ax.set_xlim(-1, Bz+1)
+    ax.set_ylim(-Df-0.5, hz+h1+hm+1)
+    
+    # Ajustar aspecto y títulos
+    ax.set_aspect('equal')
+    ax.set_title('Diseño de Muro de Contención - CONSORCIO DEJ', fontsize=16, fontweight='bold', pad=20)
+    ax.set_xlabel('Distancia (m)', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Altura (m)', fontsize=12, fontweight='bold')
+    
+    # Agregar leyenda
+    from matplotlib.patches import Patch
+    legend_elements = [
+        Patch(facecolor='#B2EBF2', edgecolor='black', label='Zapata'),
+        Patch(facecolor='#FFCDD2', edgecolor='black', label='Muro'),
+        Patch(facecolor='#FFF9C4', edgecolor='black', label='Relleno'),
+        Patch(facecolor='#D7CCC8', edgecolor='black', label='Suelo')
+    ]
+    ax.legend(handles=legend_elements, loc='upper right', fontsize=10)
+    
+    plt.tight_layout()
+    return fig
 
 # Configuración de la página
 st.set_page_config(
@@ -298,6 +401,10 @@ else:
                     'b': b,
                     'r': r,
                     't': t,
+                    'hm': hm,
+                    'h1': h1,
+                    'Df': Df,
+                    'qsc': qsc,
                     'Ea': Ea,
                     'W_muro': W_muro,
                     'W_zapata': W_zapata,
@@ -338,6 +445,37 @@ else:
                     st.success(f"✅ El muro cumple con los requisitos de estabilidad al volcamiento (FS = {FS_volcamiento:.2f} > 2.0)")
                 else:
                     st.error(f"⚠️ El muro requiere revisión de dimensiones (FS = {FS_volcamiento:.2f} < 2.0)")
+                
+                # Gráfico del muro de contención
+                st.subheader("🏗️ Visualización del Muro de Contención")
+                st.info("Gráfico detallado del muro con todas las dimensiones calculadas")
+                
+                # Crear dimensiones para el gráfico
+                dimensiones_grafico = {
+                    'Bz': Bz,
+                    'hz': hz,
+                    'b': b,
+                    'r': r,
+                    't': t,
+                    'hm': hm
+                }
+                
+                # Generar el gráfico del muro
+                fig_muro = dibujar_muro_streamlit(dimensiones_grafico, h1, Df, qsc)
+                
+                # Mostrar el gráfico en Streamlit
+                st.pyplot(fig_muro)
+                
+                # Información adicional sobre el gráfico
+                st.markdown("""
+                **Leyenda del Gráfico:**
+                - 🔵 **Zapata (Azul claro):** Base de cimentación del muro
+                - 🔴 **Muro (Rosa):** Estructura principal de contención
+                - 🟡 **Relleno (Amarillo):** Material de relleno detrás del muro
+                - 🟤 **Suelo (Marrón):** Suelo de cimentación
+                - 🔴 **Flechas rojas:** Sobrecarga aplicada (qsc)
+                - 🔵 **Dimensiones en azul:** Medidas calculadas del muro
+                """)
 
     elif opcion == "📄 Generar Reporte":
         st.title("Generar Reporte Técnico")
@@ -586,6 +724,37 @@ Método: Teoría de Rankine
                 
                 fig3.update_traces(texttemplate='%{y:.2f}', textposition='outside')
                 st.plotly_chart(fig3, use_container_width=True)
+                
+                # Gráfico del muro de contención
+                st.subheader("🏗️ Visualización del Muro de Contención")
+                st.info("Representación gráfica detallada del muro diseñado")
+                
+                # Crear dimensiones para el gráfico
+                dimensiones_grafico = {
+                    'Bz': resultados['Bz'],
+                    'hz': resultados['hz'],
+                    'b': resultados['b'],
+                    'r': resultados['r'],
+                    't': resultados['t'],
+                    'hm': resultados['hm']
+                }
+                
+                # Generar el gráfico del muro con valores reales
+                fig_muro = dibujar_muro_streamlit(dimensiones_grafico, resultados['h1'], resultados['Df'], resultados['qsc'])
+                
+                # Mostrar el gráfico en Streamlit
+                st.pyplot(fig_muro)
+                
+                # Información adicional sobre el gráfico
+                st.markdown("""
+                **Leyenda del Gráfico:**
+                - 🔵 **Zapata (Azul claro):** Base de cimentación del muro
+                - 🔴 **Muro (Rosa):** Estructura principal de contención
+                - 🟡 **Relleno (Amarillo):** Material de relleno detrás del muro
+                - 🟤 **Suelo (Marrón):** Suelo de cimentación
+                - 🔴 **Flechas rojas:** Sobrecarga aplicada (qsc)
+                - 🔵 **Dimensiones en azul:** Medidas calculadas del muro
+                """)
             else:
                 st.warning("⚠️ No hay resultados disponibles. Realiza primero el análisis completo.")
 
@@ -621,10 +790,10 @@ Método: Teoría de Rankine
         ### 🏗️ CONSORCIO DEJ
         **Información de Contacto:**
         
-        📧 Email: dejconstruct@gmail.com  
-        📱 Teléfono: +51 967573364  
-        🌐 Web: www.gruposelectiva.com  
-        📍 Dirección: [Jose Luis Bustamante Rivero - Arequipa]
+        📧 Email: contacto@consorciodej.com  
+        📱 Teléfono: +123 456 7890  
+        🌐 Web: www.consorciodej.com  
+        📍 Dirección: [Tu dirección aquí]
         
         **Horarios de Atención:**
         Lunes a Viernes: 8:00 AM - 6:00 PM
