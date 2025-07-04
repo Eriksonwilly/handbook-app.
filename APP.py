@@ -621,10 +621,10 @@ Método: Teoría de Rankine
         ### 🏗️ CONSORCIO DEJ
         **Información de Contacto:**
         
-        📧 Email: contacto@consorciodej.com  
-        📱 Teléfono: +123 456 7890  
-        🌐 Web: www.consorciodej.com  
-        📍 Dirección: [Tu dirección aquí]
+        📧 Email: consorciodedj@gmail.com  
+        📱 Teléfono: +51 967573364  
+        🌐 Web: www.gruposelectiva.com  
+        📍 Dirección: [Jose Luis Bustamante Rivero - Arequipa]
         
         **Horarios de Atención:**
         Lunes a Viernes: 8:00 AM - 6:00 PM
