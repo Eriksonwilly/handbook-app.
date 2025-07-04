@@ -1,6 +1,6 @@
 import streamlit as st
 
-st.image("LOGO CONTRUCtora dej6.png", width=200)  # Ajusta el nombre y tamaño según tu archivo
+st.image("LOGO CONTRUCTORA DEJ6.png", width=200)  # Ajusta el nombre y tamaño según tu archivo
 
 # Autenticación simple (ejemplo)
 def login():
