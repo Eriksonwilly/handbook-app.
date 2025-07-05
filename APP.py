@@ -617,17 +617,23 @@ def show_auth_page():
             submitted = st.form_submit_button("Entrar")
             
             if submitted:
-                if not PAYMENT_SYSTEM_AVAILABLE:
-                    # Modo demo
-                    if username == "demo" and password == "demo":
-                        st.session_state['logged_in'] = True
-                        st.session_state['user_data'] = {"username": "demo", "plan": "gratuito"}
-                        st.session_state['user'] = "demo"
-                        st.session_state['plan'] = "gratuito"
-                        st.success("¡Bienvenido al modo demo!")
-                        st.rerun()
-                    else:
-                        st.error("Credenciales demo: usuario=demo, contraseña=demo")
+                # Verificar credenciales especiales primero
+                if username == "admin" and password == "admin123":
+                    st.session_state['logged_in'] = True
+                    st.session_state['user_data'] = {"username": "admin", "plan": "empresarial", "name": "Administrador"}
+                    st.session_state['user'] = "admin"
+                    st.session_state['plan'] = "empresarial"
+                    st.success("¡Bienvenido Administrador!")
+                    st.rerun()
+                elif username == "demo" and password == "demo":
+                    st.session_state['logged_in'] = True
+                    st.session_state['user_data'] = {"username": "demo", "plan": "gratuito", "name": "Usuario Demo"}
+                    st.session_state['user'] = "demo"
+                    st.session_state['plan'] = "gratuito"
+                    st.success("¡Bienvenido al modo demo!")
+                    st.rerun()
+                elif not PAYMENT_SYSTEM_AVAILABLE:
+                    st.error("Credenciales disponibles: admin/admin123 o demo/demo")
                 else:
                     # Sistema real
                     result = payment_system.login_user(username, password)

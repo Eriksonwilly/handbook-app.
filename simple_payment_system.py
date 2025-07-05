@@ -185,6 +185,8 @@ class SimplePaymentSystem:
 • Disponible en Perú
 • Proceso automático
 • Sin comisiones ocultas
+
+📧 PayPal: consorciodej@gmail.com
             """
         
         elif method == "transferencia":
@@ -207,6 +209,8 @@ Titular: CONSORCIO DEJ SAC
 • Sin comisiones
 • Disponible en todos los bancos
 • Proceso seguro
+
+🏦 El dinero llega directamente a tu cuenta BCP
             """
         
         elif method == "yape":
@@ -226,6 +230,8 @@ Titular: CONSORCIO DEJ SAC
 • Sin comisiones
 • Disponible 24/7
 • Activación inmediata
+
+📱 El dinero llega directamente a tu Yape
             """
         
         elif method == "plin":
@@ -244,6 +250,8 @@ Titular: CONSORCIO DEJ SAC
 • Sin comisiones
 • Proceso instantáneo
 • Disponible en todo Perú
+
+📱 El dinero llega directamente a tu PLIN
             """
         
         else:
@@ -263,6 +271,8 @@ Titular: CONSORCIO DEJ SAC
 • Sin comisiones
 • Pago directo
 • Recibo físico
+
+💼 El dinero llega directamente a tu cuenta
             """
     
     def confirm_payment(self, payment_id: str) -> Dict:
