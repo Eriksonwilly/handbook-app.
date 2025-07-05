@@ -570,6 +570,12 @@ def show_payment_form(plan):
     """Mostrar formulario de pago"""
     st.subheader(f"💳 Pago - Plan {plan.title()}")
     
+    # Verificar si hay usuario logueado
+    if 'user' not in st.session_state:
+        st.warning("⚠️ Debes iniciar sesión o registrarte primero")
+        st.info("📝 Ve a la pestaña 'Registrarse' para crear una cuenta")
+        return
+    
     payment_method = st.selectbox(
         "Método de pago",
         ["yape", "plin", "paypal", "transferencia", "efectivo"],
@@ -582,26 +588,39 @@ def show_payment_form(plan):
         }[x]
     )
     
-    if st.button("Procesar Pago"):
-        if PAYMENT_SYSTEM_AVAILABLE and 'user' in st.session_state:
-            result = payment_system.upgrade_plan(
-                st.session_state['user'], 
-                plan, 
-                payment_method
-            )
-            
-            if result["success"]:
-                st.success("✅ Pago procesado correctamente")
-                st.info("📋 Instrucciones de pago:")
-                st.text(result["instructions"])
+    if st.button("Procesar Pago", type="primary"):
+        if PAYMENT_SYSTEM_AVAILABLE:
+            try:
+                result = payment_system.upgrade_plan(
+                    st.session_state['user'], 
+                    plan, 
+                    payment_method
+                )
                 
-                # Actualizar plan en session state
-                st.session_state['plan'] = plan
-                st.rerun()
-            else:
-                st.error(result["message"])
+                if result["success"]:
+                    st.success("✅ Pago procesado correctamente")
+                    st.info("📋 Instrucciones de pago:")
+                    st.text(result["instructions"])
+                    
+                    # Mostrar información adicional
+                    st.info("📱 Envía el comprobante de pago a WhatsApp: +51 999 888 777")
+                    st.info("⏰ Activación en 2 horas máximo")
+                    
+                    # Actualizar plan en session state
+                    st.session_state['plan'] = plan
+                    st.session_state['user_data']['plan'] = plan
+                    
+                    # Botón para continuar
+                    if st.button("✅ Continuar", key="continue_after_payment"):
+                        st.rerun()
+                else:
+                    st.error(f"❌ Error: {result['message']}")
+            except Exception as e:
+                st.error(f"❌ Error en el sistema de pagos: {str(e)}")
+                st.info("🔄 Intenta nuevamente o contacta soporte")
         else:
-            st.error("Sistema de pagos no disponible")
+            st.error("❌ Sistema de pagos no disponible")
+            st.info("🔧 Contacta al administrador para activar el sistema")
 
 def show_auth_page():
     st.title("🏗️ CONSORCIO DEJ - Muros de Contención")
@@ -650,26 +669,41 @@ def show_auth_page():
     with tab2:
         st.subheader("Crear Cuenta")
         with st.form("register_form"):
-            new_username = st.text_input("Usuario")
-            new_email = st.text_input("Email")
-            new_password = st.text_input("Contraseña", type="password")
+            new_username = st.text_input("Usuario", placeholder="Tu nombre de usuario")
+            new_email = st.text_input("Email", placeholder="tuemail@gmail.com")
+            new_password = st.text_input("Contraseña", type="password", placeholder="Mínimo 6 caracteres")
             confirm_password = st.text_input("Confirmar Contraseña", type="password")
-            submitted = st.form_submit_button("Registrarse")
+            submitted = st.form_submit_button("📝 Registrarse", type="primary")
             
             if submitted:
-                if new_password != confirm_password:
-                    st.error("Las contraseñas no coinciden")
+                if not new_username or not new_email or not new_password:
+                    st.error("❌ Todos los campos son obligatorios")
+                elif new_password != confirm_password:
+                    st.error("❌ Las contraseñas no coinciden")
                 elif len(new_password) < 6:
-                    st.error("La contraseña debe tener al menos 6 caracteres")
+                    st.error("❌ La contraseña debe tener al menos 6 caracteres")
                 else:
                     if not PAYMENT_SYSTEM_AVAILABLE:
-                        st.success("Modo demo: Registro simulado exitoso")
+                        st.success("✅ Modo demo: Registro simulado exitoso")
+                        st.info("🔑 Credenciales: demo / demo")
                     else:
                         result = payment_system.register_user(new_email, new_password, new_username)
                         if result["success"]:
-                            st.success(result["message"])
+                            st.success("✅ " + result["message"])
+                            st.info("🔐 Ahora puedes iniciar sesión y actualizar tu plan")
+                            
+                            # Auto-login después del registro
+                            login_result = payment_system.login_user(new_email, new_password)
+                            if login_result["success"]:
+                                st.session_state['logged_in'] = True
+                                st.session_state['user_data'] = login_result["user"]
+                                st.session_state['user'] = login_result["user"]["email"]
+                                st.session_state['plan'] = login_result["user"]["plan"]
+                                st.success(f"🎉 ¡Bienvenido, {login_result['user']['name']}!")
+                                st.info("💰 Ve a 'Planes y Precios' para actualizar tu plan")
+                                st.rerun()
                         else:
-                            st.error(result["message"])
+                            st.error("❌ " + result["message"])
     
     with tab3:
         show_pricing_page()
