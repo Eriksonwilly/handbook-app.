@@ -30,7 +30,7 @@ class SimplePaymentSystem:
             admin_user = {
                 "email": admin_email,
                 "password": self.hash_password("admin123"),
-                "name": "Administrador",
+                "name": "admin",
                 "plan": "empresarial",
                 "created_at": datetime.datetime.now().isoformat(),
                 "expires_at": None
@@ -38,6 +38,13 @@ class SimplePaymentSystem:
             self.users[admin_email] = admin_user
             self.save_data()
             print("✅ Usuario admin creado: admin@consorciodej.com / admin123")
+        else:
+            # Asegurar que el admin tenga plan empresarial
+            if self.users[admin_email]["plan"] != "empresarial":
+                self.users[admin_email]["plan"] = "empresarial"
+                self.users[admin_email]["expires_at"] = None
+                self.save_data()
+                print("✅ Plan de admin actualizado a empresarial")
     
     def load_data(self):
         """Cargar datos de usuarios y pagos"""
