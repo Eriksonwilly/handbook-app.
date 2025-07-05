@@ -194,14 +194,14 @@ class SimplePaymentSystem:
 🏦 TRANSFERENCIA BANCÁRIA (PERÚ)
 💰 Monto: S/{(amount * 3.7):.2f} PEN
 
-📋 Datos bancarios REALES:
+📋 DATOS BANCARIOS REALES - TU CUENTA BCP:
 Banco: BCP
 Cuenta: 193-12345678-0-12
 CCI: 002-193-001234567890-12
 Titular: CONSORCIO DEJ SAC
 
 📱 Pasos:
-1. Haz la transferencia
+1. Haz la transferencia a TU cuenta BCP
 2. Envía comprobante a WhatsApp: +51 999 888 777
 3. ¡Activación en 2 horas!
 
@@ -209,6 +209,7 @@ Titular: CONSORCIO DEJ SAC
 • Sin comisiones
 • Disponible en todos los bancos
 • Proceso seguro
+• El dinero llega DIRECTAMENTE a tu cuenta BCP
 
 🏦 El dinero llega directamente a tu cuenta BCP
             """
@@ -230,6 +231,7 @@ Titular: CONSORCIO DEJ SAC
 • Sin comisiones
 • Disponible 24/7
 • Activación inmediata
+• El dinero llega DIRECTAMENTE a tu Yape
 
 📱 El dinero llega directamente a tu Yape
             """
@@ -250,6 +252,7 @@ Titular: CONSORCIO DEJ SAC
 • Sin comisiones
 • Proceso instantáneo
 • Disponible en todo Perú
+• El dinero llega DIRECTAMENTE a tu PLIN
 
 📱 El dinero llega directamente a tu PLIN
             """
