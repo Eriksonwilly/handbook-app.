@@ -1,0 +1,122 @@
+# CONSORCIO DEJ - Muros de Contención
+# Archivo .gitignore para excluir archivos innecesarios
+
+# Entorno virtual
+venv/
+env/
+ENV/
+
+# Archivos compilados de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribución / empaquetado
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Metadatos de paquetes
+*.dist-info/
+*.egg-info/
+
+# Carpetas de versiones de paquetes
+1.28.0/
+2.0.0/
+3.7.0/
+1.24.0/
+5.15.0/
+4.0.0/
+3.1.0/
+1.17.1/
+1.5.1/
+0.4.6/
+1.3.2/
+45.0.4/
+0.8.0/
+0.12.1/
+2.9.0.post0/
+1.1.0/
+6.0.2/
+4.58.4/
+1.1/
+3.10/
+1.4.8/
+5.4.0/
+3.10.3/
+2.3.0/
+1.3.0/
+25.0/
+11.2.1/
+25.1.1/
+2.22/
+0.27.0/
+0.29.0/
+5.6.0/
+6.4.2.2.3/
+6.4.3/
+13.10.2/
+6.4.2.3.3/
+6.4.2/
+6.9.1/
+0.6.6/
+2025.6.15/
+5.2.0/
+3.4.2/
+8.2.1/
+2025.2/
+5.3.1/
+5.0.0/
+2.4.0/
+0.5.1/
+0.2.17/
+6.0.2/
+
+# Archivos de configuración local
+.env
+.env.local
+.env.production
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Archivos temporales
+*.tmp
+*.temp
+*.log
+
+# Archivos de base de datos
+*.db
+*.sqlite
+*.sqlite3
+
+# Archivos de configuración de Streamlit
+.streamlit/
+
+# Archivos de caché
+.cache/
+.pytest_cache/
+
+# Archivos de configuración de Python
+.python-version
