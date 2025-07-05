@@ -896,7 +896,10 @@ else:
         user_id = user_data.get('id')
         plan = user_data.get('plan', 'gratuito')
         
-        if not PAYMENT_SYSTEM_AVAILABLE or not payment_system.check_plan_access(st.session_state['user'], 'premium'):
+        # Verificar si es admin (acceso completo)
+        is_admin = st.session_state.get('user') == 'admin' or st.session_state.get('user') == 'admin@consorciodej.com'
+        
+        if not PAYMENT_SYSTEM_AVAILABLE or (not is_admin and not payment_system.check_plan_access(st.session_state['user'], 'premium')):
             st.warning("⚠️ Esta función requiere plan premium. Actualiza tu cuenta para acceder a análisis completos.")
             st.info("Plan gratuito incluye: Cálculos básicos, resultados simples")
             st.info("Plan premium incluye: Análisis completo, reportes detallados, gráficos avanzados")
