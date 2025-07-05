@@ -1,6 +1,15 @@
 [theme]
-primaryColor="#FFD700"
-backgroundColor="#FFFFE0"
-secondaryBackgroundColor="#FFFACD"
-textColor="#2F2F2F"
-font="sans serif"
+primaryColor = "#FFD700"
+backgroundColor = "#FFFFF0"
+secondaryBackgroundColor = "#FFFACD"
+textColor = "#2F2F2F"
+font = "sans serif"
+
+[server]
+port = 8501
+headless = true
+enableCORS = false
+enableXsrfProtection = false
+
+[browser]
+gatherUsageStats = false

@@ -7,6 +7,272 @@ import plotly.graph_objects as go
 from datetime import datetime
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle, Polygon
+from reportlab.lib.pagesizes import A4, letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak, Image
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import inch
+import io
+import tempfile
+import os
+
+# Función para calcular diseño del fuste del muro
+def calcular_diseno_fuste(resultados, datos_entrada):
+    """
+    Calcula el diseño y verificación del fuste del muro según PARTE 2.2.py
+    """
+    # Datos del fuste
+    h1 = datos_entrada['h1']
+    gamma_relleno = datos_entrada['gamma_relleno']
+    phi_relleno = datos_entrada['phi_relleno']
+    cohesion = datos_entrada['cohesion']
+    Df = datos_entrada['Df']
+    fc = datos_entrada['fc']
+    fy = datos_entrada['fy']
+    b = resultados['b']
+    
+    # 1. Cálculo del coeficiente pasivo
+    phi_rad = math.radians(phi_relleno)
+    kp = (1 + math.sin(phi_rad)) / (1 - math.sin(phi_rad))
+    
+    # 2. Empuje pasivo en el intradós
+    Ep = 0.5 * kp * (gamma_relleno/1000) * Df**2 + 2 * cohesion * Df * math.sqrt(kp)
+    Ep_kg_m = Ep * 1000  # Convertir a kg/m
+    
+    # 3. Altura de aplicación del empuje pasivo
+    yt = Df / 3
+    
+    # 4. Momentos volcadores y estabilizadores
+    # Empuje activo total
+    ka = resultados['ka']
+    Ea_relleno = 0.5 * ka * (gamma_relleno/1000) * h1**2
+    Ea_sobrecarga = ka * (datos_entrada['qsc']/1000) * h1
+    Ea_total = Ea_relleno + Ea_sobrecarga
+    
+    # Momentos volcadores
+    Mvol_relleno = Ea_relleno * h1 / 3
+    Mvol_sobrecarga = Ea_sobrecarga * h1 / 2
+    Mvol_total = Mvol_relleno + Mvol_sobrecarga
+    
+    # Momentos estabilizadores (simplificado)
+    W_muro = b * h1 * (datos_entrada['gamma_concreto']/1000)
+    W_zapata = resultados['Bz'] * resultados['hz'] * (datos_entrada['gamma_concreto']/1000)
+    W_relleno = resultados['t'] * h1 * (gamma_relleno/1000)
+    
+    # Brazos de momento
+    x_muro = resultados['r'] + b/2
+    x_zapata = resultados['Bz']/2
+    x_relleno = resultados['r'] + b + resultados['t']/2
+    
+    Mr_muro = W_muro * x_muro
+    Mr_zapata = W_zapata * x_zapata
+    Mr_relleno = W_relleno * x_relleno
+    Mr_pasivo = Ep * yt
+    Mesta_total = Mr_muro + Mr_zapata + Mr_relleno + Mr_pasivo
+    
+    # 5. Factores de seguridad
+    FSv = Mesta_total / Mvol_total
+    FSd = (math.tan(phi_rad) * (W_muro + W_zapata + W_relleno) + Ep) / Ea_total
+    
+    # 6. Ubicación de la resultante y excentricidad
+    W_total = W_muro + W_zapata + W_relleno
+    sum_momentos = Mr_muro + Mr_zapata + Mr_relleno
+    x_barra = sum_momentos / W_total
+    e = abs(x_barra - resultados['Bz']/2)
+    
+    # 7. Cálculo del peralte efectivo
+    # Momento de diseño
+    Mu = 1.4 * Mvol_total  # Factor de carga
+    
+    # Resistencia del concreto
+    fc_kg_cm2 = fc
+    fy_kg_cm2 = fy
+    
+    # Peralte efectivo requerido
+    dreq = math.sqrt(Mu * 100000 / (0.9 * 0.85 * fc_kg_cm2 * b * 100 * 0.59))
+    hreq = dreq + 9  # Recubrimiento + diámetro de barra
+    dreal = resultados['hz'] * 100 - 9  # Peralte real en cm
+    
+    # 8. Área de acero
+    As = Mu * 100000 / (0.9 * fy_kg_cm2 * dreal)
+    Asmin = 0.0033 * b * 100 * dreal  # Cuantía mínima
+    
+    # 9. Distribución del acero
+    # Usar barras de 5/8" (1.98 cm²)
+    area_barra = 1.98
+    num_barras = math.ceil(As / area_barra)
+    As_proporcionado = num_barras * area_barra
+    separacion = (b * 100 - 6) / (num_barras - 1)  # 3cm de recubrimiento
+    
+    # 10. Verificación de cuantías
+    rho_real = As_proporcionado / (b * 100 * dreal)
+    rho_min = 0.0033
+    rho_max = 0.0163
+    
+    # 11. Acero por retracción y temperatura
+    As_retraccion = 0.002 * b * 100 * resultados['hz'] * 100
+    num_barras_retraccion = math.ceil(As_retraccion / 1.27)  # Barras de 1/2"
+    As_retraccion_proporcionado = num_barras_retraccion * 1.27
+    
+    return {
+        'kp': kp,
+        'Ep_kg_m': Ep_kg_m,
+        'yt': yt,
+        'Mvol_total': Mvol_total,
+        'Mesta_total': Mesta_total,
+        'FSv': FSv,
+        'FSd': FSd,
+        'x_barra': x_barra,
+        'e': e,
+        'dreq': dreq,
+        'hreq': hreq,
+        'dreal': dreal,
+        'As': As,
+        'Asmin': Asmin,
+        'num_barras': num_barras,
+        'As_proporcionado': As_proporcionado,
+        'separacion': separacion,
+        'rho_real': rho_real,
+        'As_retraccion': As_retraccion,
+        'num_barras_retraccion': num_barras_retraccion,
+        'As_retraccion_proporcionado': As_retraccion_proporcionado
+    }
+
+# Función para generar PDF del reporte
+def generar_pdf_reportlab(resultados, datos_entrada, diseno_fuste, plan="premium"):
+    """
+    Genera un PDF profesional usando ReportLab
+    """
+    # Crear archivo temporal
+    pdf_buffer = io.BytesIO()
+    doc = SimpleDocTemplate(pdf_buffer, pagesize=A4)
+    styles = getSampleStyleSheet()
+    styleN = styles["Normal"]
+    styleH = styles["Heading1"]
+    styleH2 = styles["Heading2"]
+    elements = []
+    
+    # Título principal
+    elements.append(Paragraph("CONSORCIO DEJ", styleH))
+    elements.append(Paragraph("Ingeniería y Construcción", styleN))
+    elements.append(Paragraph(f"Reporte de Muro de Contención - {plan.upper()}", styleH2))
+    elements.append(Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}", styleN))
+    elements.append(Spacer(1, 20))
+    
+    if plan == "premium":
+        # Reporte premium completo
+        elements.append(Paragraph("1. DATOS DE ENTRADA", styleH))
+        datos_tabla = [
+            ["Parámetro", "Valor", "Unidad"],
+            ["Altura del talud (h1)", f"{datos_entrada['h1']:.2f}", "m"],
+            ["Densidad del relleno", f"{datos_entrada['gamma_relleno']}", "kg/m³"],
+            ["Ángulo de fricción del relleno", f"{datos_entrada['phi_relleno']}", "°"],
+            ["Profundidad de desplante (Df)", f"{datos_entrada['Df']:.2f}", "m"],
+            ["Sobrecarga (qsc)", f"{datos_entrada['qsc']}", "kg/m²"],
+            ["Resistencia del concreto (fc)", f"{datos_entrada['fc']}", "kg/cm²"],
+            ["Resistencia del acero (fy)", f"{datos_entrada['fy']}", "kg/cm²"]
+        ]
+        
+        tabla = Table(datos_tabla, colWidths=[200, 100, 80])
+        tabla.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ]))
+        elements.append(tabla)
+        elements.append(Spacer(1, 20))
+        
+        # Dimensiones calculadas
+        elements.append(Paragraph("2. DIMENSIONES CALCULADAS", styleH))
+        dim_tabla = [
+            ["Dimensión", "Valor", "Unidad"],
+            ["Ancho de zapata (Bz)", f"{resultados['Bz']:.2f}", "m"],
+            ["Peralte de zapata (hz)", f"{resultados['hz']:.2f}", "m"],
+            ["Espesor del muro (b)", f"{resultados['b']:.2f}", "m"],
+            ["Longitud de puntera (r)", f"{resultados['r']:.2f}", "m"],
+            ["Longitud de talón (t)", f"{resultados['t']:.2f}", "m"],
+            ["Altura de coronación (hm)", f"{resultados['hm']:.2f}", "m"]
+        ]
+        
+        tabla_dim = Table(dim_tabla, colWidths=[200, 100, 80])
+        tabla_dim.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgreen),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ]))
+        elements.append(tabla_dim)
+        elements.append(Spacer(1, 20))
+        
+        # Diseño del fuste
+        elements.append(Paragraph("3. DISEÑO Y VERIFICACIÓN DEL FUSTE", styleH))
+        fuste_tabla = [
+            ["Parámetro", "Valor", "Unidad"],
+            ["Coeficiente pasivo (kp)", f"{diseno_fuste['kp']:.2f}", ""],
+            ["Empuje pasivo", f"{diseno_fuste['Ep_kg_m']:.0f}", "kg/m"],
+            ["Factor de seguridad volcamiento", f"{diseno_fuste['FSv']:.2f}", ""],
+            ["Factor de seguridad deslizamiento", f"{diseno_fuste['FSd']:.2f}", ""],
+            ["Peralte efectivo requerido", f"{diseno_fuste['dreq']:.2f}", "cm"],
+            ["Peralte efectivo real", f"{diseno_fuste['dreal']:.2f}", "cm"],
+            ["Área de acero requerida", f"{diseno_fuste['As']:.2f}", "cm²"],
+            ["Área de acero mínima", f"{diseno_fuste['Asmin']:.2f}", "cm²"],
+            ["Número de barras 5/8\"", f"{diseno_fuste['num_barras']}", ""],
+            ["Separación entre barras", f"{diseno_fuste['separacion']:.1f}", "cm"]
+        ]
+        
+        tabla_fuste = Table(fuste_tabla, colWidths=[200, 100, 80])
+        tabla_fuste.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightyellow),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ]))
+        elements.append(tabla_fuste)
+        elements.append(Spacer(1, 20))
+        
+        # Verificaciones de estabilidad
+        elements.append(Paragraph("4. VERIFICACIONES DE ESTABILIDAD", styleH))
+        verificaciones = []
+        
+        if diseno_fuste['FSv'] >= 2.0:
+            verificaciones.append(["Volcamiento", "CUMPLE", f"FS = {diseno_fuste['FSv']:.2f} ≥ 2.0"])
+        else:
+            verificaciones.append(["Volcamiento", "NO CUMPLE", f"FS = {diseno_fuste['FSv']:.2f} < 2.0"])
+            
+        if diseno_fuste['FSd'] >= 1.5:
+            verificaciones.append(["Deslizamiento", "CUMPLE", f"FS = {diseno_fuste['FSd']:.2f} ≥ 1.5"])
+        else:
+            verificaciones.append(["Deslizamiento", "NO CUMPLE", f"FS = {diseno_fuste['FSd']:.2f} < 1.5"])
+            
+        if diseno_fuste['dreal'] >= diseno_fuste['dreq']:
+            verificaciones.append(["Peralte efectivo", "CUMPLE", f"dreal = {diseno_fuste['dreal']:.2f} ≥ {diseno_fuste['dreq']:.2f}"])
+        else:
+            verificaciones.append(["Peralte efectivo", "NO CUMPLE", f"dreal = {diseno_fuste['dreal']:.2f} < {diseno_fuste['dreq']:.2f}"])
+            
+        if diseno_fuste['As_proporcionado'] >= diseno_fuste['As']:
+            verificaciones.append(["Área de acero", "CUMPLE", f"As = {diseno_fuste['As_proporcionado']:.2f} ≥ {diseno_fuste['As']:.2f}"])
+        else:
+            verificaciones.append(["Área de acero", "NO CUMPLE", f"As = {diseno_fuste['As_proporcionado']:.2f} < {diseno_fuste['As']:.2f}"])
+        
+        verif_tabla = [["Verificación", "Estado", "Detalle"]] + verificaciones
+        tabla_verif = Table(verif_tabla, colWidths=[150, 100, 150])
+        tabla_verif.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightcoral),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ]))
+        elements.append(tabla_verif)
+        
+    else:
+        # Reporte básico
+        elements.append(Paragraph("RESULTADOS BÁSICOS", styleH))
+        elements.append(Paragraph(f"Peso del muro: {resultados.get('peso_muro', 0):.2f} kN", styleN))
+        elements.append(Paragraph(f"Empuje del suelo: {resultados.get('empuje_suelo', 0):.2f} kN", styleN))
+        elements.append(Paragraph(f"Factor de seguridad: {resultados.get('fs_volcamiento', 0):.2f}", styleN))
+        elements.append(Paragraph("Este es un reporte básico del plan gratuito.", styleN))
+    
+    # Construir PDF
+    doc.build(elements)
+    pdf_buffer.seek(0)
+    return pdf_buffer
 
 # Función para dibujar el muro de contención
 def dibujar_muro_streamlit(dimensiones, h1, Df, qsc):
@@ -237,7 +503,7 @@ else:
         st.sidebar.success("⭐ Plan Premium")
     
     opcion = st.sidebar.selectbox("Selecciona una opción", 
-                                 ["🏗️ Cálculo Básico", "📊 Análisis Completo", "📄 Generar Reporte", "📈 Gráficos", "ℹ️ Acerca de", "✉️ Contacto"])
+                                 ["🏗️ Cálculo Básico", "📊 Análisis Completo", "🏗️ Diseño del Fuste", "📄 Generar Reporte", "📈 Gráficos", "ℹ️ Acerca de", "✉️ Contacto"])
 
     if opcion == "🏗️ Cálculo Básico":
         st.title("Cálculo Básico de Muro de Contención")
@@ -395,7 +661,7 @@ else:
                 st.subheader("Dimensiones")
                 h1 = st.number_input("Altura del talud (m)", value=2.8, step=0.1)
                 Df = st.number_input("Profundidad de desplante (m)", value=1.2, step=0.1)
-                hm = st.number_input("Altura de coronación (m)", value=0.8, step=0.1)
+                hm = st.number_input("Altura de coronación (m)", value=1.2, step=0.1, help="Según TAREA_DE_PROGRAMACION2.py, altura recomendada para mejor estabilidad")
                 
                 st.subheader("Materiales")
                 gamma_relleno = st.number_input("Densidad del relleno (kg/m³)", value=1800, step=50)
@@ -512,6 +778,57 @@ else:
                 q_max_kg_cm2 = q_max * 0.1  # tn/m² a kg/cm²
                 q_min_kg_cm2 = q_min * 0.1
                 
+                # Crear diccionario con datos de entrada para el diseño del fuste
+                datos_entrada = {
+                    'h1': h1,
+                    'gamma_relleno': gamma_relleno,
+                    'phi_relleno': phi_relleno,
+                    'gamma_cimentacion': gamma_cimentacion,
+                    'phi_cimentacion': phi_cimentacion,
+                    'cohesion': cohesion,
+                    'Df': Df,
+                    'sigma_adm': sigma_adm,
+                    'gamma_concreto': gamma_concreto,
+                    'fc': fc,
+                    'fy': fy,
+                    'qsc': qsc,
+                    'hm': hm
+                }
+                
+                # Calcular diseño del fuste
+                resultados_completos = {
+                    'ka': ka,
+                    'kp': kp,
+                    'hs': hs,
+                    'Bz': Bz,
+                    'hz': hz,
+                    'b': b,
+                    'r': r,
+                    't': t,
+                    'hm': hm,
+                    'h1': h1,
+                    'Df': Df,
+                    'qsc': qsc,
+                    'Ea_relleno': Ea_relleno,
+                    'Ea_sobrecarga': Ea_sobrecarga,
+                    'Ea_total': Ea_total,
+                    'Ep': Ep,
+                    'W_muro': W_muro,
+                    'W_zapata': W_zapata,
+                    'W_relleno': W_relleno,
+                    'W_total': W_total,
+                    'M_volcador': M_volcador,
+                    'M_estabilizador': M_estabilizador,
+                    'FS_volcamiento': FS_volcamiento,
+                    'FS_deslizamiento': FS_deslizamiento,
+                    'q_max_kg_cm2': q_max_kg_cm2,
+                    'q_min_kg_cm2': q_min_kg_cm2,
+                    'e': e,
+                    'tension': tension
+                }
+                
+                diseno_fuste = calcular_diseno_fuste(resultados_completos, datos_entrada)
+                
                 # Guardar resultados completos
                 st.session_state['resultados_completos'] = {
                     'ka': ka,
@@ -543,6 +860,10 @@ else:
                     'e': e,
                     'tension': tension
                 }
+                
+                # Guardar datos de entrada y diseño del fuste
+                st.session_state['datos_entrada'] = datos_entrada
+                st.session_state['diseno_fuste'] = diseno_fuste
                 
                 st.success("¡Análisis completo ejecutado exitosamente!")
                 st.balloons()
@@ -612,12 +933,56 @@ else:
                     else:
                         st.error(f"⚠️ > B/6 ({e_limite:.3f} m)")
                 
+                # Diseño del fuste
+                st.subheader("🏗️ Diseño y Verificación del Fuste del Muro")
+                st.info("Análisis estructural del fuste según PARTE 2.2.py")
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.metric("Coeficiente Pasivo (kp)", f"{diseno_fuste['kp']:.2f}")
+                    st.metric("Empuje Pasivo", f"{diseno_fuste['Ep_kg_m']:.0f} kg/m")
+                    st.metric("Peralte Efectivo Req.", f"{diseno_fuste['dreq']:.2f} cm")
+                    st.metric("Peralte Efectivo Real", f"{diseno_fuste['dreal']:.2f} cm")
+                    st.metric("Área de Acero Req.", f"{diseno_fuste['As']:.2f} cm²")
+                
+                with col2:
+                    st.metric("Área de Acero Mín.", f"{diseno_fuste['Asmin']:.2f} cm²")
+                    st.metric("Número de Barras 5/8\"", f"{diseno_fuste['num_barras']}")
+                    st.metric("Separación Barras", f"{diseno_fuste['separacion']:.1f} cm")
+                    st.metric("Acero Retracción", f"{diseno_fuste['As_retraccion']:.2f} cm²")
+                    st.metric("Barras Retracción 1/2\"", f"{diseno_fuste['num_barras_retraccion']}")
+                
+                # Verificaciones del fuste
+                st.subheader("🔍 Verificaciones del Fuste")
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    if diseno_fuste['dreal'] >= diseno_fuste['dreq']:
+                        st.success(f"✅ **Peralte:** CUMPLE (dreal = {diseno_fuste['dreal']:.2f} ≥ {diseno_fuste['dreq']:.2f} cm)")
+                    else:
+                        st.error(f"⚠️ **Peralte:** NO CUMPLE (dreal = {diseno_fuste['dreal']:.2f} < {diseno_fuste['dreq']:.2f} cm)")
+                
+                with col2:
+                    if diseno_fuste['As_proporcionado'] >= diseno_fuste['As']:
+                        st.success(f"✅ **Acero:** CUMPLE (As = {diseno_fuste['As_proporcionado']:.2f} ≥ {diseno_fuste['As']:.2f} cm²)")
+                    else:
+                        st.error(f"⚠️ **Acero:** NO CUMPLE (As = {diseno_fuste['As_proporcionado']:.2f} < {diseno_fuste['As']:.2f} cm²)")
+                
+                with col3:
+                    if diseno_fuste['As_proporcionado'] >= diseno_fuste['Asmin']:
+                        st.success(f"✅ **Acero Mín:** CUMPLE (As = {diseno_fuste['As_proporcionado']:.2f} ≥ {diseno_fuste['Asmin']:.2f} cm²)")
+                    else:
+                        st.error(f"⚠️ **Acero Mín:** NO CUMPLE (As = {diseno_fuste['As_proporcionado']:.2f} < {diseno_fuste['Asmin']:.2f} cm²)")
+                
                 # Resumen final
                 cumple_todo = (FS_volcamiento >= 2.0 and FS_deslizamiento >= 1.5 and 
-                              q_max_kg_cm2 <= sigma_adm and not tension and e <= e_limite)
+                              q_max_kg_cm2 <= sigma_adm and not tension and e <= e_limite and
+                              diseno_fuste['dreal'] >= diseno_fuste['dreq'] and 
+                              diseno_fuste['As_proporcionado'] >= diseno_fuste['As'])
                 
                 if cumple_todo:
-                    st.success("🎉 **RESULTADO FINAL:** El muro CUMPLE con todos los requisitos de estabilidad")
+                    st.success("🎉 **RESULTADO FINAL:** El muro CUMPLE con todos los requisitos de estabilidad y diseño estructural")
                 else:
                     st.error("⚠️ **RESULTADO FINAL:** El muro NO CUMPLE con todos los requisitos. Se recomienda revisar dimensiones.")
                 
@@ -651,6 +1016,158 @@ else:
                 - 🔴 **Flechas rojas:** Sobrecarga aplicada (qsc)
                 - 🔵 **Dimensiones en azul:** Medidas calculadas del muro
                 """)
+                
+                # Mostrar información del diseño del fuste si está disponible
+                if 'diseno_fuste' in st.session_state:
+                    st.subheader("🏗️ Información del Diseño del Fuste")
+                    diseno_fuste = st.session_state['diseno_fuste']
+                    
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.info("**Diseño Estructural:**")
+                        st.write(f"• Peralte efectivo requerido: {diseno_fuste['dreq']:.2f} cm")
+                        st.write(f"• Peralte efectivo real: {diseno_fuste['dreal']:.2f} cm")
+                        st.write(f"• Área de acero requerida: {diseno_fuste['As']:.2f} cm²")
+                        st.write(f"• Área de acero mínima: {diseno_fuste['Asmin']:.2f} cm²")
+                    
+                    with col2:
+                        st.info("**Distribución del Acero:**")
+                        st.write(f"• Número de barras 5/8\": {diseno_fuste['num_barras']}")
+                        st.write(f"• Separación entre barras: {diseno_fuste['separacion']:.1f} cm")
+                        st.write(f"• Acero por retracción: {diseno_fuste['As_retraccion']:.2f} cm²")
+                        st.write(f"• Barras retracción 1/2\": {diseno_fuste['num_barras_retraccion']}")
+
+    elif opcion == "🏗️ Diseño del Fuste":
+        st.title("Diseño y Verificación del Fuste del Muro")
+        
+        if st.session_state['plan'] == "gratuito":
+            st.warning("⚠️ Esta función requiere plan premium. Actualiza tu cuenta para acceder al diseño estructural.")
+            st.info("Plan gratuito incluye: Cálculos básicos, resultados simples")
+            st.info("Plan premium incluye: Diseño del fuste, cálculo de refuerzo, reportes detallados")
+        else:
+            st.success("⭐ Plan Premium: Diseño estructural completo del fuste")
+            
+            if 'diseno_fuste' in st.session_state and 'datos_entrada' in st.session_state:
+                diseno_fuste = st.session_state['diseno_fuste']
+                datos_entrada = st.session_state['datos_entrada']
+                
+                # Mostrar información del diseño del fuste
+                st.subheader("📊 Resultados del Diseño del Fuste")
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.metric("Coeficiente Pasivo (kp)", f"{diseno_fuste['kp']:.2f}")
+                    st.metric("Empuje Pasivo", f"{diseno_fuste['Ep_kg_m']:.0f} kg/m")
+                    st.metric("Altura de Aplicación", f"{diseno_fuste['yt']:.2f} m")
+                    st.metric("Momento Volcador Total", f"{diseno_fuste['Mvol_total']:.2f} tn·m/m")
+                    st.metric("Momento Estabilizador Total", f"{diseno_fuste['Mesta_total']:.2f} tn·m/m")
+                
+                with col2:
+                    st.metric("Factor Seguridad Volcamiento", f"{diseno_fuste['FSv']:.2f}")
+                    st.metric("Factor Seguridad Deslizamiento", f"{diseno_fuste['FSd']:.2f}")
+                    st.metric("Ubicación Resultante (x̄)", f"{diseno_fuste['x_barra']:.3f} m")
+                    st.metric("Excentricidad (e)", f"{diseno_fuste['e']:.3f} m")
+                    st.metric("Cuantía Real (ρ)", f"{diseno_fuste['rho_real']:.4f}")
+                
+                # Diseño estructural
+                st.subheader("🏗️ Diseño Estructural")
+                
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.info("**Peralte Efectivo:**")
+                    st.write(f"• Requerido: {diseno_fuste['dreq']:.2f} cm")
+                    st.write(f"• Real: {diseno_fuste['dreal']:.2f} cm")
+                    if diseno_fuste['dreal'] >= diseno_fuste['dreq']:
+                        st.success("✅ CUMPLE")
+                    else:
+                        st.error("⚠️ NO CUMPLE")
+                
+                with col2:
+                    st.info("**Área de Acero:**")
+                    st.write(f"• Requerida: {diseno_fuste['As']:.2f} cm²")
+                    st.write(f"• Mínima: {diseno_fuste['Asmin']:.2f} cm²")
+                    st.write(f"• Proporcionada: {diseno_fuste['As_proporcionado']:.2f} cm²")
+                    if diseno_fuste['As_proporcionado'] >= diseno_fuste['As']:
+                        st.success("✅ CUMPLE")
+                    else:
+                        st.error("⚠️ NO CUMPLE")
+                
+                with col3:
+                    st.info("**Distribución:**")
+                    st.write(f"• Barras 5/8\": {diseno_fuste['num_barras']}")
+                    st.write(f"• Separación: {diseno_fuste['separacion']:.1f} cm")
+                    st.write(f"• Barras retracción: {diseno_fuste['num_barras_retraccion']}")
+                    st.write(f"• Acero retracción: {diseno_fuste['As_retraccion_proporcionado']:.2f} cm²")
+                
+                # Tabla de propiedades del acero
+                st.subheader("📋 Propiedades del Acero Corrugado")
+                acero_data = {
+                    'Barra N°': ['3', '4', '5', '6', '7'],
+                    'Diámetro (pulg)': ['3/8', '1/2', '5/8', '3/4', '7/8'],
+                    'Diámetro (cm)': [0.98, 1.27, 1.59, 1.91, 2.22],
+                    'Peso (kg/m)': [0.559, 0.993, 1.552, 2.235, 3.042],
+                    'Área (cm²)': [0.71, 1.27, 1.98, 2.85, 3.85],
+                    'Perímetro (cm)': [2.99, 3.99, 4.99, 5.98, 6.98]
+                }
+                
+                df_acero = pd.DataFrame(acero_data)
+                st.dataframe(df_acero, use_container_width=True)
+                
+                # Verificaciones de estabilidad
+                st.subheader("🔍 Verificaciones de Estabilidad del Fuste")
+                
+                verificaciones = []
+                
+                # Verificación al volcamiento
+                if diseno_fuste['FSv'] >= 2.0:
+                    verificaciones.append(["Volcamiento", "✅ CUMPLE", f"FS = {diseno_fuste['FSv']:.2f} ≥ 2.0"])
+                else:
+                    verificaciones.append(["Volcamiento", "⚠️ NO CUMPLE", f"FS = {diseno_fuste['FSv']:.2f} < 2.0"])
+                
+                # Verificación al deslizamiento
+                if diseno_fuste['FSd'] >= 1.5:
+                    verificaciones.append(["Deslizamiento", "✅ CUMPLE", f"FS = {diseno_fuste['FSd']:.2f} ≥ 1.5"])
+                else:
+                    verificaciones.append(["Deslizamiento", "⚠️ NO CUMPLE", f"FS = {diseno_fuste['FSd']:.2f} < 1.5"])
+                
+                # Verificación de peralte
+                if diseno_fuste['dreal'] >= diseno_fuste['dreq']:
+                    verificaciones.append(["Peralte Efectivo", "✅ CUMPLE", f"dreal = {diseno_fuste['dreal']:.2f} ≥ {diseno_fuste['dreq']:.2f}"])
+                else:
+                    verificaciones.append(["Peralte Efectivo", "⚠️ NO CUMPLE", f"dreal = {diseno_fuste['dreal']:.2f} < {diseno_fuste['dreq']:.2f}"])
+                
+                # Verificación de acero
+                if diseno_fuste['As_proporcionado'] >= diseno_fuste['As']:
+                    verificaciones.append(["Área de Acero", "✅ CUMPLE", f"As = {diseno_fuste['As_proporcionado']:.2f} ≥ {diseno_fuste['As']:.2f}"])
+                else:
+                    verificaciones.append(["Área de Acero", "⚠️ NO CUMPLE", f"As = {diseno_fuste['As_proporcionado']:.2f} < {diseno_fuste['As']:.2f}"])
+                
+                # Verificación de cuantía mínima
+                if diseno_fuste['rho_real'] >= 0.0033:
+                    verificaciones.append(["Cuantía Mínima", "✅ CUMPLE", f"ρ = {diseno_fuste['rho_real']:.4f} ≥ 0.0033"])
+                else:
+                    verificaciones.append(["Cuantía Mínima", "⚠️ NO CUMPLE", f"ρ = {diseno_fuste['rho_real']:.4f} < 0.0033"])
+                
+                # Mostrar tabla de verificaciones
+                df_verif = pd.DataFrame(verificaciones, columns=['Verificación', 'Estado', 'Detalle'])
+                st.dataframe(df_verif, use_container_width=True)
+                
+                # Resumen final
+                cumple_todo = (diseno_fuste['FSv'] >= 2.0 and diseno_fuste['FSd'] >= 1.5 and 
+                              diseno_fuste['dreal'] >= diseno_fuste['dreq'] and 
+                              diseno_fuste['As_proporcionado'] >= diseno_fuste['As'] and
+                              diseno_fuste['rho_real'] >= 0.0033)
+                
+                if cumple_todo:
+                    st.success("🎉 **RESULTADO FINAL:** El fuste del muro CUMPLE con todos los requisitos de diseño estructural")
+                else:
+                    st.error("⚠️ **RESULTADO FINAL:** El fuste del muro NO CUMPLE con todos los requisitos. Se recomienda revisar el diseño.")
+                
+            else:
+                st.warning("⚠️ No hay datos de diseño del fuste disponibles. Ejecuta primero el análisis completo.")
 
     elif opcion == "📄 Generar Reporte":
         st.title("Generar Reporte Técnico")
@@ -707,17 +1224,27 @@ Plan: Gratuito
                 st.text_area("Reporte Básico", reporte_basico, height=500)
                 
                 # Botones para el reporte básico
-                col1, col2 = st.columns(2)
+                col1, col2, col3 = st.columns(3)
                 
                 with col1:
                     st.download_button(
-                        label="📥 Descargar Reporte Básico",
+                        label="📥 Descargar TXT",
                         data=reporte_basico,
                         file_name=f"reporte_basico_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
                         mime="text/plain"
                     )
                 
                 with col2:
+                    # Generar PDF básico
+                    pdf_buffer = generar_pdf_reportlab(resultados, {}, {}, "gratuito")
+                    st.download_button(
+                        label="📄 Descargar PDF",
+                        data=pdf_buffer.getvalue(),
+                        file_name=f"reporte_basico_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+                        mime="application/pdf"
+                    )
+                
+                with col3:
                     if st.button("🖨️ Generar Reporte en Pantalla", type="primary"):
                         st.success("✅ Reporte básico generado exitosamente")
                         st.balloons()
@@ -831,7 +1358,65 @@ Se recomienda revisar las dimensiones del muro o las propiedades del suelo
 para mejorar los factores de seguridad y cumplir con las especificaciones.
 """
 
-                reporte_premium += f"""
+                # Agregar información del diseño del fuste si está disponible
+                if 'diseno_fuste' in st.session_state:
+                    diseno_fuste = st.session_state['diseno_fuste']
+                    reporte_premium += f"""
+
+### 9. DISEÑO Y VERIFICACIÓN DEL FUSTE DEL MURO:
+**9.1 Coeficiente Pasivo y Empuje:**
+- Coeficiente pasivo (kp): {diseno_fuste['kp']:.2f}
+- Empuje pasivo: {diseno_fuste['Ep_kg_m']:.0f} kg/m
+- Altura de aplicación: {diseno_fuste['yt']:.2f} m
+
+**9.2 Momentos y Factores de Seguridad:**
+- Momento volcador total: {diseno_fuste['Mvol_total']:.2f} tn·m/m
+- Momento estabilizador total: {diseno_fuste['Mesta_total']:.2f} tn·m/m
+- Factor de seguridad al volcamiento: {diseno_fuste['FSv']:.2f}
+- Factor de seguridad al deslizamiento: {diseno_fuste['FSd']:.2f}
+
+**9.3 Diseño Estructural:**
+- Peralte efectivo requerido: {diseno_fuste['dreq']:.2f} cm
+- Peralte efectivo real: {diseno_fuste['dreal']:.2f} cm
+- Área de acero requerida: {diseno_fuste['As']:.2f} cm²
+- Área de acero mínima: {diseno_fuste['Asmin']:.2f} cm²
+- Área de acero proporcionada: {diseno_fuste['As_proporcionado']:.2f} cm²
+
+**9.4 Distribución del Acero:**
+- Número de barras 5/8\": {diseno_fuste['num_barras']}
+- Separación entre barras: {diseno_fuste['separacion']:.1f} cm
+- Acero por retracción y temperatura: {diseno_fuste['As_retraccion']:.2f} cm²
+- Barras de retracción 1/2\": {diseno_fuste['num_barras_retraccion']}
+
+**9.5 Verificaciones del Fuste:**
+- Peralte efectivo: {'✅ CUMPLE' if diseno_fuste['dreal'] >= diseno_fuste['dreq'] else '⚠️ NO CUMPLE'}
+- Área de acero: {'✅ CUMPLE' if diseno_fuste['As_proporcionado'] >= diseno_fuste['As'] else '⚠️ NO CUMPLE'}
+- Cuantía mínima: {'✅ CUMPLE' if diseno_fuste['rho_real'] >= 0.0033 else '⚠️ NO CUMPLE'}
+
+### 10. RECOMENDACIONES TÉCNICAS:
+- Verificar la capacidad portante del suelo en campo
+- Revisar el diseño del refuerzo estructural según ACI 318
+- Considerar efectos sísmicos según la normativa local
+- Realizar inspecciones periódicas durante la construcción
+- Monitorear deformaciones durante el servicio
+- Verificar drenaje del relleno para evitar presiones hidrostáticas
+- **NUEVO:** Verificar la colocación del acero según el diseño calculado
+- **NUEVO:** Controlar la calidad del concreto durante la construcción
+
+### 11. INFORMACIÓN DEL PROYECTO:
+- Empresa: CONSORCIO DEJ
+- Método de análisis: Teoría de Rankine
+- Diseño estructural: Según PARTE 2.2.py
+- Fecha de análisis: {datetime.now().strftime('%d/%m/%Y %H:%M')}
+- Plan: Premium
+- Software: Streamlit + Python
+
+---
+**Este reporte fue generado automáticamente por el sistema de análisis de muros de contención de CONSORCIO DEJ.**
+**Para consultas técnicas, contacte a nuestro equipo de ingeniería.**
+"""
+                else:
+                    reporte_premium += f"""
 
 ### 9. RECOMENDACIONES TÉCNICAS:
 - Verificar la capacidad portante del suelo en campo
@@ -855,18 +1440,36 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                 
                 st.text_area("Reporte Premium", reporte_premium, height=600)
                 
-                # Botones para el reporte
-                col1, col2 = st.columns(2)
+                # Botones para el reporte premium
+                col1, col2, col3 = st.columns(3)
                 
                 with col1:
                     st.download_button(
-                        label="📥 Descargar Reporte Premium",
+                        label="📥 Descargar TXT",
                         data=reporte_premium,
                         file_name=f"reporte_premium_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
                         mime="text/plain"
                     )
                 
                 with col2:
+                    # Generar PDF premium con diseño del fuste
+                    if 'datos_entrada' in st.session_state and 'diseno_fuste' in st.session_state:
+                        pdf_buffer = generar_pdf_reportlab(
+                            st.session_state['resultados_completos'], 
+                            st.session_state['datos_entrada'], 
+                            st.session_state['diseno_fuste'], 
+                            "premium"
+                        )
+                        st.download_button(
+                            label="📄 Descargar PDF Premium",
+                            data=pdf_buffer.getvalue(),
+                            file_name=f"reporte_premium_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+                            mime="application/pdf"
+                        )
+                    else:
+                        st.warning("⚠️ Ejecuta primero el análisis completo")
+                
+                with col3:
                     if st.button("🖨️ Generar Reporte en Pantalla", type="primary"):
                         st.success("✅ Reporte técnico generado exitosamente")
                         st.balloons()
@@ -1044,9 +1647,12 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
         **Características del Plan Premium:**
         - ⭐ Análisis completo con teoría de Rankine
         - ⭐ Cálculos de dimensiones automáticos
-        - ⭐ Reportes técnicos detallados
+        - ⭐ **Diseño y verificación del fuste del muro** (NUEVO)
+        - ⭐ **Cálculo de refuerzo estructural** (NUEVO)
+        - ⭐ **Reportes técnicos en PDF** (NUEVO)
         - ⭐ Gráficos avanzados y visualizaciones
         - ⭐ Verificaciones de estabilidad completas
+        - ⭐ **Altura de coronación optimizada** (NUEVO)
         
         **Desarrollado con:** Python, Streamlit, Plotly
         **Normativas:** Aplicación de la teoría de Rankine para muros de contención
