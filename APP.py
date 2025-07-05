@@ -606,13 +606,33 @@ def show_payment_form(plan):
                     st.info("📱 Envía el comprobante de pago a WhatsApp: +51 999 888 777")
                     st.info("⏰ Activación en 2 horas máximo")
                     
-                    # Actualizar plan en session state
-                    st.session_state['plan'] = plan
-                    st.session_state['user_data']['plan'] = plan
-                    
-                    # Botón para continuar
-                    if st.button("✅ Continuar", key="continue_after_payment"):
-                        st.rerun()
+                    # Actualizar plan inmediatamente en el sistema
+                    if PAYMENT_SYSTEM_AVAILABLE:
+                        try:
+                            # Confirmar pago automáticamente (para demo)
+                            payment_id = result.get("payment_id")
+                            if payment_id:
+                                confirm_result = payment_system.confirm_payment(payment_id)
+                                if confirm_result["success"]:
+                                    st.success("🎉 ¡Plan activado inmediatamente!")
+                                    
+                                    # Actualizar plan en session state
+                                    st.session_state['plan'] = plan
+                                    if 'user_data' in st.session_state:
+                                        st.session_state['user_data']['plan'] = plan
+                                    
+                                    # Botón para continuar con acceso completo
+                                    if st.button("🚀 Continuar con Acceso Completo", key="continue_full_access"):
+                                        st.rerun()
+                                else:
+                                    st.info("📋 Pago registrado. Espera confirmación del administrador.")
+                                    st.info("🔄 Recarga la página después de 2 horas")
+                            else:
+                                st.info("📋 Pago registrado. Espera confirmación del administrador.")
+                        except Exception as e:
+                            st.info("📋 Pago registrado. Espera confirmación del administrador.")
+                    else:
+                        st.info("📋 Pago registrado. Espera confirmación del administrador.")
                 else:
                     st.error(f"❌ Error: {result['message']}")
             except Exception as e:
@@ -712,9 +732,34 @@ def show_auth_page():
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 
+# Función para actualizar plan del usuario
+def update_user_plan():
+    """Actualizar plan del usuario desde el sistema de pagos"""
+    if PAYMENT_SYSTEM_AVAILABLE and 'user' in st.session_state:
+        try:
+            user_email = st.session_state['user']
+            if user_email and user_email not in ['admin', 'demo']:
+                real_plan = payment_system.get_user_plan(user_email)
+                current_plan = real_plan.get('plan', 'gratuito')
+                
+                # Actualizar session state si el plan cambió
+                if st.session_state.get('plan') != current_plan:
+                    st.session_state['plan'] = current_plan
+                    if 'user_data' in st.session_state:
+                        st.session_state['user_data']['plan'] = current_plan
+                    return True
+        except Exception as e:
+            pass
+    return False
+
 if not st.session_state['logged_in']:
     show_auth_page()
 else:
+    # Actualizar plan del usuario automáticamente
+    plan_updated = update_user_plan()
+    if plan_updated:
+        st.success("🎉 ¡Tu plan ha sido actualizado!")
+        st.rerun()
     # Mostrar información del usuario
     user_data = st.session_state.get('user_data', {})
     plan = user_data.get('plan', 'gratuito')
