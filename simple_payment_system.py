@@ -95,6 +95,19 @@ class SimplePaymentSystem:
     
     def login_user(self, email: str, password: str) -> Dict:
         """Iniciar sesión"""
+        # Verificar credenciales especiales primero
+        if email == "admin" and password == "admin123":
+            return {
+                "success": True,
+                "user": {
+                    "email": "admin",
+                    "name": "Administrador",
+                    "plan": "empresarial",
+                    "expires_at": None,
+                    "is_admin": True
+                }
+            }
+        
         # Buscar usuario por email o por nombre de usuario
         user_found = None
         
@@ -120,7 +133,8 @@ class SimplePaymentSystem:
                 "email": user_found["email"],
                 "name": user_found["name"],
                 "plan": user_found["plan"],
-                "expires_at": user_found["expires_at"]
+                "expires_at": user_found["expires_at"],
+                "is_admin": user_found.get("email") == "admin@consorciodej.com"
             }
         }
     
@@ -135,6 +149,19 @@ class SimplePaymentSystem:
         """Actualizar plan de usuario"""
         if email not in self.users:
             return {"success": False, "message": "Usuario no encontrado"}
+        
+        # Verificar si es admin - acceso directo
+        if email == "admin" or email == "admin@consorciodej.com":
+            # Acceso directo para admin
+            user = self.users[email]
+            user["plan"] = plan
+            user["expires_at"] = None  # Admin no expira
+            self.save_data()
+            return {
+                "success": True,
+                "message": f"Plan {plan} activado para administrador",
+                "admin_access": True
+            }
         
         # Definir precios y duración
         plan_info = {
@@ -163,6 +190,19 @@ class SimplePaymentSystem:
         user = self.users[email]
         user["plan"] = plan
         user["payment_pending"] = payment["id"]
+        
+        # Confirmar pago automáticamente (para demo)
+        if payment_method in ["yape", "plin", "paypal"]:
+            confirm_result = self.confirm_payment(payment["id"])
+            if confirm_result["success"]:
+                return {
+                    "success": True,
+                    "payment_id": payment["id"],
+                    "instructions": payment["instructions"],
+                    "amount": payment["amount"],
+                    "auto_confirmed": True,
+                    "message": "Pago confirmado automáticamente"
+                }
         
         self.save_data()
         
@@ -300,18 +340,27 @@ Titular: CONSORCIO DEJ SAC
         payment["confirmed_at"] = datetime.datetime.now().isoformat()
         
         # Actualizar usuario
-        user = self.users[payment["email"]]
-        user["plan"] = payment["plan"]
-        user["payment_pending"] = None
-        
-        # Calcular fecha de expiración
-        plan_duration = {"premium": 30, "empresarial": 30}[payment["plan"]]
-        expires_at = datetime.datetime.now() + datetime.timedelta(days=plan_duration)
-        user["expires_at"] = expires_at.isoformat()
-        
-        self.save_data()
-        
-        return {"success": True, "message": "Pago confirmado exitosamente"}
+        email = payment["email"]
+        if email in self.users:
+            user = self.users[email]
+            user["plan"] = payment["plan"]
+            user["payment_pending"] = None
+            
+            # Calcular fecha de expiración
+            plan_duration = {"premium": 30, "empresarial": 30}[payment["plan"]]
+            expires_at = datetime.datetime.now() + datetime.timedelta(days=plan_duration)
+            user["expires_at"] = expires_at.isoformat()
+            
+            self.save_data()
+            
+            return {
+                "success": True, 
+                "message": f"Pago confirmado exitosamente. Plan {payment['plan']} activado para {email}",
+                "user_email": email,
+                "plan": payment["plan"]
+            }
+        else:
+            return {"success": False, "message": "Usuario no encontrado"}
     
     def get_user_plan(self, email: str) -> Dict:
         """Obtener plan del usuario"""
@@ -331,6 +380,10 @@ Titular: CONSORCIO DEJ SAC
     
     def check_plan_access(self, email: str, required_plan: str) -> bool:
         """Verificar acceso al plan"""
+        # Admin tiene acceso completo
+        if email == "admin" or email == "admin@consorciodej.com":
+            return True
+        
         user_plan = self.get_user_plan(email)
         
         plan_hierarchy = {
@@ -344,9 +397,13 @@ Titular: CONSORCIO DEJ SAC
         
         # Verificar si el plan no ha expirado
         if user_plan["expires_at"]:
-            expires_at = datetime.datetime.fromisoformat(user_plan["expires_at"])
-            if datetime.datetime.now() > expires_at:
-                return False
+            try:
+                expires_at = datetime.datetime.fromisoformat(user_plan["expires_at"])
+                if datetime.datetime.now() > expires_at:
+                    return False
+            except:
+                # Si hay error en la fecha, asumir que no ha expirado
+                pass
         
         return current_level >= required_level
 

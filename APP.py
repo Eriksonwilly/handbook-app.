@@ -653,41 +653,43 @@ def show_payment_form(plan):
                 )
                 
                 if result["success"]:
-                    st.success("✅ Pago procesado correctamente")
-                    st.info("📋 Instrucciones de pago:")
-                    st.text(result["instructions"])
-                    
-                    # Mostrar información adicional
-                    st.info("📱 Envía el comprobante de pago a WhatsApp: +51 999 888 777")
-                    st.info("⏰ Activación en 2 horas máximo")
-                    
-                    # Actualizar plan inmediatamente en el sistema
-                    if PAYMENT_SYSTEM_AVAILABLE:
-                        try:
-                            # Confirmar pago automáticamente (para demo)
-                            payment_id = result.get("payment_id")
-                            if payment_id:
-                                confirm_result = payment_system.confirm_payment(payment_id)
-                                if confirm_result["success"]:
-                                    st.success("🎉 ¡Plan activado inmediatamente!")
-                                    
-                                    # Actualizar plan en session state
-                                    st.session_state['plan'] = plan
-                                    if 'user_data' in st.session_state:
-                                        st.session_state['user_data']['plan'] = plan
-                                    
-                                    # Botón para continuar con acceso completo
-                                    if st.button("🚀 Continuar con Acceso Completo", key="continue_full_access"):
-                                        st.rerun()
-                                else:
-                                    st.info("📋 Pago registrado. Espera confirmación del administrador.")
-                                    st.info("🔄 Recarga la página después de 2 horas")
-                            else:
-                                st.info("📋 Pago registrado. Espera confirmación del administrador.")
-                        except Exception as e:
-                            st.info("📋 Pago registrado. Espera confirmación del administrador.")
+                    # Verificar si es acceso directo de admin
+                    if result.get("admin_access"):
+                        st.success("✅ " + result["message"])
+                        st.info("🎉 Acceso completo activado para administrador")
+                        
+                        # Actualizar plan en session state
+                        st.session_state['plan'] = plan
+                        if 'user_data' in st.session_state:
+                            st.session_state['user_data']['plan'] = plan
+                        
+                        # Botón para continuar
+                        if st.button("🚀 Continuar con Acceso Completo", key="continue_full_access"):
+                            st.rerun()
                     else:
-                        st.info("📋 Pago registrado. Espera confirmación del administrador.")
+                        st.success("✅ Pago procesado correctamente")
+                        st.info("📋 Instrucciones de pago:")
+                        st.text(result["instructions"])
+                        
+                        # Mostrar información adicional
+                        st.info("📱 Envía el comprobante de pago a WhatsApp: +51 999 888 777")
+                        
+                        # Verificar si fue confirmado automáticamente
+                        if result.get("auto_confirmed"):
+                            st.success("🎉 ¡Plan activado inmediatamente!")
+                            st.info("✅ Pago confirmado automáticamente")
+                            
+                            # Actualizar plan en session state
+                            st.session_state['plan'] = plan
+                            if 'user_data' in st.session_state:
+                                st.session_state['user_data']['plan'] = plan
+                            
+                            # Botón para continuar con acceso completo
+                            if st.button("🚀 Continuar con Acceso Completo", key="continue_full_access"):
+                                st.rerun()
+                        else:
+                            st.info("⏰ Activación en 2 horas máximo")
+                            st.info("🔄 Recarga la página después de 2 horas")
                 else:
                     st.error(f"❌ Error: {result['message']}")
             except Exception as e:
