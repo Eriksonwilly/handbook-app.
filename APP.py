@@ -519,6 +519,9 @@ def show_pricing_page():
     """Mostrar página de precios y planes"""
     st.title("💰 Planes y Precios - CONSORCIO DEJ")
     
+    # Verificar si es administrador
+    is_admin = st.session_state.get('user') == 'admin'
+    
     col1, col2, col3 = st.columns(3)
     
     with col1:
@@ -532,7 +535,14 @@ def show_pricing_page():
         st.write("❌ Sin gráficos avanzados")
         
         if st.button("Seleccionar Gratuito", key="free_plan"):
-            st.info("Ya tienes acceso al plan gratuito")
+            if is_admin:
+                st.session_state['plan'] = "gratuito"
+                if 'user_data' in st.session_state:
+                    st.session_state['user_data']['plan'] = "gratuito"
+                st.success("✅ Plan gratuito activado para administrador")
+                st.rerun()
+            else:
+                st.info("Ya tienes acceso al plan gratuito")
     
     with col2:
         st.subheader("⭐ Plan Premium")
@@ -545,7 +555,14 @@ def show_pricing_page():
         st.write("❌ Sin soporte empresarial")
         
         if st.button("Actualizar a Premium", key="premium_plan"):
-            if PAYMENT_SYSTEM_AVAILABLE:
+            if is_admin:
+                # Acceso directo para administrador
+                st.session_state['plan'] = "premium"
+                if 'user_data' in st.session_state:
+                    st.session_state['user_data']['plan'] = "premium"
+                st.success("✅ Plan Premium activado para administrador")
+                st.rerun()
+            elif PAYMENT_SYSTEM_AVAILABLE:
                 show_payment_form("premium")
             else:
                 st.info("Sistema de pagos no disponible en modo demo")
@@ -561,10 +578,48 @@ def show_pricing_page():
         st.write("✅ API de integración")
         
         if st.button("Actualizar a Empresarial", key="business_plan"):
-            if PAYMENT_SYSTEM_AVAILABLE:
+            if is_admin:
+                # Acceso directo para administrador
+                st.session_state['plan'] = "empresarial"
+                if 'user_data' in st.session_state:
+                    st.session_state['user_data']['plan'] = "empresarial"
+                st.success("✅ Plan Empresarial activado para administrador")
+                st.rerun()
+            elif PAYMENT_SYSTEM_AVAILABLE:
                 show_payment_form("empresarial")
             else:
                 st.info("Sistema de pagos no disponible en modo demo")
+    
+    # Panel especial para administrador
+    if is_admin:
+        st.markdown("---")
+        st.subheader("👨‍💼 Panel de Administrador")
+        st.info("Como administrador, puedes cambiar tu plan directamente sin pasar por el sistema de pagos.")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            if st.button("🆓 Activar Plan Gratuito", key="admin_free"):
+                st.session_state['plan'] = "gratuito"
+                if 'user_data' in st.session_state:
+                    st.session_state['user_data']['plan'] = "gratuito"
+                st.success("✅ Plan gratuito activado")
+                st.rerun()
+        
+        with col2:
+            if st.button("⭐ Activar Plan Premium", key="admin_premium"):
+                st.session_state['plan'] = "premium"
+                if 'user_data' in st.session_state:
+                    st.session_state['user_data']['plan'] = "premium"
+                st.success("✅ Plan premium activado")
+                st.rerun()
+        
+        with col3:
+            if st.button("🏢 Activar Plan Empresarial", key="admin_enterprise"):
+                st.session_state['plan'] = "empresarial"
+                if 'user_data' in st.session_state:
+                    st.session_state['user_data']['plan'] = "empresarial"
+                st.success("✅ Plan empresarial activado")
+                st.rerun()
 
 def show_payment_form(plan):
     """Mostrar formulario de pago"""
@@ -782,6 +837,38 @@ else:
         st.session_state['user'] = None
         st.session_state['plan'] = None
         st.rerun()
+    
+    # Panel especial para administrador
+    is_admin = st.session_state.get('user') == 'admin'
+    if is_admin:
+        st.sidebar.markdown("---")
+        st.sidebar.subheader("👨‍💼 Panel de Administrador")
+        st.sidebar.info("Acceso directo a todos los planes")
+        
+        col1, col2, col3 = st.sidebar.columns(3)
+        with col1:
+            if st.button("🆓 Gratuito", key="sidebar_free"):
+                st.session_state['plan'] = "gratuito"
+                if 'user_data' in st.session_state:
+                    st.session_state['user_data']['plan'] = "gratuito"
+                st.success("✅ Plan gratuito activado")
+                st.rerun()
+        
+        with col2:
+            if st.button("⭐ Premium", key="sidebar_premium"):
+                st.session_state['plan'] = "premium"
+                if 'user_data' in st.session_state:
+                    st.session_state['user_data']['plan'] = "premium"
+                st.success("✅ Plan premium activado")
+                st.rerun()
+        
+        with col3:
+            if st.button("🏢 Empresarial", key="sidebar_enterprise"):
+                st.session_state['plan'] = "empresarial"
+                if 'user_data' in st.session_state:
+                    st.session_state['user_data']['plan'] = "empresarial"
+                st.success("✅ Plan empresarial activado")
+                st.rerun()
     
     # Mostrar página de precios si se solicita
     if st.session_state.get('show_pricing', False):
