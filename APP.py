@@ -925,15 +925,19 @@ else:
                 st.pyplot(fig2)
 
     elif opcion == "📊 Análisis Completo":
-        # Verificar acceso basado en plan
-        user_data = st.session_state.get('user_data', {})
-        user_id = user_data.get('id')
-        plan = user_data.get('plan', 'gratuito')
+        # Verificar acceso basado en plan real del usuario
+        user_plan = st.session_state.get('plan', 'gratuito')
+        user_email = st.session_state.get('user', '')
         
         # Verificar si es admin (acceso completo)
-        is_admin = st.session_state.get('user') == 'admin' or st.session_state.get('user') == 'admin@consorciodej.com'
+        is_admin = user_email == 'admin' or user_email == 'admin@consorciodej.com'
         
-        if not PAYMENT_SYSTEM_AVAILABLE or (not is_admin and not payment_system.check_plan_access(st.session_state['user'], 'premium')):
+        # Verificar plan real en el sistema de pagos
+        if PAYMENT_SYSTEM_AVAILABLE and user_email:
+            real_plan = payment_system.get_user_plan(user_email)
+            user_plan = real_plan.get('plan', 'gratuito')
+        
+        if user_plan == "gratuito" and not is_admin:
             st.warning("⚠️ Esta función requiere plan premium. Actualiza tu cuenta para acceder a análisis completos.")
             st.info("Plan gratuito incluye: Cálculos básicos, resultados simples")
             st.info("Plan premium incluye: Análisis completo, reportes detallados, gráficos avanzados")
@@ -1335,10 +1339,29 @@ else:
     elif opcion == "🏗️ Diseño del Fuste":
         st.title("Diseño y Verificación del Fuste del Muro")
         
-        if st.session_state['plan'] == "gratuito":
+        # Verificar acceso basado en plan real del usuario
+        user_plan = st.session_state.get('plan', 'gratuito')
+        user_email = st.session_state.get('user', '')
+        
+        # Verificar si es admin (acceso completo)
+        is_admin = user_email == 'admin' or user_email == 'admin@consorciodej.com'
+        
+        # Verificar plan real en el sistema de pagos
+        if PAYMENT_SYSTEM_AVAILABLE and user_email:
+            real_plan = payment_system.get_user_plan(user_email)
+            user_plan = real_plan.get('plan', 'gratuito')
+        
+        if user_plan == "gratuito" and not is_admin:
             st.warning("⚠️ Esta función requiere plan premium. Actualiza tu cuenta para acceder al diseño estructural.")
             st.info("Plan gratuito incluye: Cálculos básicos, resultados simples")
             st.info("Plan premium incluye: Diseño del fuste, cálculo de refuerzo, reportes detallados")
+            
+            # Mostrar botón para actualizar plan
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                if st.button("⭐ Actualizar a Premium", type="primary", key="upgrade_diseno"):
+                    st.session_state['show_pricing'] = True
+                    st.rerun()
         else:
             st.success("⭐ Plan Premium: Diseño estructural completo del fuste")
             
