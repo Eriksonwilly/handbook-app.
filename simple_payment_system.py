@@ -21,6 +21,23 @@ class SimplePaymentSystem:
             "clave": "admin123"
         }
         self.load_data()
+        self.create_default_admin()
+    
+    def create_default_admin(self):
+        """Crear usuario admin por defecto si no existe"""
+        admin_email = "admin@consorciodej.com"
+        if admin_email not in self.users:
+            admin_user = {
+                "email": admin_email,
+                "password": self.hash_password("admin123"),
+                "name": "Administrador",
+                "plan": "empresarial",
+                "created_at": datetime.datetime.now().isoformat(),
+                "expires_at": None
+            }
+            self.users[admin_email] = admin_user
+            self.save_data()
+            print("✅ Usuario admin creado: admin@consorciodej.com / admin123")
     
     def load_data(self):
         """Cargar datos de usuarios y pagos"""
@@ -71,20 +88,32 @@ class SimplePaymentSystem:
     
     def login_user(self, email: str, password: str) -> Dict:
         """Iniciar sesión"""
-        if email not in self.users:
+        # Buscar usuario por email o por nombre de usuario
+        user_found = None
+        
+        # Primero buscar por email exacto
+        if email in self.users:
+            user_found = self.users[email]
+        else:
+            # Buscar por nombre de usuario (campo name)
+            for user_email, user_data in self.users.items():
+                if user_data.get("name", "").lower() == email.lower():
+                    user_found = user_data
+                    break
+        
+        if not user_found:
             return {"success": False, "message": "Usuario no encontrado"}
         
-        user = self.users[email]
-        if user["password"] != self.hash_password(password):
+        if user_found["password"] != self.hash_password(password):
             return {"success": False, "message": "Contraseña incorrecta"}
         
         return {
             "success": True, 
             "user": {
-                "email": user["email"],
-                "name": user["name"],
-                "plan": user["plan"],
-                "expires_at": user["expires_at"]
+                "email": user_found["email"],
+                "name": user_found["name"],
+                "plan": user_found["plan"],
+                "expires_at": user_found["expires_at"]
             }
         }
     
