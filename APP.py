@@ -1739,10 +1739,10 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
         ### 🏗️ CONSORCIO DEJ
         **Información de Contacto:**
         
-        📧 Email: contacto@consorciodej.com  
-        📱 Teléfono: +123 456 7890  
-        🌐 Web: www.consorciodej.com  
-        📍 Dirección: [Tu dirección aquí]
+        📧 Email: dejconstruct@gmail.com  
+        📱 Teléfono: +151 967573364  
+        🌐 Web: www.gruposelectiva.com  
+        📍 Dirección: [Jose Luis B. Rivero - Arequipa]
         
         **Horarios de Atención:**
         Lunes a Viernes: 8:00 AM - 6:00 PM
