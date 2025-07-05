@@ -9,6 +9,9 @@ import io
 import tempfile
 import os
 
+# Importar sistema de pagos
+from payment_system import payment_system
+
 # Importaciones opcionales con manejo de errores
 try:
     import plotly.express as px
@@ -506,40 +509,97 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Autenticación simple
-def login():
-    st.title("Iniciar Sesión")
-    username = st.text_input("Usuario")
-    password = st.text_input("Contraseña", type="password")
-    if st.button("Entrar"):
-        if username == "demo" and password == "demo":
-            st.session_state['logged_in'] = True
-            st.session_state['user'] = username
-            st.session_state['plan'] = "gratuito"
-        elif username == "premium" and password == "premium":
-            st.session_state['logged_in'] = True
-            st.session_state['user'] = username
-            st.session_state['plan'] = "premium"
-        else:
-            st.error("Usuario o contraseña incorrectos")
+# Sistema de autenticación y pagos
+def show_auth_page():
+    st.title("🏗️ CONSORCIO DEJ - Muros de Contención")
+    
+    # Pestañas para login/registro
+    tab1, tab2, tab3 = st.tabs(["🔐 Iniciar Sesión", "📝 Registrarse", "💰 Planes y Precios"])
+    
+    with tab1:
+        st.subheader("Iniciar Sesión")
+        with st.form("login_form"):
+            username = st.text_input("Usuario")
+            password = st.text_input("Contraseña", type="password")
+            submitted = st.form_submit_button("Entrar")
+            
+            if submitted:
+                success, result = payment_system.authenticate_user(username, password)
+                if success:
+                    st.session_state['logged_in'] = True
+                    st.session_state['user_data'] = result
+                    st.session_state['user'] = result['username']
+                    st.session_state['plan'] = result['plan']
+                    st.success(f"¡Bienvenido, {result['username']}!")
+                    st.rerun()
+                else:
+                    st.error(result)
+    
+    with tab2:
+        st.subheader("Crear Cuenta")
+        with st.form("register_form"):
+            new_username = st.text_input("Usuario")
+            new_email = st.text_input("Email")
+            new_password = st.text_input("Contraseña", type="password")
+            confirm_password = st.text_input("Confirmar Contraseña", type="password")
+            submitted = st.form_submit_button("Registrarse")
+            
+            if submitted:
+                if new_password != confirm_password:
+                    st.error("Las contraseñas no coinciden")
+                elif len(new_password) < 6:
+                    st.error("La contraseña debe tener al menos 6 caracteres")
+                else:
+                    success, message = payment_system.register_user(new_username, new_email, new_password)
+                    if success:
+                        st.success(message)
+                    else:
+                        st.error(message)
+    
+    with tab3:
+        payment_system.show_pricing_page()
 
+# Verificar estado de autenticación
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 
 if not st.session_state['logged_in']:
-    login()
+    show_auth_page()
 else:
-    st.success(f"Bienvenido, {st.session_state['user']}!")
+    # Mostrar información del usuario
+    user_data = st.session_state.get('user_data', {})
+    plan = user_data.get('plan', 'gratuito')
+    
+    # Header con información del plan
+    if plan == "gratuito":
+        st.sidebar.info("🆓 Plan Gratuito")
+    elif plan == "premium":
+        st.sidebar.success("⭐ Plan Premium")
+    else:
+        st.sidebar.success("🏢 Plan Empresarial")
+    
+    st.sidebar.write(f"Usuario: {st.session_state['user']}")
+    st.sidebar.write(f"Plan: {plan}")
     
     # Botón para cerrar sesión
     if st.sidebar.button("🚪 Cerrar Sesión"):
         st.session_state['logged_in'] = False
+        st.session_state['user_data'] = None
         st.session_state['user'] = None
         st.session_state['plan'] = None
         st.rerun()
     
-    # Sidebar para navegación
-    st.sidebar.title("📋 Menú Principal")
+    # Mostrar página de precios si se solicita
+    if st.session_state.get('show_pricing', False):
+        payment_system.show_pricing_page()
+        
+        # Botón para volver
+        if st.button("← Volver a la aplicación"):
+            st.session_state['show_pricing'] = False
+            st.rerun()
+    else:
+        # Sidebar para navegación
+        st.sidebar.title("📋 Menú Principal")
     
     # Mostrar plan actual
     if st.session_state['plan'] == "gratuito":
@@ -716,10 +776,22 @@ else:
                 st.pyplot(fig2)
 
     elif opcion == "📊 Análisis Completo":
-        if st.session_state['plan'] == "gratuito":
+        # Verificar acceso basado en plan
+        user_data = st.session_state.get('user_data', {})
+        user_id = user_data.get('id')
+        plan = user_data.get('plan', 'gratuito')
+        
+        if not payment_system.check_user_access(user_id, 'premium'):
             st.warning("⚠️ Esta función requiere plan premium. Actualiza tu cuenta para acceder a análisis completos.")
             st.info("Plan gratuito incluye: Cálculos básicos, resultados simples")
             st.info("Plan premium incluye: Análisis completo, reportes detallados, gráficos avanzados")
+            
+            # Mostrar botón para actualizar plan
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                if st.button("⭐ Actualizar a Premium", type="primary"):
+                    st.session_state['show_pricing'] = True
+                    st.rerun()
         else:
             st.title("Análisis Completo de Muro de Contención")
             st.success("⭐ Plan Premium: Análisis completo con teoría de Rankine")
@@ -1739,10 +1811,10 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
         ### 🏗️ CONSORCIO DEJ
         **Información de Contacto:**
         
-        📧 Email: dejconstruct@gmail.com  
-        📱 Teléfono: +151 967573364  
-        🌐 Web: www.gruposelectiva.com  
-        📍 Dirección: [Jose Luis B. Rivero - Arequipa]
+        📧 Email: contacto@consorciodej.com  
+        📱 Teléfono: +123 456 7890  
+        🌐 Web: www.consorciodej.com  
+        📍 Dirección: [Tu dirección aquí]
         
         **Horarios de Atención:**
         Lunes a Viernes: 8:00 AM - 6:00 PM
