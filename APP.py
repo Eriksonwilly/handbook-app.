@@ -9,8 +9,13 @@ import io
 import tempfile
 import os
 
-# Importar sistema de pagos
-from payment_system import payment_system
+# Importar sistema de pagos simple
+try:
+    from simple_payment_system import payment_system
+    PAYMENT_SYSTEM_AVAILABLE = True
+except ImportError:
+    PAYMENT_SYSTEM_AVAILABLE = False
+    st.warning("⚠️ Sistema de pagos no disponible. Usando modo demo.")
 
 # Importaciones opcionales con manejo de errores
 try:
@@ -510,6 +515,94 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Sistema de autenticación y pagos
+def show_pricing_page():
+    """Mostrar página de precios y planes"""
+    st.title("💰 Planes y Precios - CONSORCIO DEJ")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.subheader("🆓 Plan Gratuito")
+        st.write("**$0/mes**")
+        st.write("✅ Cálculos básicos")
+        st.write("✅ Análisis simple")
+        st.write("✅ Reportes básicos")
+        st.write("❌ Sin análisis completo")
+        st.write("❌ Sin diseño del fuste")
+        st.write("❌ Sin gráficos avanzados")
+        
+        if st.button("Seleccionar Gratuito", key="free_plan"):
+            st.info("Ya tienes acceso al plan gratuito")
+    
+    with col2:
+        st.subheader("⭐ Plan Premium")
+        st.write("**$29.99/mes**")
+        st.write("✅ Todo del plan gratuito")
+        st.write("✅ Análisis completo")
+        st.write("✅ Diseño del fuste")
+        st.write("✅ Gráficos avanzados")
+        st.write("✅ Reportes PDF")
+        st.write("❌ Sin soporte empresarial")
+        
+        if st.button("Actualizar a Premium", key="premium_plan"):
+            if PAYMENT_SYSTEM_AVAILABLE:
+                show_payment_form("premium")
+            else:
+                st.info("Sistema de pagos no disponible en modo demo")
+    
+    with col3:
+        st.subheader("🏢 Plan Empresarial")
+        st.write("**$99.99/mes**")
+        st.write("✅ Todo del plan premium")
+        st.write("✅ Soporte prioritario")
+        st.write("✅ Múltiples proyectos")
+        st.write("✅ Reportes personalizados")
+        st.write("✅ Capacitación incluida")
+        st.write("✅ API de integración")
+        
+        if st.button("Actualizar a Empresarial", key="business_plan"):
+            if PAYMENT_SYSTEM_AVAILABLE:
+                show_payment_form("empresarial")
+            else:
+                st.info("Sistema de pagos no disponible en modo demo")
+
+def show_payment_form(plan):
+    """Mostrar formulario de pago"""
+    st.subheader(f"💳 Pago - Plan {plan.title()}")
+    
+    payment_method = st.selectbox(
+        "Método de pago",
+        ["yape", "plin", "paypal", "transferencia", "efectivo"],
+        format_func=lambda x: {
+            "yape": "📱 Yape (Más Rápido)",
+            "plin": "📱 PLIN",
+            "paypal": "💳 PayPal",
+            "transferencia": "🏦 Transferencia Bancaria", 
+            "efectivo": "💵 Pago en Efectivo"
+        }[x]
+    )
+    
+    if st.button("Procesar Pago"):
+        if PAYMENT_SYSTEM_AVAILABLE and 'user' in st.session_state:
+            result = payment_system.upgrade_plan(
+                st.session_state['user'], 
+                plan, 
+                payment_method
+            )
+            
+            if result["success"]:
+                st.success("✅ Pago procesado correctamente")
+                st.info("📋 Instrucciones de pago:")
+                st.text(result["instructions"])
+                
+                # Actualizar plan en session state
+                st.session_state['plan'] = plan
+                st.rerun()
+            else:
+                st.error(result["message"])
+        else:
+            st.error("Sistema de pagos no disponible")
+
 def show_auth_page():
     st.title("🏗️ CONSORCIO DEJ - Muros de Contención")
     
@@ -524,16 +617,29 @@ def show_auth_page():
             submitted = st.form_submit_button("Entrar")
             
             if submitted:
-                success, result = payment_system.authenticate_user(username, password)
-                if success:
-                    st.session_state['logged_in'] = True
-                    st.session_state['user_data'] = result
-                    st.session_state['user'] = result['username']
-                    st.session_state['plan'] = result['plan']
-                    st.success(f"¡Bienvenido, {result['username']}!")
-                    st.rerun()
+                if not PAYMENT_SYSTEM_AVAILABLE:
+                    # Modo demo
+                    if username == "demo" and password == "demo":
+                        st.session_state['logged_in'] = True
+                        st.session_state['user_data'] = {"username": "demo", "plan": "gratuito"}
+                        st.session_state['user'] = "demo"
+                        st.session_state['plan'] = "gratuito"
+                        st.success("¡Bienvenido al modo demo!")
+                        st.rerun()
+                    else:
+                        st.error("Credenciales demo: usuario=demo, contraseña=demo")
                 else:
-                    st.error(result)
+                    # Sistema real
+                    result = payment_system.login_user(username, password)
+                    if result["success"]:
+                        st.session_state['logged_in'] = True
+                        st.session_state['user_data'] = result["user"]
+                        st.session_state['user'] = result["user"]["email"]
+                        st.session_state['plan'] = result["user"]["plan"]
+                        st.success(f"¡Bienvenido, {result['user']['name']}!")
+                        st.rerun()
+                    else:
+                        st.error(result["message"])
     
     with tab2:
         st.subheader("Crear Cuenta")
@@ -550,14 +656,17 @@ def show_auth_page():
                 elif len(new_password) < 6:
                     st.error("La contraseña debe tener al menos 6 caracteres")
                 else:
-                    success, message = payment_system.register_user(new_username, new_email, new_password)
-                    if success:
-                        st.success(message)
+                    if not PAYMENT_SYSTEM_AVAILABLE:
+                        st.success("Modo demo: Registro simulado exitoso")
                     else:
-                        st.error(message)
+                        result = payment_system.register_user(new_email, new_password, new_username)
+                        if result["success"]:
+                            st.success(result["message"])
+                        else:
+                            st.error(result["message"])
     
     with tab3:
-        payment_system.show_pricing_page()
+        show_pricing_page()
 
 # Verificar estado de autenticación
 if 'logged_in' not in st.session_state:
@@ -591,7 +700,7 @@ else:
     
     # Mostrar página de precios si se solicita
     if st.session_state.get('show_pricing', False):
-        payment_system.show_pricing_page()
+        show_pricing_page()
         
         # Botón para volver
         if st.button("← Volver a la aplicación"):
@@ -781,7 +890,7 @@ else:
         user_id = user_data.get('id')
         plan = user_data.get('plan', 'gratuito')
         
-        if not payment_system.check_user_access(user_id, 'premium'):
+        if not PAYMENT_SYSTEM_AVAILABLE or not payment_system.check_plan_access(st.session_state['user'], 'premium'):
             st.warning("⚠️ Esta función requiere plan premium. Actualiza tu cuenta para acceder a análisis completos.")
             st.info("Plan gratuito incluye: Cálculos básicos, resultados simples")
             st.info("Plan premium incluye: Análisis completo, reportes detallados, gráficos avanzados")
