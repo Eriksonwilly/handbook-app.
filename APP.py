@@ -152,12 +152,25 @@ def generar_pdf_reportlab(resultados, datos_entrada, diseno_fuste, plan="premium
     styleH2 = styles["Heading2"]
     elements = []
     
+    # Función auxiliar para agregar elementos de forma segura
+    def add_element(element):
+        try:
+            elements.append(element)
+        except Exception as e:
+            print(f"Error agregando elemento: {e}")
+            # Agregar elemento de texto simple como fallback
+            elements.append(Paragraph(str(element), styleN))
+    
     # Título principal
-    elements.append(Paragraph("CONSORCIO DEJ", styleH))
-    elements.append(Paragraph("Ingeniería y Construcción", styleN))
-    elements.append(Paragraph(f"Reporte de Muro de Contención - {plan.upper()}", styleH2))
-    elements.append(Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}", styleN))
-    elements.append(Spacer(1, 20))
+    try:
+        elements.append(Paragraph("CONSORCIO DEJ", styleH))
+        elements.append(Paragraph("Ingeniería y Construcción", styleN))
+        elements.append(Paragraph(f"Reporte de Muro de Contención - {plan.upper()}", styleH2))
+        elements.append(Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}", styleN))
+        elements.append(Spacer(1, 20))
+    except Exception as e:
+        print(f"Error en título: {e}")
+        elements.append(Paragraph("CONSORCIO DEJ - Reporte de Muro de Contención", styleN))
     
     if plan == "premium":
         # Reporte premium completo
@@ -356,84 +369,84 @@ def dibujar_muro_streamlit(dimensiones, h1, Df, qsc):
         ax.arrow(x, hz+h1+hm+0.7, 0, -0.5, head_width=0.1, head_length=0.2, 
                 fc=color_flecha, ec=color_flecha, linewidth=4, alpha=0.9)
     
-    # Texto de sobrecarga con fondo profesional
-    ax.text(Bz/2, hz+h1+hm+1.0, f'SOBRECARGA APLICADA: {qsc} kg/m²', 
-            ha='center', fontsize=16, fontweight='bold', 
-            bbox=dict(boxstyle="round,pad=0.5", facecolor='#FFEBEE', 
-                     edgecolor='#D32F2F', linewidth=3, alpha=0.95))
+    # Texto de sobrecarga con fondo profesional (más pequeño)
+    ax.text(Bz/2, hz+h1+hm+0.8, f'SOBRECARGA: {qsc} kg/m²', 
+            ha='center', fontsize=10, fontweight='bold', 
+            bbox=dict(boxstyle="round,pad=0.3", facecolor='#FFEBEE', 
+                     edgecolor='#D32F2F', linewidth=2, alpha=0.9))
     
     # Agregar línea de nivel del terreno
-    ax.axhline(y=hz, color='#795548', linewidth=3, linestyle='-', alpha=0.8)
-    ax.text(Bz+0.3, hz, 'NIVEL DEL TERRENO', fontsize=12, fontweight='bold', 
+    ax.axhline(y=hz, color='#795548', linewidth=2, linestyle='-', alpha=0.8)
+    ax.text(Bz+0.2, hz, 'NIVEL TERRENO', fontsize=8, fontweight='bold', 
             color='#795548', rotation=90, va='center')
     
-    # Añadir dimensiones con estilo profesional
-    dimension_style = dict(arrowstyle='<->', color='#1976D2', linewidth=3)
+    # Añadir dimensiones con estilo profesional (más pequeñas)
+    dimension_style = dict(arrowstyle='<->', color='#1976D2', linewidth=2)
     
     # Dimensiones horizontales
     ax.annotate('', xy=(0, hz/2), xytext=(r, hz/2), arrowprops=dimension_style)
-    ax.text(r/2, hz/2-0.15, f'r = {r}m', ha='center', fontsize=11, fontweight='bold', 
-            color='#1976D2', bbox=dict(boxstyle="round,pad=0.2", facecolor='white', 
-                                      edgecolor='#1976D2', alpha=0.9))
+    ax.text(r/2, hz/2-0.1, f'r={r}m', ha='center', fontsize=8, fontweight='bold', 
+            color='#1976D2', bbox=dict(boxstyle="round,pad=0.1", facecolor='white', 
+                                      edgecolor='#1976D2', alpha=0.8))
     
     ax.annotate('', xy=(r, hz/2), xytext=(r+b, hz/2), arrowprops=dimension_style)
-    ax.text(r+b/2, hz/2-0.15, f'b = {b}m', ha='center', fontsize=11, fontweight='bold', 
-            color='#1976D2', bbox=dict(boxstyle="round,pad=0.2", facecolor='white', 
-                                      edgecolor='#1976D2', alpha=0.9))
+    ax.text(r+b/2, hz/2-0.1, f'b={b}m', ha='center', fontsize=8, fontweight='bold', 
+            color='#1976D2', bbox=dict(boxstyle="round,pad=0.1", facecolor='white', 
+                                      edgecolor='#1976D2', alpha=0.8))
     
     ax.annotate('', xy=(r+b, hz/2), xytext=(Bz, hz/2), arrowprops=dimension_style)
-    ax.text(r+b+t/2, hz/2-0.15, f't = {t}m', ha='center', fontsize=11, fontweight='bold', 
-            color='#1976D2', bbox=dict(boxstyle="round,pad=0.2", facecolor='white', 
-                                      edgecolor='#1976D2', alpha=0.9))
+    ax.text(r+b+t/2, hz/2-0.1, f't={t}m', ha='center', fontsize=8, fontweight='bold', 
+            color='#1976D2', bbox=dict(boxstyle="round,pad=0.1", facecolor='white', 
+                                      edgecolor='#1976D2', alpha=0.8))
     
     # Dimensiones verticales
     ax.annotate('', xy=(r+b/2, hz), xytext=(r+b/2, hz+h1), arrowprops=dimension_style)
-    ax.text(r+b/2-0.2, hz+h1/2, f'h1 = {h1}m', ha='right', fontsize=11, fontweight='bold', 
-            color='#1976D2', bbox=dict(boxstyle="round,pad=0.2", facecolor='white', 
-                                      edgecolor='#1976D2', alpha=0.9))
+    ax.text(r+b/2-0.15, hz+h1/2, f'h1={h1}m', ha='right', fontsize=8, fontweight='bold', 
+            color='#1976D2', bbox=dict(boxstyle="round,pad=0.1", facecolor='white', 
+                                      edgecolor='#1976D2', alpha=0.8))
     
     ax.annotate('', xy=(r+b/2, hz+h1), xytext=(r+b/2, hz+h1+hm), arrowprops=dimension_style)
-    ax.text(r+b/2-0.2, hz+h1+hm/2, f'hm = {hm}m', ha='right', fontsize=11, fontweight='bold', 
-            color='#1976D2', bbox=dict(boxstyle="round,pad=0.2", facecolor='white', 
-                                      edgecolor='#1976D2', alpha=0.9))
+    ax.text(r+b/2-0.15, hz+h1+hm/2, f'hm={hm}m', ha='right', fontsize=8, fontweight='bold', 
+            color='#1976D2', bbox=dict(boxstyle="round,pad=0.1", facecolor='white', 
+                                      edgecolor='#1976D2', alpha=0.8))
     
     ax.annotate('', xy=(r+b/2, 0), xytext=(r+b/2, -Df), arrowprops=dimension_style)
-    ax.text(r+b/2-0.2, -Df/2, f'Df = {Df}m', ha='right', fontsize=11, fontweight='bold', 
-            color='#1976D2', bbox=dict(boxstyle="round,pad=0.2", facecolor='white', 
-                                      edgecolor='#1976D2', alpha=0.9))
+    ax.text(r+b/2-0.15, -Df/2, f'Df={Df}m', ha='right', fontsize=8, fontweight='bold', 
+            color='#1976D2', bbox=dict(boxstyle="round,pad=0.1", facecolor='white', 
+                                      edgecolor='#1976D2', alpha=0.8))
     
     ax.annotate('', xy=(0, 0), xytext=(0, hz), arrowprops=dimension_style)
-    ax.text(-0.2, hz/2, f'hz = {hz}m', ha='right', fontsize=11, fontweight='bold', 
-            color='#1976D2', bbox=dict(boxstyle="round,pad=0.2", facecolor='white', 
-                                      edgecolor='#1976D2', alpha=0.9))
+    ax.text(-0.15, hz/2, f'hz={hz}m', ha='right', fontsize=8, fontweight='bold', 
+            color='#1976D2', bbox=dict(boxstyle="round,pad=0.1", facecolor='white', 
+                                      edgecolor='#1976D2', alpha=0.8))
     
     ax.annotate('', xy=(0, 0), xytext=(Bz, 0), arrowprops=dimension_style)
-    ax.text(Bz/2, -0.3, f'Bz = {Bz}m', ha='center', fontsize=11, fontweight='bold', 
-            color='#1976D2', bbox=dict(boxstyle="round,pad=0.2", facecolor='white', 
-                                      edgecolor='#1976D2', alpha=0.9))
+    ax.text(Bz/2, -0.2, f'Bz={Bz}m', ha='center', fontsize=8, fontweight='bold', 
+            color='#1976D2', bbox=dict(boxstyle="round,pad=0.1", facecolor='white', 
+                                      edgecolor='#1976D2', alpha=0.8))
     
-    # Ajustar límites del gráfico
-    ax.set_xlim(-1.5, Bz+1.5)
-    ax.set_ylim(-Df-0.8, hz+h1+hm+1.2)
+    # Ajustar límites del gráfico para mejor visualización
+    ax.set_xlim(-1.0, Bz+1.0)
+    ax.set_ylim(-Df-0.5, hz+h1+hm+1.0)
     
     # Configurar aspecto y títulos profesionales
     ax.set_aspect('equal')
     ax.set_title('DISEÑO PROFESIONAL DE MURO DE CONTENCIÓN\nCONSORCIO DEJ - Ingeniería y Construcción', 
-                fontsize=18, fontweight='bold', pad=30, color='#1565C0')
-    ax.set_xlabel('Distancia (metros)', fontsize=14, fontweight='bold', color='#424242')
-    ax.set_ylabel('Altura (metros)', fontsize=14, fontweight='bold', color='#424242')
+                fontsize=16, fontweight='bold', pad=20, color='#1565C0')
+    ax.set_xlabel('Distancia (metros)', fontsize=12, fontweight='bold', color='#424242')
+    ax.set_ylabel('Altura (metros)', fontsize=12, fontweight='bold', color='#424242')
     
-    # Agregar leyenda profesional
+    # Agregar leyenda profesional (más pequeña y posicionada para no obstruir)
     from matplotlib.patches import Patch
     legend_elements = [
-        Patch(facecolor=color_zapata, edgecolor='#1565C0', label='ZAPATA DE CIMENTACIÓN'),
-        Patch(facecolor=color_muro, edgecolor='#D84315', label='MURO DE CONTENCIÓN'),
-        Patch(facecolor=color_relleno, edgecolor='#F57F17', label='MATERIAL DE RELLENO'),
-        Patch(facecolor=color_suelo, edgecolor='#5D4037', label='SUELO DE CIMENTACIÓN')
+        Patch(facecolor=color_zapata, edgecolor='#1565C0', label='ZAPATA'),
+        Patch(facecolor=color_muro, edgecolor='#D84315', label='MURO'),
+        Patch(facecolor=color_relleno, edgecolor='#F57F17', label='RELLENO'),
+        Patch(facecolor=color_suelo, edgecolor='#5D4037', label='SUELO')
     ]
-    ax.legend(handles=legend_elements, loc='upper right', fontsize=12, 
+    ax.legend(handles=legend_elements, loc='upper left', fontsize=8, 
              frameon=True, fancybox=True, shadow=True, 
-             title='ELEMENTOS ESTRUCTURALES', title_fontsize=13)
+             title='ELEMENTOS', title_fontsize=9, bbox_to_anchor=(0.02, 0.98))
     
     # Agregar grid sutil
     ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
@@ -1152,8 +1165,9 @@ else:
                     verificaciones.append(["Cuantía Mínima", "⚠️ NO CUMPLE", f"ρ = {diseno_fuste['rho_real']:.4f} < 0.0033"])
                 
                 # Mostrar tabla de verificaciones
-                df_verif = pd.DataFrame(verificaciones, columns=['Verificación', 'Estado', 'Detalle'])
-                st.dataframe(df_verif, use_container_width=True)
+                df_verif = pd.DataFrame(verificaciones)
+                df_verif.columns = ['Verificación', 'Estado', 'Detalle']
+                st.dataframe(df_verif, use_container_width=True, hide_index=True)
                 
                 # Resumen final
                 cumple_todo = (diseno_fuste['FSv'] >= 2.0 and diseno_fuste['FSd'] >= 1.5 and 
@@ -1359,7 +1373,7 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
 """
 
                 # Agregar información del diseño del fuste si está disponible
-                if 'diseno_fuste' in st.session_state:
+                if 'diseno_fuste' in st.session_state and st.session_state['diseno_fuste']:
                     diseno_fuste = st.session_state['diseno_fuste']
                     reporte_premium += f"""
 
@@ -1454,18 +1468,22 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                 with col2:
                     # Generar PDF premium con diseño del fuste
                     if 'datos_entrada' in st.session_state and 'diseno_fuste' in st.session_state:
-                        pdf_buffer = generar_pdf_reportlab(
-                            st.session_state['resultados_completos'], 
-                            st.session_state['datos_entrada'], 
-                            st.session_state['diseno_fuste'], 
-                            "premium"
-                        )
-                        st.download_button(
-                            label="📄 Descargar PDF Premium",
-                            data=pdf_buffer.getvalue(),
-                            file_name=f"reporte_premium_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
-                            mime="application/pdf"
-                        )
+                        try:
+                            pdf_buffer = generar_pdf_reportlab(
+                                st.session_state['resultados_completos'], 
+                                st.session_state['datos_entrada'], 
+                                st.session_state['diseno_fuste'], 
+                                "premium"
+                            )
+                            st.download_button(
+                                label="📄 Descargar PDF Premium",
+                                data=pdf_buffer.getvalue(),
+                                file_name=f"reporte_premium_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+                                mime="application/pdf"
+                            )
+                        except Exception as e:
+                            st.error(f"⚠️ Error generando PDF: {str(e)}")
+                            st.info("Intenta ejecutar el análisis completo nuevamente")
                     else:
                         st.warning("⚠️ Ejecuta primero el análisis completo")
                 
