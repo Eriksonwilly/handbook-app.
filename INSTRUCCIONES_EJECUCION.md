@@ -9,6 +9,13 @@ python --version
 
 ### 2. Dependencias instaladas
 ```bash
+# Opción 1: Instalación automática (recomendado)
+python install_dependencies.py
+
+# Opción 2: Instalar desde requirements.txt
+pip install -r requirements.txt
+
+# Opción 3: Instalar manualmente
 pip install streamlit pandas numpy matplotlib plotly reportlab
 ```
 

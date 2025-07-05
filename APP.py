@@ -2,19 +2,32 @@ import streamlit as st
 import math
 import numpy as np
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
 from datetime import datetime
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle, Polygon
-from reportlab.lib.pagesizes import A4, letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak, Image
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.units import inch
 import io
 import tempfile
 import os
+
+# Importaciones opcionales con manejo de errores
+try:
+    import plotly.express as px
+    import plotly.graph_objects as go
+    PLOTLY_AVAILABLE = True
+except ImportError:
+    PLOTLY_AVAILABLE = False
+    st.warning("⚠️ Plotly no está instalado. Los gráficos interactivos no estarán disponibles.")
+
+try:
+    from reportlab.lib.pagesizes import A4, letter
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak, Image
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib.units import inch
+    REPORTLAB_AVAILABLE = True
+except ImportError:
+    REPORTLAB_AVAILABLE = False
+    st.warning("⚠️ ReportLab no está instalado. La generación de PDFs no estará disponible.")
 
 # Función para calcular diseño del fuste del muro
 def calcular_diseno_fuste(resultados, datos_entrada):
@@ -143,6 +156,25 @@ def generar_pdf_reportlab(resultados, datos_entrada, diseno_fuste, plan="premium
     """
     Genera un PDF profesional usando ReportLab
     """
+    if not REPORTLAB_AVAILABLE:
+        # Crear un archivo de texto simple como fallback
+        pdf_buffer = io.BytesIO()
+        reporte_texto = f"""
+CONSORCIO DEJ
+Ingeniería y Construcción
+Reporte de Muro de Contención - {plan.upper()}
+Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}
+
+Este es un reporte básico. Para reportes en PDF, instale ReportLab:
+pip install reportlab
+
+---
+Generado por: CONSORCIO DEJ
+        """
+        pdf_buffer.write(reporte_texto.encode('utf-8'))
+        pdf_buffer.seek(0)
+        return pdf_buffer
+    
     # Crear archivo temporal
     pdf_buffer = io.BytesIO()
     doc = SimpleDocTemplate(pdf_buffer, pagesize=A4)
@@ -626,23 +658,40 @@ else:
             })
             
             # Gráfico de barras mejorado
-            fig = px.bar(datos, x='Fuerza', y='Valor (kN)', 
-                        title="Comparación de Fuerzas - Plan Gratuito",
-                        color='Fuerza',
-                        color_discrete_map={'Peso Muro': '#2E8B57', 'Empuje Suelo': '#DC143C'})
-            
-            # Personalizar el gráfico
-            fig.update_layout(
-                xaxis_title="Tipo de Fuerza",
-                yaxis_title="Valor (kN)",
-                showlegend=True,
-                height=400
-            )
-            
-            # Agregar valores en las barras
-            fig.update_traces(texttemplate='%{y:.1f}', textposition='outside')
-            
-            st.plotly_chart(fig, use_container_width=True)
+            if PLOTLY_AVAILABLE:
+                fig = px.bar(datos, x='Fuerza', y='Valor (kN)', 
+                            title="Comparación de Fuerzas - Plan Gratuito",
+                            color='Fuerza',
+                            color_discrete_map={'Peso Muro': '#2E8B57', 'Empuje Suelo': '#DC143C'})
+                
+                # Personalizar el gráfico
+                fig.update_layout(
+                    xaxis_title="Tipo de Fuerza",
+                    yaxis_title="Valor (kN)",
+                    showlegend=True,
+                    height=400
+                )
+                
+                # Agregar valores en las barras
+                fig.update_traces(texttemplate='%{y:.1f}', textposition='outside')
+                
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                # Gráfico alternativo con matplotlib
+                fig, ax = plt.subplots(figsize=(10, 6))
+                bars = ax.bar(datos['Fuerza'], datos['Valor (kN)'], 
+                             color=['#2E8B57', '#DC143C'])
+                ax.set_title("Comparación de Fuerzas - Plan Gratuito")
+                ax.set_xlabel("Tipo de Fuerza")
+                ax.set_ylabel("Valor (kN)")
+                
+                # Agregar valores en las barras
+                for bar in bars:
+                    height = bar.get_height()
+                    ax.text(bar.get_x() + bar.get_width()/2., height + 0.1,
+                           f'{height:.1f}', ha='center', va='bottom')
+                
+                st.pyplot(fig)
             
             # Gráfico de momentos
             st.subheader("📊 Gráfico de Momentos")
@@ -651,12 +700,20 @@ else:
                 'Valor (kN·m)': [momento_volcador, momento_estabilizador]
             })
             
-            fig2 = px.pie(datos_momentos, values='Valor (kN·m)', names='Momento',
-                         title="Distribución de Momentos - Plan Gratuito",
-                         color_discrete_map={'Volcador': '#FF6B6B', 'Estabilizador': '#4ECDC4'})
-            
-            fig2.update_traces(textposition='inside', textinfo='percent+label')
-            st.plotly_chart(fig2, use_container_width=True)
+            if PLOTLY_AVAILABLE:
+                fig2 = px.pie(datos_momentos, values='Valor (kN·m)', names='Momento',
+                             title="Distribución de Momentos - Plan Gratuito",
+                             color_discrete_map={'Volcador': '#FF6B6B', 'Estabilizador': '#4ECDC4'})
+                
+                fig2.update_traces(textposition='inside', textinfo='percent+label')
+                st.plotly_chart(fig2, use_container_width=True)
+            else:
+                # Gráfico alternativo con matplotlib
+                fig2, ax2 = plt.subplots(figsize=(8, 8))
+                ax2.pie(datos_momentos['Valor (kN·m)'], labels=datos_momentos['Momento'], 
+                       autopct='%1.1f%%', colors=['#FF6B6B', '#4ECDC4'])
+                ax2.set_title("Distribución de Momentos - Plan Gratuito")
+                st.pyplot(fig2)
 
     elif opcion == "📊 Análisis Completo":
         if st.session_state['plan'] == "gratuito":
