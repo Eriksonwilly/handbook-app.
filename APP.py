@@ -1059,17 +1059,28 @@ else:
                 st.pyplot(fig2)
 
     elif opcion == "📊 Análisis Completo":
-        # Verificar acceso basado en plan real del usuario
+        # Verificar acceso basado en plan del usuario
         user_plan = st.session_state.get('plan', 'gratuito')
         user_email = st.session_state.get('user', '')
         
         # Verificar si es admin (acceso completo)
         is_admin = user_email == 'admin' or user_email == 'admin@consorciodej.com'
         
-        # Verificar plan real en el sistema de pagos
-        if PAYMENT_SYSTEM_AVAILABLE and user_email:
-            real_plan = payment_system.get_user_plan(user_email)
-            user_plan = real_plan.get('plan', 'gratuito')
+        # Para usuarios normales, verificar plan real en el sistema de pagos
+        if PAYMENT_SYSTEM_AVAILABLE and user_email and not is_admin:
+            try:
+                real_plan = payment_system.get_user_plan(user_email)
+                current_plan = real_plan.get('plan', 'gratuito')
+                
+                # Actualizar session state si el plan cambió
+                if st.session_state.get('plan') != current_plan:
+                    st.session_state['plan'] = current_plan
+                    if 'user_data' in st.session_state:
+                        st.session_state['user_data']['plan'] = current_plan
+                    user_plan = current_plan
+            except Exception as e:
+                # Si hay error, usar el plan de session state
+                pass
         
         if user_plan == "gratuito" and not is_admin:
             st.warning("⚠️ Esta función requiere plan premium. Actualiza tu cuenta para acceder a análisis completos.")
@@ -1473,17 +1484,28 @@ else:
     elif opcion == "🏗️ Diseño del Fuste":
         st.title("Diseño y Verificación del Fuste del Muro")
         
-        # Verificar acceso basado en plan real del usuario
+        # Verificar acceso basado en plan del usuario
         user_plan = st.session_state.get('plan', 'gratuito')
         user_email = st.session_state.get('user', '')
         
         # Verificar si es admin (acceso completo)
         is_admin = user_email == 'admin' or user_email == 'admin@consorciodej.com'
         
-        # Verificar plan real en el sistema de pagos
-        if PAYMENT_SYSTEM_AVAILABLE and user_email:
-            real_plan = payment_system.get_user_plan(user_email)
-            user_plan = real_plan.get('plan', 'gratuito')
+        # Para usuarios normales, verificar plan real en el sistema de pagos
+        if PAYMENT_SYSTEM_AVAILABLE and user_email and not is_admin:
+            try:
+                real_plan = payment_system.get_user_plan(user_email)
+                current_plan = real_plan.get('plan', 'gratuito')
+                
+                # Actualizar session state si el plan cambió
+                if st.session_state.get('plan') != current_plan:
+                    st.session_state['plan'] = current_plan
+                    if 'user_data' in st.session_state:
+                        st.session_state['user_data']['plan'] = current_plan
+                    user_plan = current_plan
+            except Exception as e:
+                # Si hay error, usar el plan de session state
+                pass
         
         if user_plan == "gratuito" and not is_admin:
             st.warning("⚠️ Esta función requiere plan premium. Actualiza tu cuenta para acceder al diseño estructural.")
