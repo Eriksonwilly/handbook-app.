@@ -2142,10 +2142,10 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
         ### 🏗️ CONSORCIO DEJ
         **Información de Contacto:**
         
-        📧 Email: contacto@consorciodej.com  
-        📱 Teléfono: +123 456 7890  
+        📧 Email: Administrador@consorciodej.com  
+        📱 Teléfono: +51967573364  
         🌐 Web: www.consorciodej.com  
-        📍 Dirección: [Tu dirección aquí]
+        📍 Dirección: [Adepa - Jose Luis B. y Rivero]
         
         **Horarios de Atención:**
         Lunes a Viernes: 8:00 AM - 6:00 PM
