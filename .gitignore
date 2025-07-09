@@ -1,18 +1,12 @@
-# CONSORCIO DEJ - Muros de Contención
-# Archivo .gitignore para excluir archivos innecesarios
-
-# Entorno virtual
-venv/
-env/
-ENV/
-
-# Archivos compilados de Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# C extensions
 *.so
 
-# Distribución / empaquetado
+# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -26,97 +20,127 @@ parts/
 sdist/
 var/
 wheels/
+pip-wheel-metadata/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
-# Metadatos de paquetes
-*.dist-info/
-*.egg-info/
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
 
-# Carpetas de versiones de paquetes
-1.28.0/
-2.0.0/
-3.7.0/
-1.24.0/
-5.15.0/
-4.0.0/
-3.1.0/
-1.17.1/
-1.5.1/
-0.4.6/
-1.3.2/
-45.0.4/
-0.8.0/
-0.12.1/
-2.9.0.post0/
-1.1.0/
-6.0.2/
-4.58.4/
-1.1/
-3.10/
-1.4.8/
-5.4.0/
-3.10.3/
-2.3.0/
-1.3.0/
-25.0/
-11.2.1/
-25.1.1/
-2.22/
-0.27.0/
-0.29.0/
-5.6.0/
-6.4.2.2.3/
-6.4.3/
-13.10.2/
-6.4.2.3.3/
-6.4.2/
-6.9.1/
-0.6.6/
-2025.6.15/
-5.2.0/
-3.4.2/
-8.2.1/
-2025.2/
-5.3.1/
-5.0.0/
-2.4.0/
-0.5.1/
-0.2.17/
-6.0.2/
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
 
-# Archivos de configuración local
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+#   However, in case of collaboration, if having platform-specific dependencies or dependencies
+#   having no cross-platform support, pipenv may install dependencies that don't work, or not
+#   install all needed dependencies.
+#Pipfile.lock
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
 .env
-.env.local
-.env.production
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
-# Archivos de sistema
-.DS_Store
-Thumbs.db
+# Spyder project settings
+.spyderproject
+.spyproject
 
-# Archivos de IDE
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Archivos temporales
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
 *.tmp
-*.temp
-*.log
-
-# Archivos de base de datos
-*.db
-*.sqlite
-*.sqlite3
-
-# Archivos de configuración de Streamlit
-.streamlit/
-
-# Archivos de caché
-.cache/
-.pytest_cache/
-
-# Archivos de configuración de Python
-.python-version
+*.temp 
