@@ -280,7 +280,7 @@ Generado por: CONSORCIO DEJ
     
     if plan == "premium":
         # Reporte premium completo (Rankine)
-        elements.append(Paragraph("1. DATOS DE ENTRADA", styleH))
+        elements.append(Paragraph("1. DATOS DE ENTRADA - TEORÍA DE RANKINE", styleH))
         datos_tabla = [
             ["Parámetro", "Valor", "Unidad"],
             ["Altura del talud (h1)", f"{datos_entrada['h1']:.2f}", "m"],
@@ -302,7 +302,7 @@ Generado por: CONSORCIO DEJ
         elements.append(Spacer(1, 20))
         
         # Dimensiones calculadas
-        elements.append(Paragraph("2. DIMENSIONES CALCULADAS", styleH))
+        elements.append(Paragraph("2. DIMENSIONES CALCULADAS - RANKINE", styleH))
         dim_tabla = [
             ["Dimensión", "Valor", "Unidad"],
             ["Ancho de zapata (Bz)", f"{resultados['Bz']:.2f}", "m"],
@@ -380,9 +380,78 @@ Generado por: CONSORCIO DEJ
         ]))
         elements.append(tabla_verif)
         
+    elif plan == "coulomb":
+        # Reporte Coulomb
+        elements.append(Paragraph("1. DATOS DE ENTRADA - TEORÍA DE COULOMB", styleH))
+        datos_tabla = [
+            ["Parámetro", "Valor", "Unidad"],
+            ["Altura total del muro (H)", f"{datos_entrada['H']:.2f}", "m"],
+            ["Altura del talud (h1)", f"{datos_entrada['h1']:.2f}", "m"],
+            ["Base del triángulo (t2)", f"{datos_entrada['t2']:.2f}", "m"],
+            ["Longitud del talón (b2)", f"{datos_entrada['b2']:.2f}", "m"],
+            ["Ángulo de fricción (φ1)", f"{datos_entrada['phi1']}", "°"],
+            ["Ángulo de fricción muro-suelo (δ)", f"{datos_entrada['delta']}", "°"],
+            ["Ángulo de inclinación del terreno (α)", f"{datos_entrada['alpha']}", "°"],
+            ["Peso específico del suelo (γ1)", f"{datos_entrada['gamma1']}", "t/m³"],
+            ["Sobrecarga (S_c)", f"{datos_entrada['S_c']}", "kg/m²"]
+        ]
+        
+        tabla = Table(datos_tabla, colWidths=[200, 100, 80])
+        tabla.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ]))
+        elements.append(tabla)
+        elements.append(Spacer(1, 20))
+        
+        # Resultados de Coulomb
+        elements.append(Paragraph("2. RESULTADOS DEL ANÁLISIS COULOMB", styleH))
+        resultados_tabla = [
+            ["Parámetro", "Valor", "Unidad"],
+            ["Ángulo de inclinación del muro (β)", f"{resultados['beta']:.2f}", "°"],
+            ["Coeficiente Ka (Coulomb)", f"{resultados['ka']:.6f}", ""],
+            ["Altura efectiva (H')", f"{resultados['H_efectiva']:.2f}", "m"],
+            ["Empuje activo total (Pa)", f"{resultados['Pa']:.3f}", "t/m"],
+            ["Componente horizontal (Ph)", f"{resultados['Ph']:.3f}", "t/m"],
+            ["Componente vertical (Pv)", f"{resultados['Pv']:.3f}", "t/m"],
+            ["Empuje por sobrecarga (PSC)", f"{resultados['PSC']:.3f}", "t/m"],
+            ["Empuje total horizontal", f"{resultados['P_total_horizontal']:.3f}", "t/m"]
+        ]
+        
+        tabla_resultados = Table(resultados_tabla, colWidths=[200, 100, 80])
+        tabla_resultados.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgreen),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ]))
+        elements.append(tabla_resultados)
+        elements.append(Spacer(1, 20))
+        
+        # Fórmulas utilizadas
+        elements.append(Paragraph("3. FÓRMULAS UTILIZADAS", styleH))
+        formulas = [
+            ["Cálculo", "Fórmula", "Resultado"],
+            ["Ángulo β", "β = arctan((H - h₁) / t₂)", f"{resultados['beta']:.2f}°"],
+            ["Coeficiente Ka", "Fórmula completa de Coulomb", f"{resultados['ka']:.6f}"],
+            ["Altura efectiva", "H' = H + (t₂/2 + b₂/2) × tan(α)", f"{resultados['H_efectiva']:.2f} m"],
+            ["Empuje activo", "Pa = ½ × Ka × γ₁ × (H')²", f"{resultados['Pa']:.3f} t/m"],
+            ["Componente horizontal", "Ph = Pa × cos(90° - β + δ)", f"{resultados['Ph']:.3f} t/m"],
+            ["Componente vertical", "Pv = Pa × sin(90° - β + δ)", f"{resultados['Pv']:.3f} t/m"],
+            ["Empuje sobrecarga", "PSC = Ka × H × (S_c/1000) × (sin(β)/sin(β+α))", f"{resultados['PSC']:.3f} t/m"]
+        ]
+        
+        tabla_formulas = Table(formulas, colWidths=[150, 200, 100])
+        tabla_formulas.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightyellow),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ]))
+        elements.append(tabla_formulas)
+        
     elif plan == "rankine":
-        # Reporte Rankine
-        elements.append(Paragraph("1. DATOS DE ENTRADA - RANKINE", styleH))
+        # Reporte Rankine específico
+        elements.append(Paragraph("1. DATOS DE ENTRADA - TEORÍA DE RANKINE", styleH))
         datos_tabla = [
             ["Parámetro", "Valor", "Unidad"],
             ["Altura del talud (h1)", f"{datos_entrada['h1']:.2f}", "m"],
@@ -410,7 +479,7 @@ Generado por: CONSORCIO DEJ
         elements.append(Spacer(1, 20))
         
         # Coeficientes de presión
-        elements.append(Paragraph("2. COEFICIENTES DE PRESIÓN", styleH))
+        elements.append(Paragraph("2. COEFICIENTES DE PRESIÓN - RANKINE", styleH))
         coef_tabla = [
             ["Parámetro", "Valor", "Unidad"],
             ["Coeficiente Ka (Rankine)", f"{resultados['ka']:.6f}", ""],
@@ -501,18 +570,18 @@ Generado por: CONSORCIO DEJ
         
     elif plan == "coulomb":
         # Reporte Coulomb
-        elements.append(Paragraph("1. DATOS DE ENTRADA - COULOMB", styleH))
+        elements.append(Paragraph("1. DATOS DE ENTRADA - TEORÍA DE COULOMB", styleH))
         datos_tabla = [
             ["Parámetro", "Valor", "Unidad"],
             ["Altura total del muro (H)", f"{datos_entrada['H']:.2f}", "m"],
             ["Altura del talud (h1)", f"{datos_entrada['h1']:.2f}", "m"],
-            ["Base del triángulo 2 (t2)", f"{datos_entrada['t2']:.2f}", "m"],
+            ["Base del triángulo (t2)", f"{datos_entrada['t2']:.2f}", "m"],
             ["Longitud del talón (b2)", f"{datos_entrada['b2']:.2f}", "m"],
-            ["Ángulo de fricción del suelo (φ₁')", f"{datos_entrada['phi1']:.1f}", "°"],
-            ["Ángulo de fricción muro-suelo (δ)", f"{datos_entrada['delta']:.1f}", "°"],
-            ["Ángulo de inclinación del terreno (α)", f"{datos_entrada['alpha']:.1f}", "°"],
-            ["Peso específico del suelo (γ₁)", f"{datos_entrada['gamma1']:.2f}", "t/m³"],
-            ["Sobrecarga (S/c)", f"{datos_entrada['S_c']}", "kg/m²"]
+            ["Ángulo de fricción (φ1)", f"{datos_entrada['phi1']}", "°"],
+            ["Ángulo de fricción muro-suelo (δ)", f"{datos_entrada['delta']}", "°"],
+            ["Ángulo de inclinación del terreno (α)", f"{datos_entrada['alpha']}", "°"],
+            ["Peso específico del suelo (γ1)", f"{datos_entrada['gamma1']}", "t/m³"],
+            ["Sobrecarga (S_c)", f"{datos_entrada['S_c']}", "kg/m²"]
         ]
         
         tabla = Table(datos_tabla, colWidths=[200, 100, 80])
@@ -524,43 +593,13 @@ Generado por: CONSORCIO DEJ
         elements.append(tabla)
         elements.append(Spacer(1, 20))
         
-        # Cálculos geométricos
-        elements.append(Paragraph("2. CÁLCULOS GEOMÉTRICOS", styleH))
-        geom_tabla = [
+        # Resultados de Coulomb
+        elements.append(Paragraph("2. RESULTADOS DEL ANÁLISIS COULOMB", styleH))
+        resultados_tabla = [
             ["Parámetro", "Valor", "Unidad"],
             ["Ángulo de inclinación del muro (β)", f"{resultados['beta']:.2f}", "°"],
-            ["Altura efectiva del muro (H')", f"{resultados['H_efectiva']:.2f}", "m"]
-        ]
-        
-        tabla_geom = Table(geom_tabla, colWidths=[200, 100, 80])
-        tabla_geom.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgreen),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ]))
-        elements.append(tabla_geom)
-        elements.append(Spacer(1, 20))
-        
-        # Coeficiente de empuje activo
-        elements.append(Paragraph("3. COEFICIENTE DE EMPUJE ACTIVO", styleH))
-        ka_tabla = [
-            ["Parámetro", "Valor", "Unidad"],
-            ["Coeficiente Ka (Coulomb)", f"{resultados['ka']:.6f}", ""]
-        ]
-        
-        tabla_ka = Table(ka_tabla, colWidths=[200, 100, 80])
-        tabla_ka.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.lightyellow),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ]))
-        elements.append(tabla_ka)
-        elements.append(Spacer(1, 20))
-        
-        # Análisis de empujes
-        elements.append(Paragraph("4. ANÁLISIS DE EMPUJES", styleH))
-        empujes_tabla = [
-            ["Empuje", "Valor", "Unidad"],
+            ["Coeficiente Ka (Coulomb)", f"{resultados['ka']:.6f}", ""],
+            ["Altura efectiva (H')", f"{resultados['H_efectiva']:.2f}", "m"],
             ["Empuje activo total (Pa)", f"{resultados['Pa']:.3f}", "t/m"],
             ["Componente horizontal (Ph)", f"{resultados['Ph']:.3f}", "t/m"],
             ["Componente vertical (Pv)", f"{resultados['Pv']:.3f}", "t/m"],
@@ -568,29 +607,52 @@ Generado por: CONSORCIO DEJ
             ["Empuje total horizontal", f"{resultados['P_total_horizontal']:.3f}", "t/m"]
         ]
         
-        tabla_empujes = Table(empujes_tabla, colWidths=[200, 100, 80])
-        tabla_empujes.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.lightcoral),
+        tabla_resultados = Table(resultados_tabla, colWidths=[200, 100, 80])
+        tabla_resultados.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgreen),
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ]))
-        elements.append(tabla_empujes)
+        elements.append(tabla_resultados)
+        elements.append(Spacer(1, 20))
+        
+        # Fórmulas utilizadas
+        elements.append(Paragraph("3. FÓRMULAS UTILIZADAS", styleH))
+        formulas = [
+            ["Cálculo", "Fórmula", "Resultado"],
+            ["Ángulo β", "β = arctan((H - h₁) / t₂)", f"{resultados['beta']:.2f}°"],
+            ["Coeficiente Ka", "Fórmula completa de Coulomb", f"{resultados['ka']:.6f}"],
+            ["Altura efectiva", "H' = H + (t₂/2 + b₂/2) × tan(α)", f"{resultados['H_efectiva']:.2f} m"],
+            ["Empuje activo", "Pa = ½ × Ka × γ₁ × (H')²", f"{resultados['Pa']:.3f} t/m"],
+            ["Componente horizontal", "Ph = Pa × cos(90° - β + δ)", f"{resultados['Ph']:.3f} t/m"],
+            ["Componente vertical", "Pv = Pa × sin(90° - β + δ)", f"{resultados['Pv']:.3f} t/m"],
+            ["Empuje sobrecarga", "PSC = Ka × H × (S_c/1000) × (sin(β)/sin(β+α))", f"{resultados['PSC']:.3f} t/m"]
+        ]
+        
+        tabla_formulas = Table(formulas, colWidths=[150, 200, 100])
+        tabla_formulas.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightyellow),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ]))
+        elements.append(tabla_formulas)
         elements.append(Spacer(1, 20))
         
         # Observaciones técnicas
-        elements.append(Paragraph("5. OBSERVACIONES TÉCNICAS", styleH))
-        elements.append(Paragraph("• La teoría de Coulomb considera la fricción entre el muro y el suelo", styleN))
-        elements.append(Paragraph("• El ángulo de fricción muro-suelo (δ) afecta significativamente el empuje", styleN))
-        elements.append(Paragraph("• Para muros rugosos, Coulomb proporciona resultados más realistas", styleN))
-        elements.append(Paragraph("• La inclinación del terreno (α) modifica la altura efectiva del muro", styleN))
+        elements.append(Paragraph("4. OBSERVACIONES TÉCNICAS", styleH))
+        elements.append(Paragraph("• La teoría de Coulomb considera fricción muro-suelo", styleN))
+        elements.append(Paragraph("• Apropiada para muros rugosos o inclinados", styleN))
+        elements.append(Paragraph("• Fórmulas más complejas que Rankine", styleN))
+        elements.append(Paragraph("• Considera el ángulo de inclinación del terreno", styleN))
+        elements.append(Paragraph("• Proporciona componentes horizontal y vertical", styleN))
         elements.append(Spacer(1, 20))
         
         # Recomendaciones
-        elements.append(Paragraph("6. RECOMENDACIONES", styleH))
-        elements.append(Paragraph("• Verificar la rugosidad del muro para determinar δ apropiado", styleN))
-        elements.append(Paragraph("• Considerar efectos de drenaje en el relleno", styleN))
-        elements.append(Paragraph("• Revisar la estabilidad al volcamiento y deslizamiento", styleN))
-        elements.append(Paragraph("• Evaluar la capacidad portante del suelo de cimentación", styleN))
+        elements.append(Paragraph("5. RECOMENDACIONES", styleH))
+        elements.append(Paragraph("• Usar para muros con superficies rugosas", styleN))
+        elements.append(Paragraph("• Apropiado para muros inclinados", styleN))
+        elements.append(Paragraph("• Verificar con Rankine para comparación", styleN))
+        elements.append(Paragraph("• Considerar efectos de fricción muro-suelo", styleN))
         
     else:
         # Reporte básico
@@ -599,6 +661,20 @@ Generado por: CONSORCIO DEJ
         elements.append(Paragraph(f"Empuje del suelo: {resultados.get('empuje_suelo', 0):.2f} kN", styleN))
         elements.append(Paragraph(f"Factor de seguridad: {resultados.get('fs_volcamiento', 0):.2f}", styleN))
         elements.append(Paragraph("Este es un reporte básico del plan gratuito.", styleN))
+    
+    # Agregar referencias y pie de página
+    elements.append(Spacer(1, 30))
+    elements.append(Paragraph("REFERENCIAS TÉCNICAS", styleH2))
+    elements.append(Paragraph("• Rankine, W.J.M. (1857). On the stability of loose earth", styleN))
+    elements.append(Paragraph("• Coulomb, C.A. (1776). Essai sur une application des règles", styleN))
+    elements.append(Paragraph("• Das, B.M. (2010). Principles of Geotechnical Engineering", styleN))
+    elements.append(Paragraph("• Bowles, J.E. (1996). Foundation Analysis and Design", styleN))
+    elements.append(Paragraph("• ACI 318 - Building Code Requirements for Structural Concrete", styleN))
+    
+    elements.append(Spacer(1, 20))
+    elements.append(Paragraph("CONSORCIO DEJ - Ingeniería y Construcción", styleN))
+    elements.append(Paragraph("Este reporte fue generado automáticamente por el sistema de análisis de muros de contención.", styleN))
+    elements.append(Paragraph(f"Fecha de generación: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}", styleN))
     
     # Construir PDF
     doc.build(elements)
