@@ -383,26 +383,60 @@ Generado por: CONSORCIO DEJ
     elif plan == "coulomb":
         # Reporte Coulomb
         elements.append(Paragraph("1. DATOS DE ENTRADA - TEORÍA DE COULOMB", styleH))
-        datos_tabla = [
+        # --- Suelo de relleno ---
+        elements.append(Paragraph("A. DATOS DEL SUELO DE RELLENO", styleH2))
+        datos_relleno = [
             ["Parámetro", "Valor", "Unidad"],
-            ["Altura total del muro (H)", f"{datos_entrada['H']:.2f}", "m"],
-            ["Altura del talud (h1)", f"{datos_entrada['h1']:.2f}", "m"],
-            ["Base del triángulo (t2)", f"{datos_entrada['t2']:.2f}", "m"],
-            ["Longitud del talón (b2)", f"{datos_entrada['b2']:.2f}", "m"],
-            ["Ángulo de fricción (φ1)", f"{datos_entrada['phi1']}", "°"],
-            ["Ángulo de fricción muro-suelo (δ)", f"{datos_entrada['delta']}", "°"],
-            ["Ángulo de inclinación del terreno (α)", f"{datos_entrada['alpha']}", "°"],
-            ["Peso específico del suelo (γ1)", f"{datos_entrada['gamma1']}", "t/m³"],
-            ["Sobrecarga (S_c)", f"{datos_entrada['S_c']}", "kg/m²"]
+            ["Peso específico (γ₁)", f"{datos_entrada.get('gamma1', '')}", "t/m³"],
+            ["Ángulo de fricción (φ'₁)", f"{datos_entrada.get('phi1', '')}", "°"],
+            ["Cohesión (c'₁)", f"{datos_entrada.get('cohesion1', '')}", "kg/cm²"],
+            ["Ángulo de inclinación (α)", f"{datos_entrada.get('alpha', '')}", "°"]
         ]
-        
-        tabla = Table(datos_tabla, colWidths=[200, 100, 80])
-        tabla.setStyle(TableStyle([
+        tabla_relleno = Table(datos_relleno, colWidths=[200, 100, 80])
+        tabla_relleno.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ]))
-        elements.append(tabla)
+        elements.append(tabla_relleno)
+        elements.append(Spacer(1, 10))
+        # --- Suelo de la base ---
+        elements.append(Paragraph("B. DATOS DEL SUELO DE LA BASE", styleH2))
+        datos_base = [
+            ["Parámetro", "Valor", "Unidad"],
+            ["Peso específico (γ₂)", f"{datos_entrada.get('gamma2', '')}", "t/m³"],
+            ["Cohesión (c'₂)", f"{datos_entrada.get('cohesion2', '')}", "kg/cm²"],
+            ["Capacidad de carga (σᵤ)", f"{datos_entrada.get('sigma_u', '')}", "kg/cm²"],
+            ["Ángulo de fricción (φ'₂)", f"{datos_entrada.get('phi2', '')}", "°"]
+        ]
+        tabla_base = Table(datos_base, colWidths=[200, 100, 80])
+        tabla_base.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgreen),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ]))
+        elements.append(tabla_base)
+        elements.append(Spacer(1, 10))
+        # --- Datos del muro ---
+        elements.append(Paragraph("C. DATOS DEL MURO", styleH2))
+        datos_muro = [
+            ["Parámetro", "Valor", "Unidad"],
+            ["Peso específico del muro (γ_muro)", f"{datos_entrada.get('gamma_muro', '')}", "t/m³"],
+            ["Sobrecarga (S/c)", f"{datos_entrada.get('S_c', '')}", "kg/m²"],
+            ["Altura total (H)", f"{datos_entrada.get('H', '')}", "m"],
+            ["Profundidad de desplante (D)", f"{datos_entrada.get('D', '')}", "m"],
+            ["Altura del talud (h1)", f"{datos_entrada.get('h1', '')}", "m"],
+            ["Base del triángulo (t2)", f"{datos_entrada.get('t2', '')}", "m"],
+            ["Longitud del talón (b2)", f"{datos_entrada.get('b2', '')}", "m"],
+            ["Ángulo de fricción muro-suelo (δ)", f"{datos_entrada.get('delta', '')}", "°"]
+        ]
+        tabla_muro = Table(datos_muro, colWidths=[200, 100, 80])
+        tabla_muro.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightyellow),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ]))
+        elements.append(tabla_muro)
         elements.append(Spacer(1, 20))
         
         # Resultados de Coulomb
@@ -2293,30 +2327,28 @@ else:
         col1, col2 = st.columns(2)
         
         with col1:
-            st.subheader("Dimensiones del Muro")
-            H = st.number_input("Altura total del muro (H) [m]", value=4.0, step=0.1, help="Altura total del muro de contención")
-            h1 = st.number_input("Altura del talud (h1) [m]", value=3.5, step=0.1, help="Altura del talud que contiene el suelo")
-            t2 = st.number_input("Base del triángulo 2 (t2) [m]", value=0.3, step=0.05, help="Base del triángulo de inclinación del muro")
-            b2 = st.number_input("Longitud del talón (b2) [m]", value=1.0, step=0.1, help="Longitud del talón del muro")
+            st.subheader("Datos del Suelo de Relleno")
+            gamma1 = st.number_input("Peso específico del suelo de relleno (γ₁) [t/m³]", value=1.85, step=0.01, help="Peso específico del suelo de relleno")
+            phi1 = st.number_input("Ángulo de fricción del suelo de relleno (φ'₁) [°]", value=32.0, step=0.1, help="Ángulo de fricción interna del suelo de relleno")
+            cohesion1 = st.number_input("Cohesión del suelo de relleno (c'₁) [kg/cm²]", value=0.0, step=0.01, help="Cohesión del suelo de relleno")
+            alpha = st.number_input("Ángulo de inclinación del terreno (α) [°]", value=10.0, step=0.1, help="Ángulo de inclinación del terreno natural")
             
-            st.subheader("Propiedades del Suelo")
-            phi1 = st.number_input("Ángulo de fricción del suelo (φ₁') [°]", value=32.0, step=1.0, help="Ángulo de fricción interna del suelo de relleno")
-            delta = st.number_input("Ángulo de fricción muro-suelo (δ) [°]", value=21.0, step=1.0, help="Ángulo de fricción entre el muro y el relleno")
-            gamma1 = st.number_input("Peso específico del suelo (γ₁) [t/m³]", value=1.85, step=0.05, help="Peso específico del suelo de relleno")
+            st.subheader("Datos del Suelo de la Base")
+            gamma2 = st.number_input("Peso específico del suelo de la base (γ₂) [t/m³]", value=1.80, step=0.01, help="Peso específico del suelo de la base")
+            cohesion2 = st.number_input("Cohesión del suelo de la base (c'₂) [kg/cm²]", value=0.30, step=0.01, help="Cohesión del suelo de la base")
+            sigma_u = st.number_input("Capacidad de carga de la base (σᵤ) [kg/cm²]", value=2.50, step=0.01, help="Capacidad portante de la base")
+            phi2 = st.number_input("Ángulo de fricción del suelo de la base (φ'₂) [°]", value=24.0, step=0.1, help="Ángulo de fricción interna del suelo de la base")
         
         with col2:
-            st.subheader("Geometría del Terreno")
-            alpha = st.number_input("Ángulo de inclinación del terreno (α) [°]", value=10.0, step=1.0, help="Ángulo de inclinación del terreno natural")
-            
-            st.subheader("Cargas")
-            S_c = st.number_input("Sobrecarga (S/c) [kg/m²]", value=750, step=50, help="Sobrecarga aplicada sobre el terreno")
-            
-            st.subheader("Información Adicional")
-            st.info("**Valores típicos de δ (ángulo de fricción muro-suelo):**")
-            st.write("• Arena gruesa: 21°")
-            st.write("• Arena fina: 17°")
-            st.write("• Grava: 25°")
-            st.write("• Arcilla: 15°")
+            st.subheader("Datos del Muro")
+            gamma_muro = st.number_input("Peso específico del muro (γ_muro) [t/m³]", value=2.40, step=0.01, help="Peso específico del concreto del muro")
+            S_c = st.number_input("Sobrecarga (S/c) [kg/m²]", value=750, step=10, help="Sobrecarga aplicada sobre el terreno")
+            H = st.number_input("Altura total del muro (H) [m]", value=4.00, step=0.01, help="Altura total del muro de contención")
+            D = st.number_input("Profundidad de desplante (D) [m]", value=1.00, step=0.01, help="Profundidad de desplante del muro")
+            h1 = st.number_input("Altura del talud (h1) [m]", value=3.00, step=0.01, help="Altura del talud que contiene el suelo")
+            t2 = st.number_input("Base del triángulo 2 (t2) [m]", value=0.30, step=0.01, help="Base del triángulo de inclinación del muro")
+            b2 = st.number_input("Longitud del talón (b2) [m]", value=1.00, step=0.01, help="Longitud del talón del muro")
+            delta = st.number_input("Ángulo de fricción muro-suelo (δ) [°]", value=21.0, step=0.1, help="Ángulo de fricción entre el muro y el relleno")
         
         # Botones para diferentes cálculos
         st.subheader("🔬 Cálculos Específicos")
@@ -2325,22 +2357,16 @@ else:
         
         with col1:
             if st.button("📐 Calcular Ángulo β", type="primary"):
-                # Calcular ángulo de inclinación del muro
                 beta = math.atan((H - h1) / t2)
                 beta_deg = math.degrees(beta)
-                
                 st.success(f"✅ Ángulo de inclinación del muro (β) = {beta_deg:.2f}°")
                 st.info(f"β = arctan((H - h1) / t2) = arctan(({H} - {h1}) / {t2}) = {beta_deg:.2f}°")
-        
         with col2:
             if st.button("📊 Calcular Coeficiente Ka", type="primary"):
-                # Calcular coeficiente de empuje activo
                 beta = math.atan((H - h1) / t2)
                 phi1_rad = math.radians(phi1)
                 delta_rad = math.radians(delta)
                 alpha_rad = math.radians(alpha)
-                
-                # Fórmula de Coulomb para Ka
                 numerador = math.sin(beta + phi1_rad)**2
                 denominador = math.sin(beta)**2 * math.sin(beta - delta_rad) * (
                     1 + math.sqrt(
@@ -2348,50 +2374,39 @@ else:
                         (math.sin(beta - delta_rad) * math.sin(beta + alpha_rad))
                     )
                 )**2
-                
                 Ka = numerador / denominador
-                
                 st.success(f"✅ Coeficiente de empuje activo (Ka) = {Ka:.6f}")
                 st.info("Calculado según la fórmula de Coulomb")
-        
         with col3:
             if st.button("📏 Calcular Altura Efectiva", type="primary"):
-                # Calcular altura efectiva
                 alpha_rad = math.radians(alpha)
                 H_efectiva = H + (t2/2 + b2/2) * math.tan(alpha_rad)
-                
                 st.success(f"✅ Altura efectiva del muro (H') = {H_efectiva:.2f} m")
                 st.info(f"H' = H + (t₂/2 + b₂/2) · tan(α) = {H} + ({t2/2:.2f} + {b2/2:.2f}) · tan({alpha}°) = {H_efectiva:.2f} m")
-        
         with col4:
             if st.button("⚖️ Calcular Empuje Total", type="primary"):
-                # Calcular empuje activo total
                 datos_entrada = {
                     'H': H, 'h1': h1, 't2': t2, 'b2': b2,
                     'phi1': phi1, 'delta': delta, 'alpha': alpha,
-                    'gamma1': gamma1, 'S_c': S_c
+                    'gamma1': gamma1, 'S_c': S_c,
+                    'cohesion1': cohesion1, 'gamma2': gamma2, 'cohesion2': cohesion2,
+                    'sigma_u': sigma_u, 'phi2': phi2, 'gamma_muro': gamma_muro, 'D': D
                 }
-                
                 resultados_coulomb = calcular_empuje_coulomb(datos_entrada)
-                
                 st.success("✅ Empuje activo calculado según Coulomb")
                 st.info(f"Empuje total horizontal = {resultados_coulomb['P_total_horizontal']:.3f} t/m")
-        
         # Botón para análisis completo
         if st.button("🚀 Ejecutar Análisis Completo Coulomb", type="primary"):
-            # Calcular todos los parámetros
             datos_entrada = {
                 'H': H, 'h1': h1, 't2': t2, 'b2': b2,
                 'phi1': phi1, 'delta': delta, 'alpha': alpha,
-                'gamma1': gamma1, 'S_c': S_c
+                'gamma1': gamma1, 'S_c': S_c,
+                'cohesion1': cohesion1, 'gamma2': gamma2, 'cohesion2': cohesion2,
+                'sigma_u': sigma_u, 'phi2': phi2, 'gamma_muro': gamma_muro, 'D': D
             }
-            
             resultados_coulomb = calcular_empuje_coulomb(datos_entrada)
-            
-            # Guardar resultados en session state
             st.session_state['resultados_coulomb'] = resultados_coulomb
             st.session_state['datos_entrada_coulomb'] = datos_entrada
-            
             st.success("¡Análisis Coulomb completado exitosamente!")
             st.balloons()
             
@@ -2678,7 +2693,9 @@ else:
                     datos_entrada_coulomb = {
                         'H': H, 'h1': h1, 't2': t2, 'b2': b2,
                         'phi1': phi1, 'delta': delta, 'alpha': alpha,
-                        'gamma1': gamma1, 'S_c': S_c
+                        'gamma1': gamma1, 'S_c': S_c,
+                        'cohesion1': cohesion1, 'gamma2': gamma2, 'cohesion2': cohesion2,
+                        'sigma_u': sigma_u, 'phi2': phi2, 'gamma_muro': gamma_muro, 'D': D
                     }
                     
                     # Crear resultados para el PDF
