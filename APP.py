@@ -2521,64 +2521,136 @@ else:
             
             # Gráficos adicionales para Coulomb
             st.subheader("📈 Gráficos Adicionales - Análisis Coulomb")
-            
             # Gráfico de componentes del empuje
             col1, col2 = st.columns(2)
-            
             with col1:
                 datos_componentes = pd.DataFrame({
                     'Componente': ['Empuje Total (Pa)', 'Componente Horizontal (Ph)', 'Componente Vertical (Pv)', 'Empuje Sobrecarga (PSC)'],
-                    'Valor (t/m)': [resultados_coulomb['Pa'], resultados_coulomb['Ph'], resultados_coulomb['Pv'], resultados_coulomb['PSC']]
+                    'Valor (t/m)': [resultados_coulomb['Pa'], resultados_coulomb['Ph'], resultados_coulomb['Pv'], resultados_coulomb['PSC']],
+                    'γ₁ (t/m³)': [gamma1]*4,
+                    "φ'₁ (°)": [phi1]*4,
+                    "c'₁ (kg/cm²)": [cohesion1]*4,
+                    "α (°)": [alpha]*4,
+                    'γ₂ (t/m³)': [gamma2]*4,
+                    "c'₂ (kg/cm²)": [cohesion2]*4,
+                    'σᵤ (kg/cm²)': [sigma_u]*4,
+                    "φ'₂ (°)": [phi2]*4,
+                    'γ_muro (t/m³)': [gamma_muro]*4,
+                    'S/c (kg/m²)': [S_c]*4,
+                    'H (m)': [H]*4,
+                    'D (m)': [D]*4,
+                    'h1 (m)': [h1]*4,
+                    't2 (m)': [t2]*4,
+                    'b2 (m)': [b2]*4,
+                    'δ (°)': [delta]*4
                 })
-                
                 if PLOTLY_AVAILABLE:
-                    fig_comp = px.bar(datos_componentes, x='Componente', y='Valor (t/m)',
-                                     title="Componentes del Empuje Activo - Coulomb",
-                                     color='Componente',
-                                     color_discrete_map={
-                                         'Empuje Total (Pa)': '#FF6B6B',
-                                         'Componente Horizontal (Ph)': '#4ECDC4',
-                                         'Componente Vertical (Pv)': '#45B7D1',
-                                         'Empuje Sobrecarga (PSC)': '#96CEB4'
-                                     })
-                    
-                    fig_comp.update_layout(
-                        xaxis_title="Componente",
-                        yaxis_title="Valor (t/m)",
-                        height=400
+                    fig_comp = px.bar(
+                        datos_componentes, x='Componente', y='Valor (t/m)',
+                        title="Componentes del Empuje Activo - Coulomb",
+                        color='Componente',
+                        color_discrete_map={
+                            'Empuje Total (Pa)': '#FF6B6B',
+                            'Componente Horizontal (Ph)': '#4ECDC4',
+                            'Componente Vertical (Pv)': '#45B7D1',
+                            'Empuje Sobrecarga (PSC)': '#96CEB4'
+                        },
+                        custom_data=[
+                            'γ₁ (t/m³)', "φ'₁ (°)", "c'₁ (kg/cm²)", "α (°)",
+                            'γ₂ (t/m³)', "c'₂ (kg/cm²)", 'σᵤ (kg/cm²)', "φ'₂ (°)",
+                            'γ_muro (t/m³)', 'S/c (kg/m²)', 'H (m)', 'D (m)', 'h1 (m)', 't2 (m)', 'b2 (m)', 'δ (°)'
+                        ]
                     )
-                    
-                    fig_comp.update_traces(texttemplate='%{y:.3f}', textposition='outside')
+                    fig_comp.update_traces(
+                        texttemplate='%{y:.3f}', textposition='outside',
+                        hovertemplate="<b>%{x}</b><br>Valor: %{y:.3f} t/m" +
+                        "<br>γ₁: %{customdata[0]} t/m³" +
+                        "<br>φ'₁: %{customdata[1]}°" +
+                        "<br>c'₁: %{customdata[2]} kg/cm²" +
+                        "<br>α: %{customdata[3]}°" +
+                        "<br>γ₂: %{customdata[4]} t/m³" +
+                        "<br>c'₂: %{customdata[5]} kg/cm²" +
+                        "<br>σᵤ: %{customdata[6]} kg/cm²" +
+                        "<br>φ'₂: %{customdata[7]}°" +
+                        "<br>γ_muro: %{customdata[8]} t/m³" +
+                        "<br>S/c: %{customdata[9]} kg/m²" +
+                        "<br>H: %{customdata[10]} m" +
+                        "<br>D: %{customdata[11]} m" +
+                        "<br>h1: %{customdata[12]} m" +
+                        "<br>t2: %{customdata[13]} m" +
+                        "<br>b2: %{customdata[14]} m" +
+                        "<br>δ: %{customdata[15]}°<extra></extra>"
+                    )
                     st.plotly_chart(fig_comp, use_container_width=True)
-            
+                # Leyenda textual de parámetros
+                st.markdown(f"""
+                **Parámetros de Entrada:**
+                - γ₁ (relleno): {gamma1} t/m³, φ'₁: {phi1}°, c'₁: {cohesion1} kg/cm², α: {alpha}°
+                - γ₂ (base): {gamma2} t/m³, φ'₂: {phi2}°, c'₂: {cohesion2} kg/cm², σᵤ: {sigma_u} kg/cm²
+                - γ_muro: {gamma_muro} t/m³, S/c: {S_c} kg/m², H: {H} m, D: {D} m, h1: {h1} m, t2: {t2} m, b2: {b2} m, δ: {delta}°
+                """)
             with col2:
                 # Gráfico de parámetros geométricos
                 datos_geometricos = pd.DataFrame({
-                    'Parámetro': ['Altura Total (H)', 'Altura Efectiva (H\')', 'Ángulo β', 'Ángulo α'],
-                    'Valor': [H, resultados_coulomb['H_efectiva'], resultados_coulomb['beta'], alpha],
-                    'Unidad': ['m', 'm', '°', '°']
+                    'Parámetro': ['Altura Total (H)', 'Altura Efectiva (H\')', 'Ángulo β', 'Ángulo α', 'Ángulo δ'],
+                    'Valor': [H, resultados_coulomb['H_efectiva'], resultados_coulomb['beta'], alpha, delta],
+                    'Unidad': ['m', 'm', '°', '°', '°'],
+                    'γ₁ (t/m³)': [gamma1]*5,
+                    "φ'₁ (°)": [phi1]*5,
+                    "c'₁ (kg/cm²)": [cohesion1]*5,
+                    "α (°)": [alpha]*5,
+                    'γ₂ (t/m³)': [gamma2]*5,
+                    "c'₂ (kg/cm²)": [cohesion2]*5,
+                    'σᵤ (kg/cm²)': [sigma_u]*5,
+                    "φ'₂ (°)": [phi2]*5,
+                    'γ_muro (t/m³)': [gamma_muro]*5,
+                    'S/c (kg/m²)': [S_c]*5,
+                    'D (m)': [D]*5,
+                    'h1 (m)': [h1]*5,
+                    't2 (m)': [t2]*5,
+                    'b2 (m)': [b2]*5
                 })
-                
                 if PLOTLY_AVAILABLE:
-                    fig_geo = px.bar(datos_geometricos, x='Parámetro', y='Valor',
-                                    title="Parámetros Geométricos - Coulomb",
-                                    color='Parámetro',
-                                    color_discrete_map={
-                                        'Altura Total (H)': '#FFD93D',
-                                        'Altura Efectiva (H\')': '#6BCF7F',
-                                        'Ángulo β': '#4D96FF',
-                                        'Ángulo α': '#FF6B6B'
-                                    })
-                    
-                    fig_geo.update_layout(
-                        xaxis_title="Parámetro",
-                        yaxis_title="Valor",
-                        height=400
+                    fig_geo = px.bar(
+                        datos_geometricos, x='Parámetro', y='Valor',
+                        title="Parámetros Geométricos - Coulomb",
+                        color='Parámetro',
+                        color_discrete_map={
+                            'Altura Total (H)': '#FFD93D',
+                            'Altura Efectiva (H\')': '#6BCF7F',
+                            'Ángulo β': '#4D96FF',
+                            'Ángulo α': '#FF6B6B',
+                            'Ángulo δ': '#9B59B6'
+                        },
+                        custom_data=[
+                            'Unidad', 'γ₁ (t/m³)', "φ'₁ (°)", "c'₁ (kg/cm²)", "α (°)",
+                            'γ₂ (t/m³)', "c'₂ (kg/cm²)", 'σᵤ (kg/cm²)', "φ'₂ (°)",
+                            'γ_muro (t/m³)', 'S/c (kg/m²)', 'D (m)', 'h1 (m)', 't2 (m)', 'b2 (m)'
+                        ]
                     )
-                    
-                    fig_geo.update_traces(texttemplate='%{y:.2f}', textposition='outside')
+                    fig_geo.update_traces(
+                        texttemplate='%{y:.2f}', textposition='outside',
+                        hovertemplate="<b>%{x}</b><br>Valor: %{y:.2f} %{customdata[0]}" +
+                        "<br>γ₁: %{customdata[1]} t/m³" +
+                        "<br>φ'₁: %{customdata[2]}°" +
+                        "<br>c'₁: %{customdata[3]} kg/cm²" +
+                        "<br>α: %{customdata[4]}°" +
+                        "<br>γ₂: %{customdata[5]} t/m³" +
+                        "<br>c'₂: %{customdata[6]} kg/cm²" +
+                        "<br>σᵤ: %{customdata[7]} kg/cm²" +
+                        "<br>φ'₂: %{customdata[8]}°" +
+                        "<br>γ_muro: %{customdata[9]} t/m³" +
+                        "<br>S/c: %{customdata[10]} kg/m²" +
+                        "<br>D: %{customdata[11]} m" +
+                        "<br>h1: %{customdata[12]} m" +
+                        "<br>t2: %{customdata[13]} m" +
+                        "<br>b2: %{customdata[14]} m<extra></extra>"
+                    )
                     st.plotly_chart(fig_geo, use_container_width=True)
-            
+                st.markdown(f"""
+                **Parámetros de Entrada Geométricos:**
+                - H: {H} m, H': {resultados_coulomb['H_efectiva']:.2f} m, β: {resultados_coulomb['beta']:.2f}°, α: {alpha}°, δ: {delta}°
+                """)
             # Gráfico del muro de contención para Coulomb
             st.subheader("🏗️ Visualización del Muro de Contención - Coulomb")
             st.info("Representación gráfica del muro con análisis Coulomb")
@@ -2610,6 +2682,7 @@ else:
             - 🔵 **Dimensiones en azul:** Medidas calculadas del muro
             - 📐 **Ángulo β:** Inclinación del muro respecto a la vertical
             - 📐 **Ángulo α:** Inclinación del terreno natural
+            - 📐 **Ángulo δ:** Fricción entre muro y relleno
             """)
             
             # Botones para generar reportes
@@ -3291,27 +3364,68 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                     datos_fuerzas = pd.DataFrame({
                         'Fuerza': ['Empuje Activo', 'Empuje Pasivo', 'Peso Total'],
                         'Valor (tn/m)': [resultados['Ea_total'], resultados['Ep'], 
-                                        resultados['W_total']]
+                                        resultados['W_total']],
+                        'h1 (m)': [resultados['h1']]*3,
+                        'Df (m)': [resultados['Df']]*3,
+                        'hm (m)': [resultados['hm']]*3,
+                        'γ_relleno (kg/m³)': [resultados['gamma_relleno']]*3,
+                        'φ_relleno (°)': [resultados['phi_relleno']]*3,
+                        'γ_cimentacion (kg/m³)': [resultados['gamma_cimentacion']]*3,
+                        'φ_cimentacion (°)': [resultados['phi_cimentacion']]*3,
+                        'c (t/m²)': [resultados['cohesion']]*3,
+                        'σ_adm (kg/cm²)': [resultados['sigma_adm']]*3,
+                        'γ_concreto (kg/m³)': [resultados['gamma_concreto']]*3,
+                        'qsc (kg/m²)': [resultados['qsc']]*3,
+                        'fc (kg/cm²)': [resultados['fc']]*3,
+                        'fy (kg/cm²)': [resultados['fy']]*3
                     })
                     
                     if PLOTLY_AVAILABLE:
-                        fig1 = px.bar(datos_fuerzas, x='Fuerza', y='Valor (tn/m)',
-                                     title="Análisis de Fuerzas - Rankine",
-                                     color='Fuerza',
-                                     color_discrete_map={
-                                         'Empuje Activo': '#DC143C',
-                                         'Empuje Pasivo': '#2E8B57',
-                                         'Peso Total': '#4169E1'
-                                     })
-                        
-                        fig1.update_layout(
-                            xaxis_title="Tipo de Fuerza",
-                            yaxis_title="Valor (tn/m)",
-                            height=400
+                        fig1 = px.bar(
+                            datos_fuerzas, x='Fuerza', y='Valor (tn/m)',
+                            title="Análisis de Fuerzas - Rankine",
+                            color='Fuerza',
+                            color_discrete_map={
+                                'Empuje Activo': '#DC143C',
+                                'Empuje Pasivo': '#2E8B57',
+                                'Peso Total': '#4169E1'
+                            },
+                            custom_data=[
+                                'h1 (m)', 'Df (m)', 'hm (m)', 'γ_relleno (kg/m³)', 'φ_relleno (°)',
+                                'γ_cimentacion (kg/m³)', 'φ_cimentacion (°)', 'c (t/m²)', 'σ_adm (kg/cm²)',
+                                'γ_concreto (kg/m³)', 'qsc (kg/m²)', 'fc (kg/cm²)', 'fy (kg/cm²)'
+                            ]
                         )
                         
-                        fig1.update_traces(texttemplate='%{y:.2f}', textposition='outside')
+                        fig1.update_traces(
+                            texttemplate='%{y:.2f}', textposition='outside',
+                            hovertemplate="<b>%{x}</b><br>Valor: %{y:.2f} tn/m" +
+                            "<br>h1: %{customdata[0]} m" +
+                            "<br>Df: %{customdata[1]} m" +
+                            "<br>hm: %{customdata[2]} m" +
+                            "<br>γ_relleno: %{customdata[3]} kg/m³" +
+                            "<br>φ_relleno: %{customdata[4]}°" +
+                            "<br>γ_cimentacion: %{customdata[5]} kg/m³" +
+                            "<br>φ_cimentacion: %{customdata[6]}°" +
+                            "<br>c: %{customdata[7]} t/m²" +
+                            "<br>σ_adm: %{customdata[8]} kg/cm²" +
+                            "<br>γ_concreto: %{customdata[9]} kg/m³" +
+                            "<br>qsc: %{customdata[10]} kg/m²" +
+                            "<br>fc: %{customdata[11]} kg/cm²" +
+                            "<br>fy: %{customdata[12]} kg/cm²<extra></extra>"
+                        )
                         st.plotly_chart(fig1, use_container_width=True)
+                    
+                    # Leyenda textual de parámetros Rankine
+                    st.markdown(f"""
+                    **Parámetros de Entrada - Rankine:**
+                    - h1: {resultados['h1']} m, Df: {resultados['Df']} m, hm: {resultados['hm']} m
+                    - γ_relleno: {resultados['gamma_relleno']} kg/m³, φ_relleno: {resultados['phi_relleno']}°
+                    - γ_cimentacion: {resultados['gamma_cimentacion']} kg/m³, φ_cimentacion: {resultados['phi_cimentacion']}°
+                    - c: {resultados['cohesion']} t/m², σ_adm: {resultados['sigma_adm']} kg/cm²
+                    - γ_concreto: {resultados['gamma_concreto']} kg/m³, qsc: {resultados['qsc']} kg/m²
+                    - fc: {resultados['fc']} kg/cm², fy: {resultados['fy']} kg/cm²
+                    """)
                 
                 with col2:
                     # Gráfico de momentos
@@ -3333,29 +3447,66 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                 dimensiones = {
                     'Dimensión': ['Bz', 'hz', 'b', 'r', 't'],
                     'Valor (m)': [resultados['Bz'], resultados['hz'], resultados['b'], 
-                                 resultados['r'], resultados['t']]
+                                 resultados['r'], resultados['t']],
+                    'h1 (m)': [resultados['h1']]*5,
+                    'Df (m)': [resultados['Df']]*5,
+                    'hm (m)': [resultados['hm']]*5,
+                    'γ_relleno (kg/m³)': [resultados['gamma_relleno']]*5,
+                    'φ_relleno (°)': [resultados['phi_relleno']]*5,
+                    'γ_cimentacion (kg/m³)': [resultados['gamma_cimentacion']]*5,
+                    'φ_cimentacion (°)': [resultados['phi_cimentacion']]*5,
+                    'c (t/m²)': [resultados['cohesion']]*5,
+                    'σ_adm (kg/cm²)': [resultados['sigma_adm']]*5,
+                    'γ_concreto (kg/m³)': [resultados['gamma_concreto']]*5,
+                    'qsc (kg/m²)': [resultados['qsc']]*5,
+                    'fc (kg/cm²)': [resultados['fc']]*5,
+                    'fy (kg/cm²)': [resultados['fy']]*5
                 }
                 
                 if PLOTLY_AVAILABLE:
-                    fig3 = px.bar(pd.DataFrame(dimensiones), x='Dimensión', y='Valor (m)',
-                                 title="Dimensiones Calculadas del Muro - Rankine",
-                                 color='Dimensión',
-                                 color_discrete_map={
-                                     'Bz': '#FF1493',
-                                     'hz': '#00CED1',
-                                     'b': '#32CD32',
-                                     'r': '#FFD700',
-                                     't': '#FF6347'
-                                 })
-                    
-                    fig3.update_layout(
-                        xaxis_title="Dimensión",
-                        yaxis_title="Valor (m)",
-                        height=400
+                    fig3 = px.bar(
+                        pd.DataFrame(dimensiones), x='Dimensión', y='Valor (m)',
+                        title="Dimensiones Calculadas del Muro - Rankine",
+                        color='Dimensión',
+                        color_discrete_map={
+                            'Bz': '#FF1493',
+                            'hz': '#00CED1',
+                            'b': '#32CD32',
+                            'r': '#FFD700',
+                            't': '#FF6347'
+                        },
+                        custom_data=[
+                            'h1 (m)', 'Df (m)', 'hm (m)', 'γ_relleno (kg/m³)', 'φ_relleno (°)',
+                            'γ_cimentacion (kg/m³)', 'φ_cimentacion (°)', 'c (t/m²)', 'σ_adm (kg/cm²)',
+                            'γ_concreto (kg/m³)', 'qsc (kg/m²)', 'fc (kg/cm²)', 'fy (kg/cm²)'
+                        ]
                     )
                     
-                    fig3.update_traces(texttemplate='%{y:.2f}', textposition='outside')
+                    fig3.update_traces(
+                        texttemplate='%{y:.2f}', textposition='outside',
+                        hovertemplate="<b>%{x}</b><br>Valor: %{y:.2f} m" +
+                        "<br>h1: %{customdata[0]} m" +
+                        "<br>Df: %{customdata[1]} m" +
+                        "<br>hm: %{customdata[2]} m" +
+                        "<br>γ_relleno: %{customdata[3]} kg/m³" +
+                        "<br>φ_relleno: %{customdata[4]}°" +
+                        "<br>γ_cimentacion: %{customdata[5]} kg/m³" +
+                        "<br>φ_cimentacion: %{customdata[6]}°" +
+                        "<br>c: %{customdata[7]} t/m²" +
+                        "<br>σ_adm: %{customdata[8]} kg/cm²" +
+                        "<br>γ_concreto: %{customdata[9]} kg/m³" +
+                        "<br>qsc: %{customdata[10]} kg/m²" +
+                        "<br>fc: %{customdata[11]} kg/cm²" +
+                        "<br>fy: %{customdata[12]} kg/cm²<extra></extra>"
+                    )
                     st.plotly_chart(fig3, use_container_width=True)
+                
+                # Leyenda textual de dimensiones Rankine
+                st.markdown(f"""
+                **Dimensiones Calculadas - Rankine:**
+                - Bz: {resultados['Bz']:.2f} m, hz: {resultados['hz']:.2f} m, b: {resultados['b']:.2f} m
+                - r: {resultados['r']:.2f} m, t: {resultados['t']:.2f} m, hm: {resultados['hm']:.2f} m
+                """)
                 
                 # Gráfico de factores de seguridad
                 st.subheader("🛡️ Factores de Seguridad - Rankine")
@@ -3365,51 +3516,126 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                     datos_fs = pd.DataFrame({
                         'Verificación': ['Volcamiento', 'Deslizamiento'],
                         'Factor de Seguridad': [resultados['FS_volcamiento'], resultados['FS_deslizamiento']],
-                        'Límite': [2.0, 1.5]
+                        'Límite': [2.0, 1.5],
+                        'h1 (m)': [resultados['h1']]*2,
+                        'Df (m)': [resultados['Df']]*2,
+                        'hm (m)': [resultados['hm']]*2,
+                        'γ_relleno (kg/m³)': [resultados['gamma_relleno']]*2,
+                        'φ_relleno (°)': [resultados['phi_relleno']]*2,
+                        'γ_cimentacion (kg/m³)': [resultados['gamma_cimentacion']]*2,
+                        'φ_cimentacion (°)': [resultados['phi_cimentacion']]*2,
+                        'c (t/m²)': [resultados['cohesion']]*2,
+                        'σ_adm (kg/cm²)': [resultados['sigma_adm']]*2,
+                        'γ_concreto (kg/m³)': [resultados['gamma_concreto']]*2,
+                        'qsc (kg/m²)': [resultados['qsc']]*2,
+                        'fc (kg/cm²)': [resultados['fc']]*2,
+                        'fy (kg/cm²)': [resultados['fy']]*2
                     })
                     
                     if PLOTLY_AVAILABLE:
-                        fig_fs = px.bar(datos_fs, x='Verificación', y=['Factor de Seguridad', 'Límite'],
-                                       title="Factores de Seguridad - Rankine",
-                                       barmode='group',
-                                       color_discrete_map={
-                                           'Factor de Seguridad': '#4ECDC4',
-                                           'Límite': '#FF6B6B'
-                                       })
-                        
-                        fig_fs.update_layout(
-                            xaxis_title="Verificación",
-                            yaxis_title="Factor de Seguridad",
-                            height=400
+                        fig_fs = px.bar(
+                            datos_fs, x='Verificación', y=['Factor de Seguridad', 'Límite'],
+                            title="Factores de Seguridad - Rankine",
+                            barmode='group',
+                            color_discrete_map={
+                                'Factor de Seguridad': '#4ECDC4',
+                                'Límite': '#FF6B6B'
+                            },
+                            custom_data=[
+                                'h1 (m)', 'Df (m)', 'hm (m)', 'γ_relleno (kg/m³)', 'φ_relleno (°)',
+                                'γ_cimentacion (kg/m³)', 'φ_cimentacion (°)', 'c (t/m²)', 'σ_adm (kg/cm²)',
+                                'γ_concreto (kg/m³)', 'qsc (kg/m²)', 'fc (kg/cm²)', 'fy (kg/cm²)'
+                            ]
                         )
                         
-                        fig_fs.update_traces(texttemplate='%{y:.2f}', textposition='outside')
+                        fig_fs.update_traces(
+                            texttemplate='%{y:.2f}', textposition='outside',
+                            hovertemplate="<b>%{x}</b><br>Valor: %{y:.2f}" +
+                            "<br>h1: %{customdata[0]} m" +
+                            "<br>Df: %{customdata[1]} m" +
+                            "<br>hm: %{customdata[2]} m" +
+                            "<br>γ_relleno: %{customdata[3]} kg/m³" +
+                            "<br>φ_relleno: %{customdata[4]}°" +
+                            "<br>γ_cimentacion: %{customdata[5]} kg/m³" +
+                            "<br>φ_cimentacion: %{customdata[6]}°" +
+                            "<br>c: %{customdata[7]} t/m²" +
+                            "<br>σ_adm: %{customdata[8]} kg/cm²" +
+                            "<br>γ_concreto: %{customdata[9]} kg/m³" +
+                            "<br>qsc: %{customdata[10]} kg/m²" +
+                            "<br>fc: %{customdata[11]} kg/cm²" +
+                            "<br>fy: %{customdata[12]} kg/cm²<extra></extra>"
+                        )
                         st.plotly_chart(fig_fs, use_container_width=True)
+                    
+                    # Leyenda textual de factores de seguridad
+                    st.markdown(f"""
+                    **Factores de Seguridad - Rankine:**
+                    - Volcamiento: {resultados['FS_volcamiento']:.2f} (Límite: 2.0)
+                    - Deslizamiento: {resultados['FS_deslizamiento']:.2f} (Límite: 1.5)
+                    """)
                 
                 with col2:
                     # Gráfico de presiones
                     datos_presiones = pd.DataFrame({
                         'Presión': ['Máxima', 'Mínima'],
-                        'Valor (kg/cm²)': [resultados['q_max_kg_cm2'], resultados['q_min_kg_cm2']]
+                        'Valor (kg/cm²)': [resultados['q_max_kg_cm2'], resultados['q_min_kg_cm2']],
+                        'h1 (m)': [resultados['h1']]*2,
+                        'Df (m)': [resultados['Df']]*2,
+                        'hm (m)': [resultados['hm']]*2,
+                        'γ_relleno (kg/m³)': [resultados['gamma_relleno']]*2,
+                        'φ_relleno (°)': [resultados['phi_relleno']]*2,
+                        'γ_cimentacion (kg/m³)': [resultados['gamma_cimentacion']]*2,
+                        'φ_cimentacion (°)': [resultados['phi_cimentacion']]*2,
+                        'c (t/m²)': [resultados['cohesion']]*2,
+                        'σ_adm (kg/cm²)': [resultados['sigma_adm']]*2,
+                        'γ_concreto (kg/m³)': [resultados['gamma_concreto']]*2,
+                        'qsc (kg/m²)': [resultados['qsc']]*2,
+                        'fc (kg/cm²)': [resultados['fc']]*2,
+                        'fy (kg/cm²)': [resultados['fy']]*2
                     })
                     
                     if PLOTLY_AVAILABLE:
-                        fig_pres = px.bar(datos_presiones, x='Presión', y='Valor (kg/cm²)',
-                                         title="Presiones sobre el Suelo - Rankine",
-                                         color='Presión',
-                                         color_discrete_map={
-                                             'Máxima': '#FF6B6B',
-                                             'Mínima': '#4ECDC4'
-                                         })
-                        
-                        fig_pres.update_layout(
-                            xaxis_title="Tipo de Presión",
-                            yaxis_title="Valor (kg/cm²)",
-                            height=400
+                        fig_pres = px.bar(
+                            datos_presiones, x='Presión', y='Valor (kg/cm²)',
+                            title="Presiones sobre el Suelo - Rankine",
+                            color='Presión',
+                            color_discrete_map={
+                                'Máxima': '#FF6B6B',
+                                'Mínima': '#4ECDC4'
+                            },
+                            custom_data=[
+                                'h1 (m)', 'Df (m)', 'hm (m)', 'γ_relleno (kg/m³)', 'φ_relleno (°)',
+                                'γ_cimentacion (kg/m³)', 'φ_cimentacion (°)', 'c (t/m²)', 'σ_adm (kg/cm²)',
+                                'γ_concreto (kg/m³)', 'qsc (kg/m²)', 'fc (kg/cm²)', 'fy (kg/cm²)'
+                            ]
                         )
                         
-                        fig_pres.update_traces(texttemplate='%{y:.2f}', textposition='outside')
+                        fig_pres.update_traces(
+                            texttemplate='%{y:.2f}', textposition='outside',
+                            hovertemplate="<b>%{x}</b><br>Valor: %{y:.2f} kg/cm²" +
+                            "<br>h1: %{customdata[0]} m" +
+                            "<br>Df: %{customdata[1]} m" +
+                            "<br>hm: %{customdata[2]} m" +
+                            "<br>γ_relleno: %{customdata[3]} kg/m³" +
+                            "<br>φ_relleno: %{customdata[4]}°" +
+                            "<br>γ_cimentacion: %{customdata[5]} kg/m³" +
+                            "<br>φ_cimentacion: %{customdata[6]}°" +
+                            "<br>c: %{customdata[7]} t/m²" +
+                            "<br>σ_adm: %{customdata[8]} kg/cm²" +
+                            "<br>γ_concreto: %{customdata[9]} kg/m³" +
+                            "<br>qsc: %{customdata[10]} kg/m²" +
+                            "<br>fc: %{customdata[11]} kg/cm²" +
+                            "<br>fy: %{customdata[12]} kg/cm²<extra></extra>"
+                        )
                         st.plotly_chart(fig_pres, use_container_width=True)
+                    
+                    # Leyenda textual de presiones
+                    st.markdown(f"""
+                    **Presiones sobre el Suelo - Rankine:**
+                    - Máxima: {resultados['q_max_kg_cm2']:.2f} kg/cm²
+                    - Mínima: {resultados['q_min_kg_cm2']:.2f} kg/cm²
+                    - Capacidad admisible: {resultados['sigma_adm']} kg/cm²
+                    """)
                 
                 # Gráfico del muro de contención
                 st.subheader("🏗️ Visualización del Muro de Contención - Rankine")
