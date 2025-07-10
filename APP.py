@@ -3434,21 +3434,21 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                 with col1:
                     datos_fuerzas = pd.DataFrame({
                         'Fuerza': ['Empuje Activo', 'Empuje Pasivo', 'Peso Total'],
-                        'Valor (tn/m)': [resultados['Ea_total'], resultados['Ep'], 
-                                        resultados['W_total']],
-                        'h1 (m)': [resultados['h1']]*3,
-                        'Df (m)': [resultados['Df']]*3,
-                        'hm (m)': [resultados['hm']]*3,
-                        'γ_relleno (kg/m³)': [resultados['gamma_relleno']]*3,
-                        'φ_relleno (°)': [resultados['phi_relleno']]*3,
-                        'γ_cimentacion (kg/m³)': [resultados['gamma_cimentacion']]*3,
-                        'φ_cimentacion (°)': [resultados['phi_cimentacion']]*3,
-                        'c (t/m²)': [resultados['cohesion']]*3,
-                        'σ_adm (kg/cm²)': [resultados['sigma_adm']]*3,
-                        'γ_concreto (kg/m³)': [resultados['gamma_concreto']]*3,
-                        'qsc (kg/m²)': [resultados['qsc']]*3,
-                        'fc (kg/cm²)': [resultados['fc']]*3,
-                        'fy (kg/cm²)': [resultados['fy']]*3
+                        'Valor (tn/m)': [resultados.get('Ea_total', 0), resultados.get('Ep', 0), 
+                                        resultados.get('W_total', 0)],
+                        'h1 (m)': [resultados.get('h1', 0)]*3,
+                        'Df (m)': [resultados.get('Df', 0)]*3,
+                        'hm (m)': [resultados.get('hm', 0)]*3,
+                        'γ_relleno (kg/m³)': [resultados.get('gamma_relleno', 0)]*3,
+                        'φ_relleno (°)': [resultados.get('phi_relleno', 0)]*3,
+                        'γ_cimentacion (kg/m³)': [resultados.get('gamma_cimentacion', 0)]*3,
+                        'φ_cimentacion (°)': [resultados.get('phi_cimentacion', 0)]*3,
+                        'c (t/m²)': [resultados.get('cohesion', 0)]*3,
+                        'σ_adm (kg/cm²)': [resultados.get('sigma_adm', 0)]*3,
+                        'γ_concreto (kg/m³)': [resultados.get('gamma_concreto', 0)]*3,
+                        'qsc (kg/m²)': [resultados.get('qsc', 0)]*3,
+                        'fc (kg/cm²)': [resultados.get('fc', 0)]*3,
+                        'fy (kg/cm²)': [resultados.get('fy', 0)]*3
                     })
                     
                     if PLOTLY_AVAILABLE:
@@ -3490,19 +3490,19 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                     # Leyenda textual de parámetros Rankine
                     st.markdown(f"""
                     **Parámetros de Entrada - Rankine:**
-                    - h1: {resultados['h1']} m, Df: {resultados['Df']} m, hm: {resultados['hm']} m
-                    - γ_relleno: {resultados['gamma_relleno']} kg/m³, φ_relleno: {resultados['phi_relleno']}°
-                    - γ_cimentacion: {resultados['gamma_cimentacion']} kg/m³, φ_cimentacion: {resultados['phi_cimentacion']}°
-                    - c: {resultados['cohesion']} t/m², σ_adm: {resultados['sigma_adm']} kg/cm²
-                    - γ_concreto: {resultados['gamma_concreto']} kg/m³, qsc: {resultados['qsc']} kg/m²
-                    - fc: {resultados['fc']} kg/cm², fy: {resultados['fy']} kg/cm²
+                    - h1: {resultados.get('h1', 0)} m, Df: {resultados.get('Df', 0)} m, hm: {resultados.get('hm', 0)} m
+                    - γ_relleno: {resultados.get('gamma_relleno', 0)} kg/m³, φ_relleno: {resultados.get('phi_relleno', 0)}°
+                    - γ_cimentacion: {resultados.get('gamma_cimentacion', 0)} kg/m³, φ_cimentacion: {resultados.get('phi_cimentacion', 0)}°
+                    - c: {resultados.get('cohesion', 0)} t/m², σ_adm: {resultados.get('sigma_adm', 0)} kg/cm²
+                    - γ_concreto: {resultados.get('gamma_concreto', 0)} kg/m³, qsc: {resultados.get('qsc', 0)} kg/m²
+                    - fc: {resultados.get('fc', 0)} kg/cm², fy: {resultados.get('fy', 0)} kg/cm²
                     """)
                 
                 with col2:
                     # Gráfico de momentos
                     datos_momentos = pd.DataFrame({
                         'Momento': ['Volcador', 'Estabilizador'],
-                        'Valor (tn·m/m)': [resultados['M_volcador'], resultados['M_estabilizador']]
+                        'Valor (tn·m/m)': [resultados.get('M_volcador', 0), resultados.get('M_estabilizador', 0)]
                     })
                     
                     if PLOTLY_AVAILABLE:
@@ -3517,21 +3517,21 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                 st.subheader("📏 Dimensiones del Muro - Rankine")
                 dimensiones = {
                     'Dimensión': ['Bz', 'hz', 'b', 'r', 't'],
-                    'Valor (m)': [resultados['Bz'], resultados['hz'], resultados['b'], 
-                                 resultados['r'], resultados['t']],
-                    'h1 (m)': [resultados['h1']]*5,
-                    'Df (m)': [resultados['Df']]*5,
-                    'hm (m)': [resultados['hm']]*5,
-                    'γ_relleno (kg/m³)': [resultados['gamma_relleno']]*5,
-                    'φ_relleno (°)': [resultados['phi_relleno']]*5,
-                    'γ_cimentacion (kg/m³)': [resultados['gamma_cimentacion']]*5,
-                    'φ_cimentacion (°)': [resultados['phi_cimentacion']]*5,
-                    'c (t/m²)': [resultados['cohesion']]*5,
-                    'σ_adm (kg/cm²)': [resultados['sigma_adm']]*5,
-                    'γ_concreto (kg/m³)': [resultados['gamma_concreto']]*5,
-                    'qsc (kg/m²)': [resultados['qsc']]*5,
-                    'fc (kg/cm²)': [resultados['fc']]*5,
-                    'fy (kg/cm²)': [resultados['fy']]*5
+                    'Valor (m)': [resultados.get('Bz', 0), resultados.get('hz', 0), resultados.get('b', 0), 
+                                 resultados.get('r', 0), resultados.get('t', 0)],
+                    'h1 (m)': [resultados.get('h1', 0)]*5,
+                    'Df (m)': [resultados.get('Df', 0)]*5,
+                    'hm (m)': [resultados.get('hm', 0)]*5,
+                    'γ_relleno (kg/m³)': [resultados.get('gamma_relleno', 0)]*5,
+                    'φ_relleno (°)': [resultados.get('phi_relleno', 0)]*5,
+                    'γ_cimentacion (kg/m³)': [resultados.get('gamma_cimentacion', 0)]*5,
+                    'φ_cimentacion (°)': [resultados.get('phi_cimentacion', 0)]*5,
+                    'c (t/m²)': [resultados.get('cohesion', 0)]*5,
+                    'σ_adm (kg/cm²)': [resultados.get('sigma_adm', 0)]*5,
+                    'γ_concreto (kg/m³)': [resultados.get('gamma_concreto', 0)]*5,
+                    'qsc (kg/m²)': [resultados.get('qsc', 0)]*5,
+                    'fc (kg/cm²)': [resultados.get('fc', 0)]*5,
+                    'fy (kg/cm²)': [resultados.get('fy', 0)]*5
                 }
                 
                 if PLOTLY_AVAILABLE:
@@ -3575,8 +3575,8 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                 # Leyenda textual de dimensiones Rankine
                 st.markdown(f"""
                 **Dimensiones Calculadas - Rankine:**
-                - Bz: {resultados['Bz']:.2f} m, hz: {resultados['hz']:.2f} m, b: {resultados['b']:.2f} m
-                - r: {resultados['r']:.2f} m, t: {resultados['t']:.2f} m, hm: {resultados['hm']:.2f} m
+                - Bz: {resultados.get('Bz', 0):.2f} m, hz: {resultados.get('hz', 0):.2f} m, b: {resultados.get('b', 0):.2f} m
+                - r: {resultados.get('r', 0):.2f} m, t: {resultados.get('t', 0):.2f} m, hm: {resultados.get('hm', 0):.2f} m
                 """)
                 
                 # Gráfico de factores de seguridad
@@ -3586,21 +3586,21 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                 with col1:
                     datos_fs = pd.DataFrame({
                         'Verificación': ['Volcamiento', 'Deslizamiento'],
-                        'Factor de Seguridad': [resultados['FS_volcamiento'], resultados['FS_deslizamiento']],
+                        'Factor de Seguridad': [resultados.get('FS_volcamiento', 0), resultados.get('FS_deslizamiento', 0)],
                         'Límite': [2.0, 1.5],
-                        'h1 (m)': [resultados['h1']]*2,
-                        'Df (m)': [resultados['Df']]*2,
-                        'hm (m)': [resultados['hm']]*2,
-                        'γ_relleno (kg/m³)': [resultados['gamma_relleno']]*2,
-                        'φ_relleno (°)': [resultados['phi_relleno']]*2,
-                        'γ_cimentacion (kg/m³)': [resultados['gamma_cimentacion']]*2,
-                        'φ_cimentacion (°)': [resultados['phi_cimentacion']]*2,
-                        'c (t/m²)': [resultados['cohesion']]*2,
-                        'σ_adm (kg/cm²)': [resultados['sigma_adm']]*2,
-                        'γ_concreto (kg/m³)': [resultados['gamma_concreto']]*2,
-                        'qsc (kg/m²)': [resultados['qsc']]*2,
-                        'fc (kg/cm²)': [resultados['fc']]*2,
-                        'fy (kg/cm²)': [resultados['fy']]*2
+                        'h1 (m)': [resultados.get('h1', 0)]*2,
+                        'Df (m)': [resultados.get('Df', 0)]*2,
+                        'hm (m)': [resultados.get('hm', 0)]*2,
+                        'γ_relleno (kg/m³)': [resultados.get('gamma_relleno', 0)]*2,
+                        'φ_relleno (°)': [resultados.get('phi_relleno', 0)]*2,
+                        'γ_cimentacion (kg/m³)': [resultados.get('gamma_cimentacion', 0)]*2,
+                        'φ_cimentacion (°)': [resultados.get('phi_cimentacion', 0)]*2,
+                        'c (t/m²)': [resultados.get('cohesion', 0)]*2,
+                        'σ_adm (kg/cm²)': [resultados.get('sigma_adm', 0)]*2,
+                        'γ_concreto (kg/m³)': [resultados.get('gamma_concreto', 0)]*2,
+                        'qsc (kg/m²)': [resultados.get('qsc', 0)]*2,
+                        'fc (kg/cm²)': [resultados.get('fc', 0)]*2,
+                        'fy (kg/cm²)': [resultados.get('fy', 0)]*2
                     })
                     
                     if PLOTLY_AVAILABLE:
@@ -3641,28 +3641,28 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                     # Leyenda textual de factores de seguridad
                     st.markdown(f"""
                     **Factores de Seguridad - Rankine:**
-                    - Volcamiento: {resultados['FS_volcamiento']:.2f} (Límite: 2.0)
-                    - Deslizamiento: {resultados['FS_deslizamiento']:.2f} (Límite: 1.5)
+                    - Volcamiento: {resultados.get('FS_volcamiento', 0):.2f} (Límite: 2.0)
+                    - Deslizamiento: {resultados.get('FS_deslizamiento', 0):.2f} (Límite: 1.5)
                     """)
                 
                 with col2:
                     # Gráfico de presiones
                     datos_presiones = pd.DataFrame({
                         'Presión': ['Máxima', 'Mínima'],
-                        'Valor (kg/cm²)': [resultados['q_max_kg_cm2'], resultados['q_min_kg_cm2']],
-                        'h1 (m)': [resultados['h1']]*2,
-                        'Df (m)': [resultados['Df']]*2,
-                        'hm (m)': [resultados['hm']]*2,
-                        'γ_relleno (kg/m³)': [resultados['gamma_relleno']]*2,
-                        'φ_relleno (°)': [resultados['phi_relleno']]*2,
-                        'γ_cimentacion (kg/m³)': [resultados['gamma_cimentacion']]*2,
-                        'φ_cimentacion (°)': [resultados['phi_cimentacion']]*2,
-                        'c (t/m²)': [resultados['cohesion']]*2,
-                        'σ_adm (kg/cm²)': [resultados['sigma_adm']]*2,
-                        'γ_concreto (kg/m³)': [resultados['gamma_concreto']]*2,
-                        'qsc (kg/m²)': [resultados['qsc']]*2,
-                        'fc (kg/cm²)': [resultados['fc']]*2,
-                        'fy (kg/cm²)': [resultados['fy']]*2
+                        'Valor (kg/cm²)': [resultados.get('q_max_kg_cm2', 0), resultados.get('q_min_kg_cm2', 0)],
+                        'h1 (m)': [resultados.get('h1', 0)]*2,
+                        'Df (m)': [resultados.get('Df', 0)]*2,
+                        'hm (m)': [resultados.get('hm', 0)]*2,
+                        'γ_relleno (kg/m³)': [resultados.get('gamma_relleno', 0)]*2,
+                        'φ_relleno (°)': [resultados.get('phi_relleno', 0)]*2,
+                        'γ_cimentacion (kg/m³)': [resultados.get('gamma_cimentacion', 0)]*2,
+                        'φ_cimentacion (°)': [resultados.get('phi_cimentacion', 0)]*2,
+                        'c (t/m²)': [resultados.get('cohesion', 0)]*2,
+                        'σ_adm (kg/cm²)': [resultados.get('sigma_adm', 0)]*2,
+                        'γ_concreto (kg/m³)': [resultados.get('gamma_concreto', 0)]*2,
+                        'qsc (kg/m²)': [resultados.get('qsc', 0)]*2,
+                        'fc (kg/cm²)': [resultados.get('fc', 0)]*2,
+                        'fy (kg/cm²)': [resultados.get('fy', 0)]*2
                     })
                     
                     if PLOTLY_AVAILABLE:
@@ -3703,9 +3703,9 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                     # Leyenda textual de presiones
                     st.markdown(f"""
                     **Presiones sobre el Suelo - Rankine:**
-                    - Máxima: {resultados['q_max_kg_cm2']:.2f} kg/cm²
-                    - Mínima: {resultados['q_min_kg_cm2']:.2f} kg/cm²
-                    - Capacidad admisible: {resultados['sigma_adm']} kg/cm²
+                    - Máxima: {resultados.get('q_max_kg_cm2', 0):.2f} kg/cm²
+                    - Mínima: {resultados.get('q_min_kg_cm2', 0):.2f} kg/cm²
+                    - Capacidad admisible: {resultados.get('sigma_adm', 0)} kg/cm²
                     """)
                 
                 # Gráfico del muro de contención
@@ -3714,16 +3714,16 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                 
                 # Crear dimensiones para el gráfico
                 dimensiones_grafico = {
-                    'Bz': resultados['Bz'],
-                    'hz': resultados['hz'],
-                    'b': resultados['b'],
-                    'r': resultados['r'],
-                    't': resultados['t'],
-                    'hm': resultados['hm']
+                    'Bz': resultados.get('Bz', 0),
+                    'hz': resultados.get('hz', 0),
+                    'b': resultados.get('b', 0),
+                    'r': resultados.get('r', 0),
+                    't': resultados.get('t', 0),
+                    'hm': resultados.get('hm', 0)
                 }
                 
                 # Generar el gráfico del muro con valores reales
-                fig_muro = dibujar_muro_streamlit(dimensiones_grafico, resultados['h1'], resultados['Df'], resultados['qsc'], "rankine")
+                fig_muro = dibujar_muro_streamlit(dimensiones_grafico, resultados.get('h1', 0), resultados.get('Df', 0), resultados.get('qsc', 0), "rankine")
                 
                 # Mostrar el gráfico en Streamlit
                 st.pyplot(fig_muro)
