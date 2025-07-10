@@ -279,7 +279,7 @@ Generado por: CONSORCIO DEJ
         elements.append(Paragraph("CONSORCIO DEJ - Reporte de Muro de Contención", styleN))
     
     if plan == "premium":
-        # Reporte premium completo
+        # Reporte premium completo (Rankine)
         elements.append(Paragraph("1. DATOS DE ENTRADA", styleH))
         datos_tabla = [
             ["Parámetro", "Valor", "Unidad"],
@@ -379,6 +379,99 @@ Generado por: CONSORCIO DEJ
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ]))
         elements.append(tabla_verif)
+        
+    elif plan == "coulomb":
+        # Reporte Coulomb
+        elements.append(Paragraph("1. DATOS DE ENTRADA - COULOMB", styleH))
+        datos_tabla = [
+            ["Parámetro", "Valor", "Unidad"],
+            ["Altura total del muro (H)", f"{datos_entrada['H']:.2f}", "m"],
+            ["Altura del talud (h1)", f"{datos_entrada['h1']:.2f}", "m"],
+            ["Base del triángulo 2 (t2)", f"{datos_entrada['t2']:.2f}", "m"],
+            ["Longitud del talón (b2)", f"{datos_entrada['b2']:.2f}", "m"],
+            ["Ángulo de fricción del suelo (φ₁')", f"{datos_entrada['phi1']:.1f}", "°"],
+            ["Ángulo de fricción muro-suelo (δ)", f"{datos_entrada['delta']:.1f}", "°"],
+            ["Ángulo de inclinación del terreno (α)", f"{datos_entrada['alpha']:.1f}", "°"],
+            ["Peso específico del suelo (γ₁)", f"{datos_entrada['gamma1']:.2f}", "t/m³"],
+            ["Sobrecarga (S/c)", f"{datos_entrada['S_c']}", "kg/m²"]
+        ]
+        
+        tabla = Table(datos_tabla, colWidths=[200, 100, 80])
+        tabla.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ]))
+        elements.append(tabla)
+        elements.append(Spacer(1, 20))
+        
+        # Cálculos geométricos
+        elements.append(Paragraph("2. CÁLCULOS GEOMÉTRICOS", styleH))
+        geom_tabla = [
+            ["Parámetro", "Valor", "Unidad"],
+            ["Ángulo de inclinación del muro (β)", f"{resultados['beta']:.2f}", "°"],
+            ["Altura efectiva del muro (H')", f"{resultados['H_efectiva']:.2f}", "m"]
+        ]
+        
+        tabla_geom = Table(geom_tabla, colWidths=[200, 100, 80])
+        tabla_geom.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgreen),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ]))
+        elements.append(tabla_geom)
+        elements.append(Spacer(1, 20))
+        
+        # Coeficiente de empuje activo
+        elements.append(Paragraph("3. COEFICIENTE DE EMPUJE ACTIVO", styleH))
+        ka_tabla = [
+            ["Parámetro", "Valor", "Unidad"],
+            ["Coeficiente Ka (Coulomb)", f"{resultados['ka']:.6f}", ""]
+        ]
+        
+        tabla_ka = Table(ka_tabla, colWidths=[200, 100, 80])
+        tabla_ka.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightyellow),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ]))
+        elements.append(tabla_ka)
+        elements.append(Spacer(1, 20))
+        
+        # Análisis de empujes
+        elements.append(Paragraph("4. ANÁLISIS DE EMPUJES", styleH))
+        empujes_tabla = [
+            ["Empuje", "Valor", "Unidad"],
+            ["Empuje activo total (Pa)", f"{resultados['Pa']:.3f}", "t/m"],
+            ["Componente horizontal (Ph)", f"{resultados['Ph']:.3f}", "t/m"],
+            ["Componente vertical (Pv)", f"{resultados['Pv']:.3f}", "t/m"],
+            ["Empuje por sobrecarga (PSC)", f"{resultados['PSC']:.3f}", "t/m"],
+            ["Empuje total horizontal", f"{resultados['P_total_horizontal']:.3f}", "t/m"]
+        ]
+        
+        tabla_empujes = Table(empujes_tabla, colWidths=[200, 100, 80])
+        tabla_empujes.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightcoral),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ]))
+        elements.append(tabla_empujes)
+        elements.append(Spacer(1, 20))
+        
+        # Observaciones técnicas
+        elements.append(Paragraph("5. OBSERVACIONES TÉCNICAS", styleH))
+        elements.append(Paragraph("• La teoría de Coulomb considera la fricción entre el muro y el suelo", styleN))
+        elements.append(Paragraph("• El ángulo de fricción muro-suelo (δ) afecta significativamente el empuje", styleN))
+        elements.append(Paragraph("• Para muros rugosos, Coulomb proporciona resultados más realistas", styleN))
+        elements.append(Paragraph("• La inclinación del terreno (α) modifica la altura efectiva del muro", styleN))
+        elements.append(Spacer(1, 20))
+        
+        # Recomendaciones
+        elements.append(Paragraph("6. RECOMENDACIONES", styleH))
+        elements.append(Paragraph("• Verificar la rugosidad del muro para determinar δ apropiado", styleN))
+        elements.append(Paragraph("• Considerar efectos de drenaje en el relleno", styleN))
+        elements.append(Paragraph("• Revisar la estabilidad al volcamiento y deslizamiento", styleN))
+        elements.append(Paragraph("• Evaluar la capacidad portante del suelo de cimentación", styleN))
         
     else:
         # Reporte básico
@@ -1897,6 +1990,221 @@ else:
                 PSC = Ka · H · (S/c / 1000) · (sin(β) / sin(β + α)) = {resultados_coulomb['Ka']:.6f} · {H} · ({S_c}/1000) · (sin({resultados_coulomb['beta']:.2f}°) / sin({resultados_coulomb['beta']:.2f}° + {alpha}°)) = {resultados_coulomb['PSC']:.3f} t/m
                 ```
                 """)
+            
+            # Gráficos adicionales para Coulomb
+            st.subheader("📈 Gráficos Adicionales - Análisis Coulomb")
+            
+            # Gráfico de componentes del empuje
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                datos_componentes = pd.DataFrame({
+                    'Componente': ['Empuje Total (Pa)', 'Componente Horizontal (Ph)', 'Componente Vertical (Pv)', 'Empuje Sobrecarga (PSC)'],
+                    'Valor (t/m)': [resultados_coulomb['Pa'], resultados_coulomb['Ph'], resultados_coulomb['Pv'], resultados_coulomb['PSC']]
+                })
+                
+                if PLOTLY_AVAILABLE:
+                    fig_comp = px.bar(datos_componentes, x='Componente', y='Valor (t/m)',
+                                     title="Componentes del Empuje Activo - Coulomb",
+                                     color='Componente',
+                                     color_discrete_map={
+                                         'Empuje Total (Pa)': '#FF6B6B',
+                                         'Componente Horizontal (Ph)': '#4ECDC4',
+                                         'Componente Vertical (Pv)': '#45B7D1',
+                                         'Empuje Sobrecarga (PSC)': '#96CEB4'
+                                     })
+                    
+                    fig_comp.update_layout(
+                        xaxis_title="Componente",
+                        yaxis_title="Valor (t/m)",
+                        height=400
+                    )
+                    
+                    fig_comp.update_traces(texttemplate='%{y:.3f}', textposition='outside')
+                    st.plotly_chart(fig_comp, use_container_width=True)
+            
+            with col2:
+                # Gráfico de parámetros geométricos
+                datos_geometricos = pd.DataFrame({
+                    'Parámetro': ['Altura Total (H)', 'Altura Efectiva (H\')', 'Ángulo β', 'Ángulo α'],
+                    'Valor': [H, resultados_coulomb['H_efectiva'], resultados_coulomb['beta'], alpha],
+                    'Unidad': ['m', 'm', '°', '°']
+                })
+                
+                if PLOTLY_AVAILABLE:
+                    fig_geo = px.bar(datos_geometricos, x='Parámetro', y='Valor',
+                                    title="Parámetros Geométricos - Coulomb",
+                                    color='Parámetro',
+                                    color_discrete_map={
+                                        'Altura Total (H)': '#FFD93D',
+                                        'Altura Efectiva (H\')': '#6BCF7F',
+                                        'Ángulo β': '#4D96FF',
+                                        'Ángulo α': '#FF6B6B'
+                                    })
+                    
+                    fig_geo.update_layout(
+                        xaxis_title="Parámetro",
+                        yaxis_title="Valor",
+                        height=400
+                    )
+                    
+                    fig_geo.update_traces(texttemplate='%{y:.2f}', textposition='outside')
+                    st.plotly_chart(fig_geo, use_container_width=True)
+            
+            # Gráfico del muro de contención para Coulomb
+            st.subheader("🏗️ Visualización del Muro de Contención - Coulomb")
+            st.info("Representación gráfica del muro con análisis Coulomb")
+            
+            # Crear dimensiones para el gráfico (usando valores típicos para Coulomb)
+            dimensiones_coulomb = {
+                'Bz': t2 + b2 + 0.5,  # Base total estimada
+                'hz': 0.4,  # Peralte de zapata típico
+                'b': 0.3,   # Espesor del muro
+                'r': t2,    # Longitud de puntera
+                't': b2,    # Longitud de talón
+                'hm': 0.2   # Altura de coronación
+            }
+            
+            # Generar el gráfico del muro para Coulomb
+            fig_muro_coulomb = dibujar_muro_streamlit(dimensiones_coulomb, h1, 0.5, S_c)
+            
+            # Mostrar el gráfico en Streamlit
+            st.pyplot(fig_muro_coulomb)
+            
+            # Información adicional sobre el gráfico
+            st.markdown("""
+            **Leyenda del Gráfico - Análisis Coulomb:**
+            - 🔵 **Zapata (Azul claro):** Base de cimentación del muro
+            - 🔴 **Muro (Rosa):** Estructura principal de contención (inclinada según β)
+            - 🟡 **Relleno (Amarillo):** Material de relleno detrás del muro
+            - 🟤 **Suelo (Marrón):** Suelo de cimentación
+            - 🔴 **Flechas rojas:** Sobrecarga aplicada (S/c)
+            - 🔵 **Dimensiones en azul:** Medidas calculadas del muro
+            - 📐 **Ángulo β:** Inclinación del muro respecto a la vertical
+            - 📐 **Ángulo α:** Inclinación del terreno natural
+            """)
+            
+            # Botones para generar reportes
+            st.subheader("📄 Generar Reportes - Análisis Coulomb")
+            
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                # Generar reporte de texto
+                reporte_coulomb = f"""
+# REPORTE TÉCNICO - ANÁLISIS COULOMB
+## CONSORCIO DEJ
+### Análisis según Teoría de Coulomb
+### Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}
+
+### 1. DATOS DE ENTRADA:
+- Altura total del muro (H): {H:.2f} m
+- Altura del talud (h1): {h1:.2f} m
+- Base del triángulo 2 (t2): {t2:.2f} m
+- Longitud del talón (b2): {b2:.2f} m
+- Ángulo de fricción del suelo (φ₁'): {phi1:.1f}°
+- Ángulo de fricción muro-suelo (δ): {delta:.1f}°
+- Ángulo de inclinación del terreno (α): {alpha:.1f}°
+- Peso específico del suelo (γ₁): {gamma1:.2f} t/m³
+- Sobrecarga (S/c): {S_c} kg/m²
+
+### 2. CÁLCULOS GEOMÉTRICOS:
+- Ángulo de inclinación del muro (β): {resultados_coulomb['beta']:.2f}°
+- Altura efectiva del muro (H'): {resultados_coulomb['H_efectiva']:.2f} m
+
+### 3. COEFICIENTE DE EMPUJE ACTIVO:
+- Coeficiente Ka (Coulomb): {resultados_coulomb['Ka']:.6f}
+
+### 4. ANÁLISIS DE EMPUJES:
+- Empuje activo total (Pa): {resultados_coulomb['Pa']:.3f} t/m
+- Componente horizontal (Ph): {resultados_coulomb['Ph']:.3f} t/m
+- Componente vertical (Pv): {resultados_coulomb['Pv']:.3f} t/m
+- Empuje por sobrecarga (PSC): {resultados_coulomb['PSC']:.3f} t/m
+- Empuje total horizontal: {resultados_coulomb['P_total_horizontal']:.3f} t/m
+
+### 5. COMPARACIÓN CON RANKINE:
+- Coeficiente Ka (Rankine): {ka_rankine:.6f}
+- Diferencia porcentual: {diferencia:.1f}%
+- {'Coulomb es menos conservador' if diferencia > 0 else 'Coulomb es más conservador'}
+
+### 6. OBSERVACIONES TÉCNICAS:
+- La teoría de Coulomb considera la fricción entre el muro y el suelo
+- El ángulo de fricción muro-suelo (δ) afecta significativamente el empuje
+- Para muros rugosos, Coulomb proporciona resultados más realistas
+- La inclinación del terreno (α) modifica la altura efectiva del muro
+
+### 7. RECOMENDACIONES:
+- Verificar la rugosidad del muro para determinar δ apropiado
+- Considerar efectos de drenaje en el relleno
+- Revisar la estabilidad al volcamiento y deslizamiento
+- Evaluar la capacidad portante del suelo de cimentación
+
+### 8. INFORMACIÓN DEL PROYECTO:
+- Empresa: CONSORCIO DEJ
+- Método de análisis: Teoría de Coulomb
+- Fecha de análisis: {datetime.now().strftime('%d/%m/%Y %H:%M')}
+- Plan: Premium
+- Software: Streamlit + Python
+
+---
+**Este reporte fue generado automáticamente por el sistema de análisis de muros de contención de CONSORCIO DEJ.**
+**Para consultas técnicas, contacte a nuestro equipo de ingeniería.**
+"""
+                
+                st.download_button(
+                    label="📥 Descargar TXT Coulomb",
+                    data=reporte_coulomb,
+                    file_name=f"reporte_coulomb_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
+                    mime="text/plain"
+                )
+            
+            with col2:
+                # Generar PDF para Coulomb
+                try:
+                    # Crear datos de entrada para el PDF
+                    datos_entrada_coulomb = {
+                        'H': H, 'h1': h1, 't2': t2, 'b2': b2,
+                        'phi1': phi1, 'delta': delta, 'alpha': alpha,
+                        'gamma1': gamma1, 'S_c': S_c
+                    }
+                    
+                    # Crear resultados para el PDF
+                    resultados_coulomb_pdf = {
+                        'ka': resultados_coulomb['Ka'],
+                        'beta': resultados_coulomb['beta'],
+                        'H_efectiva': resultados_coulomb['H_efectiva'],
+                        'Pa': resultados_coulomb['Pa'],
+                        'Ph': resultados_coulomb['Ph'],
+                        'Pv': resultados_coulomb['Pv'],
+                        'PSC': resultados_coulomb['PSC'],
+                        'P_total_horizontal': resultados_coulomb['P_total_horizontal']
+                    }
+                    
+                    pdf_buffer_coulomb = generar_pdf_reportlab(
+                        resultados_coulomb_pdf, 
+                        datos_entrada_coulomb, 
+                        {}, 
+                        "coulomb"
+                    )
+                    
+                    st.download_button(
+                        label="📄 Descargar PDF Coulomb",
+                        data=pdf_buffer_coulomb.getvalue(),
+                        file_name=f"reporte_coulomb_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+                        mime="application/pdf"
+                    )
+                except Exception as e:
+                    st.error(f"⚠️ Error generando PDF: {str(e)}")
+                    st.info("Intenta ejecutar el análisis completo nuevamente")
+            
+            with col3:
+                if st.button("🖨️ Generar Reporte en Pantalla", type="primary", key="coulomb_pantalla"):
+                    st.success("✅ Reporte Coulomb generado exitosamente")
+                    st.balloons()
+                    
+                    # Mostrar el reporte en formato expandible
+                    with st.expander("📋 VER REPORTE COULOMB COMPLETO", expanded=True):
+                        st.markdown(reporte_coulomb)
 
     elif opcion == "🏗️ Diseño del Fuste":
         st.title("Diseño y Verificación del Fuste del Muro")
@@ -2378,6 +2686,9 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
     elif opcion == "📈 Gráficos":
         st.title("Gráficos y Visualizaciones")
         
+        # Verificar si hay resultados de Coulomb disponibles
+        resultados_coulomb_disponibles = 'resultados_coulomb' in st.session_state
+        
         if st.session_state['plan'] == "gratuito":
             if 'resultados_basicos' in st.session_state:
                 resultados = st.session_state['resultados_basicos']
@@ -2521,6 +2832,110 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                 - 🔴 **Flechas rojas:** Sobrecarga aplicada (qsc)
                 - 🔵 **Dimensiones en azul:** Medidas calculadas del muro
                 """)
+                
+                # Mostrar gráficos de Coulomb si están disponibles
+                if resultados_coulomb_disponibles:
+                    st.markdown("---")
+                    st.subheader("🔬 Gráficos Adicionales - Análisis Coulomb")
+                    st.info("Gráficos complementarios del análisis según teoría de Coulomb")
+                    
+                    resultados_coulomb = st.session_state['resultados_coulomb']
+                    
+                    # Gráfico comparativo Rankine vs Coulomb
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        # Calcular Ka de Rankine para comparación
+                        phi1_rankine = 30  # Valor típico
+                        ka_rankine = math.tan(math.radians(45 - phi1_rankine/2))**2
+                        
+                        datos_comparacion = pd.DataFrame({
+                            'Teoría': ['Rankine', 'Coulomb'],
+                            'Coeficiente Ka': [ka_rankine, resultados_coulomb['Ka']]
+                        })
+                        
+                        fig_comp = px.bar(datos_comparacion, x='Teoría', y='Coeficiente Ka',
+                                         title="Comparación Ka: Rankine vs Coulomb",
+                                         color='Teoría',
+                                         color_discrete_map={'Rankine': '#4ECDC4', 'Coulomb': '#FF6B6B'})
+                        
+                        fig_comp.update_layout(
+                            xaxis_title="Teoría",
+                            yaxis_title="Coeficiente Ka",
+                            height=400
+                        )
+                        
+                        fig_comp.update_traces(texttemplate='%{y:.6f}', textposition='outside')
+                        st.plotly_chart(fig_comp, use_container_width=True)
+                    
+                    with col2:
+                        # Gráfico de componentes del empuje Coulomb
+                        datos_componentes = pd.DataFrame({
+                            'Componente': ['Empuje Total (Pa)', 'Componente Horizontal (Ph)', 'Componente Vertical (Pv)', 'Empuje Sobrecarga (PSC)'],
+                            'Valor (t/m)': [resultados_coulomb['Pa'], resultados_coulomb['Ph'], resultados_coulomb['Pv'], resultados_coulomb['PSC']]
+                        })
+                        
+                        fig_comp2 = px.bar(datos_componentes, x='Componente', y='Valor (t/m)',
+                                          title="Componentes del Empuje - Coulomb",
+                                          color='Componente',
+                                          color_discrete_map={
+                                              'Empuje Total (Pa)': '#FF6B6B',
+                                              'Componente Horizontal (Ph)': '#4ECDC4',
+                                              'Componente Vertical (Pv)': '#45B7D1',
+                                              'Empuje Sobrecarga (PSC)': '#96CEB4'
+                                          })
+                        
+                        fig_comp2.update_layout(
+                            xaxis_title="Componente",
+                            yaxis_title="Valor (t/m)",
+                            height=400
+                        )
+                        
+                        fig_comp2.update_traces(texttemplate='%{y:.3f}', textposition='outside')
+                        st.plotly_chart(fig_comp2, use_container_width=True)
+                    
+                    # Gráfico de parámetros geométricos de Coulomb
+                    st.subheader("📐 Parámetros Geométricos - Coulomb")
+                    
+                    if 'datos_entrada_coulomb' in st.session_state:
+                        datos_entrada_coulomb = st.session_state['datos_entrada_coulomb']
+                        
+                        datos_geometricos = pd.DataFrame({
+                            'Parámetro': ['Altura Total (H)', 'Altura Efectiva (H\')', 'Ángulo β', 'Ángulo α', 'Ángulo δ'],
+                            'Valor': [datos_entrada_coulomb['H'], resultados_coulomb['H_efectiva'], 
+                                     resultados_coulomb['beta'], datos_entrada_coulomb['alpha'], datos_entrada_coulomb['delta']],
+                            'Unidad': ['m', 'm', '°', '°', '°']
+                        })
+                        
+                        fig_geo = px.bar(datos_geometricos, x='Parámetro', y='Valor',
+                                        title="Parámetros Geométricos - Análisis Coulomb",
+                                        color='Parámetro',
+                                        color_discrete_map={
+                                            'Altura Total (H)': '#FFD93D',
+                                            'Altura Efectiva (H\')': '#6BCF7F',
+                                            'Ángulo β': '#4D96FF',
+                                            'Ángulo α': '#FF6B6B',
+                                            'Ángulo δ': '#9B59B6'
+                                        })
+                        
+                        fig_geo.update_layout(
+                            xaxis_title="Parámetro",
+                            yaxis_title="Valor",
+                            height=400
+                        )
+                        
+                        fig_geo.update_traces(texttemplate='%{y:.2f}', textposition='outside')
+                        st.plotly_chart(fig_geo, use_container_width=True)
+                        
+                        # Información técnica adicional
+                        st.info("""
+                        **Explicación de Parámetros:**
+                        - **H:** Altura total del muro de contención
+                        - **H':** Altura efectiva que incluye el efecto de la inclinación del terreno
+                        - **β:** Ángulo de inclinación del muro respecto a la vertical
+                        - **α:** Ángulo de inclinación del terreno natural
+                        - **δ:** Ángulo de fricción entre el muro y el relleno
+                        """)
             else:
                 st.warning("⚠️ No hay resultados disponibles. Realiza primero el análisis completo.")
 
