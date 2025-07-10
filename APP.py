@@ -380,6 +380,125 @@ Generado por: CONSORCIO DEJ
         ]))
         elements.append(tabla_verif)
         
+    elif plan == "rankine":
+        # Reporte Rankine
+        elements.append(Paragraph("1. DATOS DE ENTRADA - RANKINE", styleH))
+        datos_tabla = [
+            ["Parámetro", "Valor", "Unidad"],
+            ["Altura del talud (h1)", f"{datos_entrada['h1']:.2f}", "m"],
+            ["Profundidad de desplante (Df)", f"{datos_entrada['Df']:.2f}", "m"],
+            ["Altura de coronación (hm)", f"{datos_entrada['hm']:.2f}", "m"],
+            ["Densidad del relleno", f"{datos_entrada['gamma_relleno']}", "kg/m³"],
+            ["Ángulo de fricción del relleno", f"{datos_entrada['phi_relleno']}", "°"],
+            ["Densidad del suelo de cimentación", f"{datos_entrada['gamma_cimentacion']}", "kg/m³"],
+            ["Ángulo de fricción del suelo", f"{datos_entrada['phi_cimentacion']}", "°"],
+            ["Cohesión del suelo", f"{datos_entrada['cohesion']}", "t/m²"],
+            ["Capacidad portante del suelo", f"{datos_entrada['sigma_adm']}", "kg/cm²"],
+            ["Peso específico del concreto", f"{datos_entrada['gamma_concreto']}", "kg/m³"],
+            ["Sobrecarga (qsc)", f"{datos_entrada['qsc']}", "kg/m²"],
+            ["Resistencia del concreto (fc)", f"{datos_entrada['fc']}", "kg/cm²"],
+            ["Resistencia del acero (fy)", f"{datos_entrada['fy']}", "kg/cm²"]
+        ]
+        
+        tabla = Table(datos_tabla, colWidths=[200, 100, 80])
+        tabla.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ]))
+        elements.append(tabla)
+        elements.append(Spacer(1, 20))
+        
+        # Coeficientes de presión
+        elements.append(Paragraph("2. COEFICIENTES DE PRESIÓN", styleH))
+        coef_tabla = [
+            ["Parámetro", "Valor", "Unidad"],
+            ["Coeficiente Ka (Rankine)", f"{resultados['ka']:.6f}", ""],
+            ["Coeficiente Kp", f"{resultados['kp']:.6f}", ""],
+            ["Altura equivalente (hs)", f"{resultados['hs']:.3f}", "m"]
+        ]
+        
+        tabla_coef = Table(coef_tabla, colWidths=[200, 100, 80])
+        tabla_coef.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgreen),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ]))
+        elements.append(tabla_coef)
+        elements.append(Spacer(1, 20))
+        
+        # Dimensiones calculadas
+        elements.append(Paragraph("3. DIMENSIONES CALCULADAS", styleH))
+        dim_tabla = [
+            ["Dimensión", "Valor", "Unidad"],
+            ["Ancho de zapata (Bz)", f"{resultados['Bz']:.2f}", "m"],
+            ["Peralte de zapata (hz)", f"{resultados['hz']:.2f}", "m"],
+            ["Espesor del muro (b)", f"{resultados['b']:.2f}", "m"],
+            ["Longitud de puntera (r)", f"{resultados['r']:.2f}", "m"],
+            ["Longitud de talón (t)", f"{resultados['t']:.2f}", "m"]
+        ]
+        
+        tabla_dim = Table(dim_tabla, colWidths=[200, 100, 80])
+        tabla_dim.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightyellow),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ]))
+        elements.append(tabla_dim)
+        elements.append(Spacer(1, 20))
+        
+        # Análisis de empujes
+        elements.append(Paragraph("4. ANÁLISIS DE EMPUJES", styleH))
+        empujes_tabla = [
+            ["Empuje", "Valor", "Unidad"],
+            ["Empuje activo por relleno", f"{resultados['Ea_relleno']:.3f}", "tn/m"],
+            ["Empuje activo por sobrecarga", f"{resultados['Ea_sobrecarga']:.3f}", "tn/m"],
+            ["Empuje activo total", f"{resultados['Ea_total']:.3f}", "tn/m"],
+            ["Empuje pasivo", f"{resultados['Ep']:.3f}", "tn/m"]
+        ]
+        
+        tabla_empujes = Table(empujes_tabla, colWidths=[200, 100, 80])
+        tabla_empujes.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightcoral),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ]))
+        elements.append(tabla_empujes)
+        elements.append(Spacer(1, 20))
+        
+        # Factores de seguridad
+        elements.append(Paragraph("5. FACTORES DE SEGURIDAD", styleH))
+        fs_tabla = [
+            ["Verificación", "Factor", "Estado"],
+            ["Volcamiento", f"{resultados['FS_volcamiento']:.2f}", "CUMPLE" if resultados['FS_volcamiento'] >= 2.0 else "NO CUMPLE"],
+            ["Deslizamiento", f"{resultados['FS_deslizamiento']:.2f}", "CUMPLE" if resultados['FS_deslizamiento'] >= 1.5 else "NO CUMPLE"]
+        ]
+        
+        tabla_fs = Table(fs_tabla, colWidths=[150, 100, 100])
+        tabla_fs.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ]))
+        elements.append(tabla_fs)
+        elements.append(Spacer(1, 20))
+        
+        # Observaciones técnicas
+        elements.append(Paragraph("6. OBSERVACIONES TÉCNICAS", styleH))
+        elements.append(Paragraph("• La teoría de Rankine considera muro vertical liso", styleN))
+        elements.append(Paragraph("• No considera fricción entre el muro y el suelo", styleN))
+        elements.append(Paragraph("• Proporciona una aproximación conservadora", styleN))
+        elements.append(Paragraph("• Fórmulas más simples que Coulomb", styleN))
+        elements.append(Paragraph("• Ka = tan²(45° - φ/2)", styleN))
+        elements.append(Spacer(1, 20))
+        
+        # Recomendaciones
+        elements.append(Paragraph("7. RECOMENDACIONES", styleH))
+        elements.append(Paragraph("• Verificar la capacidad portante del suelo en campo", styleN))
+        elements.append(Paragraph("• Revisar el diseño del refuerzo estructural según ACI 318", styleN))
+        elements.append(Paragraph("• Considerar efectos sísmicos según la normativa local", styleN))
+        elements.append(Paragraph("• Realizar inspecciones periódicas durante la construcción", styleN))
+        
     elif plan == "coulomb":
         # Reporte Coulomb
         elements.append(Paragraph("1. DATOS DE ENTRADA - COULOMB", styleH))
@@ -1718,6 +1837,324 @@ else:
                         st.write(f"• Separación entre barras: {diseno_fuste['separacion']:.1f} cm")
                         st.write(f"• Acero por retracción: {diseno_fuste['As_retraccion']:.2f} cm²")
                         st.write(f"• Barras retracción 1/2\": {diseno_fuste['num_barras_retraccion']}")
+                
+                # Gráficos adicionales para Rankine
+                st.subheader("📈 Gráficos Adicionales - Análisis Rankine")
+                
+                # Gráfico de fuerzas
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    datos_fuerzas = pd.DataFrame({
+                        'Fuerza': ['Empuje Activo', 'Empuje Pasivo', 'Peso Total'],
+                        'Valor (tn/m)': [Ea_total, Ep, W_total]
+                    })
+                    
+                    if PLOTLY_AVAILABLE:
+                        fig_fuerzas = px.bar(datos_fuerzas, x='Fuerza', y='Valor (tn/m)',
+                                            title="Análisis de Fuerzas - Rankine",
+                                            color='Fuerza',
+                                            color_discrete_map={
+                                                'Empuje Activo': '#DC143C',
+                                                'Empuje Pasivo': '#2E8B57',
+                                                'Peso Total': '#4169E1'
+                                            })
+                        
+                        fig_fuerzas.update_layout(
+                            xaxis_title="Tipo de Fuerza",
+                            yaxis_title="Valor (tn/m)",
+                            height=400
+                        )
+                        
+                        fig_fuerzas.update_traces(texttemplate='%{y:.2f}', textposition='outside')
+                        st.plotly_chart(fig_fuerzas, use_container_width=True)
+                
+                with col2:
+                    # Gráfico de momentos
+                    datos_momentos = pd.DataFrame({
+                        'Momento': ['Volcador', 'Estabilizador'],
+                        'Valor (tn·m/m)': [M_volcador, M_estabilizador]
+                    })
+                    
+                    if PLOTLY_AVAILABLE:
+                        fig_momentos = px.pie(datos_momentos, values='Valor (tn·m/m)', names='Momento',
+                                             title="Distribución de Momentos - Rankine",
+                                             color_discrete_map={'Volcador': '#FF6B6B', 'Estabilizador': '#4ECDC4'})
+                        
+                        fig_momentos.update_traces(textposition='inside', textinfo='percent+label+value')
+                        st.plotly_chart(fig_momentos, use_container_width=True)
+                
+                # Gráfico de dimensiones
+                st.subheader("📏 Dimensiones del Muro - Rankine")
+                dimensiones_rankine = {
+                    'Dimensión': ['Bz', 'hz', 'b', 'r', 't'],
+                    'Valor (m)': [Bz, hz, b, r, t]
+                }
+                
+                if PLOTLY_AVAILABLE:
+                    fig_dim = px.bar(pd.DataFrame(dimensiones_rankine), x='Dimensión', y='Valor (m)',
+                                    title="Dimensiones Calculadas del Muro - Rankine",
+                                    color='Dimensión',
+                                    color_discrete_map={
+                                        'Bz': '#FF1493',
+                                        'hz': '#00CED1',
+                                        'b': '#32CD32',
+                                        'r': '#FFD700',
+                                        't': '#FF6347'
+                                    })
+                    
+                    fig_dim.update_layout(
+                        xaxis_title="Dimensión",
+                        yaxis_title="Valor (m)",
+                        height=400
+                    )
+                    
+                    fig_dim.update_traces(texttemplate='%{y:.2f}', textposition='outside')
+                    st.plotly_chart(fig_dim, use_container_width=True)
+                
+                # Gráfico de factores de seguridad
+                st.subheader("🛡️ Factores de Seguridad - Rankine")
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    datos_fs = pd.DataFrame({
+                        'Verificación': ['Volcamiento', 'Deslizamiento'],
+                        'Factor de Seguridad': [FS_volcamiento, FS_deslizamiento],
+                        'Límite': [2.0, 1.5]
+                    })
+                    
+                    if PLOTLY_AVAILABLE:
+                        fig_fs = px.bar(datos_fs, x='Verificación', y=['Factor de Seguridad', 'Límite'],
+                                       title="Factores de Seguridad - Rankine",
+                                       barmode='group',
+                                       color_discrete_map={
+                                           'Factor de Seguridad': '#4ECDC4',
+                                           'Límite': '#FF6B6B'
+                                       })
+                        
+                        fig_fs.update_layout(
+                            xaxis_title="Verificación",
+                            yaxis_title="Factor de Seguridad",
+                            height=400
+                        )
+                        
+                        fig_fs.update_traces(texttemplate='%{y:.2f}', textposition='outside')
+                        st.plotly_chart(fig_fs, use_container_width=True)
+                
+                with col2:
+                    # Gráfico de presiones
+                    datos_presiones = pd.DataFrame({
+                        'Presión': ['Máxima', 'Mínima'],
+                        'Valor (kg/cm²)': [q_max_kg_cm2, q_min_kg_cm2]
+                    })
+                    
+                    if PLOTLY_AVAILABLE:
+                        fig_pres = px.bar(datos_presiones, x='Presión', y='Valor (kg/cm²)',
+                                         title="Presiones sobre el Suelo - Rankine",
+                                         color='Presión',
+                                         color_discrete_map={
+                                             'Máxima': '#FF6B6B',
+                                             'Mínima': '#4ECDC4'
+                                         })
+                        
+                        fig_pres.update_layout(
+                            xaxis_title="Tipo de Presión",
+                            yaxis_title="Valor (kg/cm²)",
+                            height=400
+                        )
+                        
+                        fig_pres.update_traces(texttemplate='%{y:.2f}', textposition='outside')
+                        st.plotly_chart(fig_pres, use_container_width=True)
+                
+                # Botones para generar reportes de Rankine
+                st.subheader("📄 Generar Reportes - Análisis Rankine")
+                
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    # Generar reporte de texto para Rankine
+                    reporte_rankine = f"""
+# REPORTE TÉCNICO - ANÁLISIS RANKINE
+## CONSORCIO DEJ
+### Análisis según Teoría de Rankine
+### Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}
+
+### 1. DATOS DE ENTRADA:
+- Altura del talud (h1): {h1:.2f} m
+- Profundidad de desplante (Df): {Df:.2f} m
+- Altura de coronación (hm): {hm:.2f} m
+- Densidad del relleno: {gamma_relleno} kg/m³
+- Ángulo de fricción del relleno: {phi_relleno}°
+- Densidad del suelo de cimentación: {gamma_cimentacion} kg/m³
+- Ángulo de fricción del suelo: {phi_cimentacion}°
+- Cohesión del suelo: {cohesion} t/m²
+- Capacidad portante del suelo: {sigma_adm} kg/cm²
+- Peso específico del concreto: {gamma_concreto} kg/m³
+- Sobrecarga (qsc): {qsc} kg/m²
+- Resistencia del concreto (fc): {fc} kg/cm²
+- Resistencia del acero (fy): {fy} kg/cm²
+
+### 2. COEFICIENTES DE PRESIÓN:
+- Coeficiente de empuje activo (Ka): {ka:.3f}
+- Coeficiente de empuje pasivo (Kp): {kp:.3f}
+- Altura equivalente por sobrecarga (hs): {hs:.3f} m
+
+### 3. DIMENSIONES CALCULADAS:
+- Ancho de zapata (Bz): {Bz:.2f} m
+- Peralte de zapata (hz): {hz:.2f} m
+- Espesor del muro (b): {b:.2f} m
+- Longitud de puntera (r): {r:.2f} m
+- Longitud de talón (t): {t:.2f} m
+
+### 4. ANÁLISIS DE EMPUJES:
+- Empuje activo por relleno: {Ea_relleno:.2f} tn/m
+- Empuje activo por sobrecarga: {Ea_sobrecarga:.2f} tn/m
+- Empuje activo total: {Ea_total:.2f} tn/m
+- Empuje pasivo: {Ep:.2f} tn/m
+
+### 5. ANÁLISIS DE PESOS:
+- Peso del muro: {W_muro:.2f} tn/m
+- Peso de la zapata: {W_zapata:.2f} tn/m
+- Peso del relleno: {W_relleno:.2f} tn/m
+- Peso total: {W_total:.2f} tn/m
+
+### 6. MOMENTOS Y FACTORES DE SEGURIDAD:
+- Momento volcador: {M_volcador:.2f} tn·m/m
+- Momento estabilizador: {M_estabilizador:.2f} tn·m/m
+- Factor de seguridad al volcamiento: {FS_volcamiento:.2f}
+- Factor de seguridad al deslizamiento: {FS_deslizamiento:.2f}
+
+### 7. VERIFICACIÓN DE PRESIONES:
+- Presión máxima: {q_max_kg_cm2:.2f} kg/cm²
+- Presión mínima: {q_min_kg_cm2:.2f} kg/cm²
+- Excentricidad: {e:.3f} m
+- Hay tensiones: {'Sí' if tension else 'No'}
+
+### 8. VERIFICACIONES DE ESTABILIDAD:
+**Verificación al Volcamiento:**
+- Factor de seguridad calculado: {FS_volcamiento:.2f}
+- Factor mínimo requerido: 2.0
+- Estado: {'✅ CUMPLE' if FS_volcamiento >= 2.0 else '⚠️ NO CUMPLE'}
+
+**Verificación al Deslizamiento:**
+- Factor de seguridad calculado: {FS_deslizamiento:.2f}
+- Factor mínimo requerido: 1.5
+- Estado: {'✅ CUMPLE' if FS_deslizamiento >= 1.5 else '⚠️ NO CUMPLE'}
+
+**Verificación de Presiones:**
+- Presión máxima: {q_max_kg_cm2:.2f} kg/cm²
+- Presión admisible: {sigma_adm} kg/cm²
+- Estado: {'✅ CUMPLE' if q_max_kg_cm2 <= sigma_adm else '⚠️ NO CUMPLE'}
+
+**Verificación de Excentricidad:**
+- Excentricidad calculada: {e:.3f} m
+- Límite (B/6): {Bz/6:.3f} m
+- Estado: {'✅ CUMPLE' if e <= Bz/6 else '⚠️ NO CUMPLE'}
+
+### 9. DISEÑO Y VERIFICACIÓN DEL FUSTE:
+**9.1 Coeficiente Pasivo y Empuje:**
+- Coeficiente pasivo (kp): {diseno_fuste['kp']:.2f}
+- Empuje pasivo: {diseno_fuste['Ep_kg_m']:.0f} kg/m
+- Altura de aplicación: {diseno_fuste['yt']:.2f} m
+
+**9.2 Diseño Estructural:**
+- Peralte efectivo requerido: {diseno_fuste['dreq']:.2f} cm
+- Peralte efectivo real: {diseno_fuste['dreal']:.2f} cm
+- Área de acero requerida: {diseno_fuste['As']:.2f} cm²
+- Área de acero mínima: {diseno_fuste['Asmin']:.2f} cm²
+- Área de acero proporcionada: {diseno_fuste['As_proporcionado']:.2f} cm²
+
+**9.3 Distribución del Acero:**
+- Número de barras 5/8\": {diseno_fuste['num_barras']}
+- Separación entre barras: {diseno_fuste['separacion']:.1f} cm
+- Acero por retracción: {diseno_fuste['As_retraccion']:.2f} cm²
+- Barras retracción 1/2\": {diseno_fuste['num_barras_retraccion']}
+
+### 10. OBSERVACIONES TÉCNICAS:
+- La teoría de Rankine considera muro vertical liso
+- No considera fricción entre el muro y el suelo
+- Proporciona una aproximación conservadora
+- Fórmulas más simples que Coulomb
+- Ka = tan²(45° - φ/2)
+
+### 11. RECOMENDACIONES:
+- Verificar la capacidad portante del suelo en campo
+- Revisar el diseño del refuerzo estructural según ACI 318
+- Considerar efectos sísmicos según la normativa local
+- Realizar inspecciones periódicas durante la construcción
+- Monitorear deformaciones durante el servicio
+- Verificar drenaje del relleno para evitar presiones hidrostáticas
+
+### 12. INFORMACIÓN DEL PROYECTO:
+- Empresa: CONSORCIO DEJ
+- Método de análisis: Teoría de Rankine
+- Fecha de análisis: {datetime.now().strftime('%d/%m/%Y %H:%M')}
+- Plan: Premium
+- Software: Streamlit + Python
+
+---
+**Este reporte fue generado automáticamente por el sistema de análisis de muros de contención de CONSORCIO DEJ.**
+**Para consultas técnicas, contacte a nuestro equipo de ingeniería.**
+"""
+                    
+                    st.download_button(
+                        label="📥 Descargar TXT Rankine",
+                        data=reporte_rankine,
+                        file_name=f"reporte_rankine_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
+                        mime="text/plain"
+                    )
+                
+                with col2:
+                    # Generar PDF para Rankine
+                    try:
+                        # Crear datos de entrada para el PDF
+                        datos_entrada_rankine = {
+                            'h1': h1, 'Df': Df, 'hm': hm,
+                            'gamma_relleno': gamma_relleno, 'phi_relleno': phi_relleno,
+                            'gamma_cimentacion': gamma_cimentacion, 'phi_cimentacion': phi_cimentacion,
+                            'cohesion': cohesion, 'sigma_adm': sigma_adm,
+                            'gamma_concreto': gamma_concreto, 'qsc': qsc,
+                            'fc': fc, 'fy': fy
+                        }
+                        
+                        # Crear resultados para el PDF
+                        resultados_rankine_pdf = {
+                            'ka': ka, 'kp': kp, 'hs': hs,
+                            'Bz': Bz, 'hz': hz, 'b': b, 'r': r, 't': t, 'hm': hm,
+                            'Ea_relleno': Ea_relleno, 'Ea_sobrecarga': Ea_sobrecarga,
+                            'Ea_total': Ea_total, 'Ep': Ep,
+                            'W_muro': W_muro, 'W_zapata': W_zapata, 'W_relleno': W_relleno, 'W_total': W_total,
+                            'M_volcador': M_volcador, 'M_estabilizador': M_estabilizador,
+                            'FS_volcamiento': FS_volcamiento, 'FS_deslizamiento': FS_deslizamiento,
+                            'q_max_kg_cm2': q_max_kg_cm2, 'q_min_kg_cm2': q_min_kg_cm2,
+                            'e': e, 'tension': tension
+                        }
+                        
+                        pdf_buffer_rankine = generar_pdf_reportlab(
+                            resultados_rankine_pdf, 
+                            datos_entrada_rankine, 
+                            diseno_fuste, 
+                            "rankine"
+                        )
+                        
+                        st.download_button(
+                            label="📄 Descargar PDF Rankine",
+                            data=pdf_buffer_rankine.getvalue(),
+                            file_name=f"reporte_rankine_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+                            mime="application/pdf"
+                        )
+                    except Exception as e:
+                        st.error(f"⚠️ Error generando PDF: {str(e)}")
+                        st.info("Intenta ejecutar el análisis completo nuevamente")
+                
+                with col3:
+                    if st.button("🖨️ Generar Reporte en Pantalla", type="primary", key="rankine_pantalla"):
+                        st.success("✅ Reporte Rankine generado exitosamente")
+                        st.balloons()
+                        
+                        # Mostrar el reporte en formato expandible
+                        with st.expander("📋 VER REPORTE RANKINE COMPLETO", expanded=True):
+                            st.markdown(reporte_rankine)
 
     elif opcion == "🔬 Análisis Coulomb":
         st.title("Análisis de Empuje Activo según Teoría de Coulomb")
@@ -2686,8 +3123,29 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
     elif opcion == "📈 Gráficos":
         st.title("Gráficos y Visualizaciones")
         
-        # Verificar si hay resultados de Coulomb disponibles
+        # Verificar qué métodos tienen resultados disponibles
+        resultados_rankine_disponibles = 'resultados_completos' in st.session_state
         resultados_coulomb_disponibles = 'resultados_coulomb' in st.session_state
+        
+        # Mostrar opciones de métodos disponibles
+        st.subheader("🔬 Seleccionar Método de Análisis")
+        
+        if resultados_rankine_disponibles and resultados_coulomb_disponibles:
+            metodo_seleccionado = st.radio(
+                "Método de análisis para visualizar:",
+                ["📊 Análisis Rankine", "🔬 Análisis Coulomb"],
+                help="Selecciona el método cuyos gráficos deseas visualizar"
+            )
+        elif resultados_rankine_disponibles:
+            metodo_seleccionado = "📊 Análisis Rankine"
+            st.info("✅ Solo hay resultados disponibles para el método Rankine")
+        elif resultados_coulomb_disponibles:
+            metodo_seleccionado = "🔬 Análisis Coulomb"
+            st.info("✅ Solo hay resultados disponibles para el método Coulomb")
+        else:
+            st.warning("⚠️ No hay resultados disponibles. Ejecuta primero algún análisis completo.")
+            st.info("📊 Ve a 'Análisis Completo (Rankine)' o 'Análisis Coulomb' para generar resultados")
+            st.stop()
         
         if st.session_state['plan'] == "gratuito":
             if 'resultados_basicos' in st.session_state:
@@ -2729,7 +3187,8 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                 st.warning("⚠️ No hay resultados disponibles. Realiza primero los cálculos básicos.")
         else:
             # Gráficos premium
-            if 'resultados_completos' in st.session_state:
+            if metodo_seleccionado == "📊 Análisis Rankine" and resultados_rankine_disponibles:
+                st.subheader("📊 Gráficos del Análisis Rankine")
                 resultados = st.session_state['resultados_completos']
                 
                 # Gráfico de fuerzas
@@ -2742,23 +3201,24 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                                         resultados['W_total']]
                     })
                     
-                    fig1 = px.bar(datos_fuerzas, x='Fuerza', y='Valor (tn/m)',
-                                 title="Análisis de Fuerzas - Plan Premium",
-                                 color='Fuerza',
-                                 color_discrete_map={
-                                     'Empuje Activo': '#DC143C',
-                                     'Empuje Pasivo': '#2E8B57',
-                                     'Peso Total': '#4169E1'
-                                 })
-                    
-                    fig1.update_layout(
-                        xaxis_title="Tipo de Fuerza",
-                        yaxis_title="Valor (tn/m)",
-                        height=400
-                    )
-                    
-                    fig1.update_traces(texttemplate='%{y:.2f}', textposition='outside')
-                    st.plotly_chart(fig1, use_container_width=True)
+                    if PLOTLY_AVAILABLE:
+                        fig1 = px.bar(datos_fuerzas, x='Fuerza', y='Valor (tn/m)',
+                                     title="Análisis de Fuerzas - Rankine",
+                                     color='Fuerza',
+                                     color_discrete_map={
+                                         'Empuje Activo': '#DC143C',
+                                         'Empuje Pasivo': '#2E8B57',
+                                         'Peso Total': '#4169E1'
+                                     })
+                        
+                        fig1.update_layout(
+                            xaxis_title="Tipo de Fuerza",
+                            yaxis_title="Valor (tn/m)",
+                            height=400
+                        )
+                        
+                        fig1.update_traces(texttemplate='%{y:.2f}', textposition='outside')
+                        st.plotly_chart(fig1, use_container_width=True)
                 
                 with col2:
                     # Gráfico de momentos
@@ -2767,44 +3227,100 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                         'Valor (tn·m/m)': [resultados['M_volcador'], resultados['M_estabilizador']]
                     })
                     
-                    fig2 = px.pie(datos_momentos, values='Valor (tn·m/m)', names='Momento',
-                                 title="Distribución de Momentos - Plan Premium",
-                                 color_discrete_map={'Volcador': '#FF6B6B', 'Estabilizador': '#4ECDC4'})
-                    
-                    fig2.update_traces(textposition='inside', textinfo='percent+label+value')
-                    st.plotly_chart(fig2, use_container_width=True)
+                    if PLOTLY_AVAILABLE:
+                        fig2 = px.pie(datos_momentos, values='Valor (tn·m/m)', names='Momento',
+                                     title="Distribución de Momentos - Rankine",
+                                     color_discrete_map={'Volcador': '#FF6B6B', 'Estabilizador': '#4ECDC4'})
+                        
+                        fig2.update_traces(textposition='inside', textinfo='percent+label+value')
+                        st.plotly_chart(fig2, use_container_width=True)
                 
                 # Gráfico de dimensiones
-                st.subheader("📏 Dimensiones del Muro")
+                st.subheader("📏 Dimensiones del Muro - Rankine")
                 dimensiones = {
                     'Dimensión': ['Bz', 'hz', 'b', 'r', 't'],
                     'Valor (m)': [resultados['Bz'], resultados['hz'], resultados['b'], 
                                  resultados['r'], resultados['t']]
                 }
                 
-                fig3 = px.bar(pd.DataFrame(dimensiones), x='Dimensión', y='Valor (m)',
-                             title="Dimensiones Calculadas del Muro - Plan Premium",
-                             color='Dimensión',
-                             color_discrete_map={
-                                 'Bz': '#FF1493',
-                                 'hz': '#00CED1',
-                                 'b': '#32CD32',
-                                 'r': '#FFD700',
-                                 't': '#FF6347'
-                             })
+                if PLOTLY_AVAILABLE:
+                    fig3 = px.bar(pd.DataFrame(dimensiones), x='Dimensión', y='Valor (m)',
+                                 title="Dimensiones Calculadas del Muro - Rankine",
+                                 color='Dimensión',
+                                 color_discrete_map={
+                                     'Bz': '#FF1493',
+                                     'hz': '#00CED1',
+                                     'b': '#32CD32',
+                                     'r': '#FFD700',
+                                     't': '#FF6347'
+                                 })
+                    
+                    fig3.update_layout(
+                        xaxis_title="Dimensión",
+                        yaxis_title="Valor (m)",
+                        height=400
+                    )
+                    
+                    fig3.update_traces(texttemplate='%{y:.2f}', textposition='outside')
+                    st.plotly_chart(fig3, use_container_width=True)
                 
-                fig3.update_layout(
-                    xaxis_title="Dimensión",
-                    yaxis_title="Valor (m)",
-                    height=400
-                )
+                # Gráfico de factores de seguridad
+                st.subheader("🛡️ Factores de Seguridad - Rankine")
+                col1, col2 = st.columns(2)
                 
-                fig3.update_traces(texttemplate='%{y:.2f}', textposition='outside')
-                st.plotly_chart(fig3, use_container_width=True)
+                with col1:
+                    datos_fs = pd.DataFrame({
+                        'Verificación': ['Volcamiento', 'Deslizamiento'],
+                        'Factor de Seguridad': [resultados['FS_volcamiento'], resultados['FS_deslizamiento']],
+                        'Límite': [2.0, 1.5]
+                    })
+                    
+                    if PLOTLY_AVAILABLE:
+                        fig_fs = px.bar(datos_fs, x='Verificación', y=['Factor de Seguridad', 'Límite'],
+                                       title="Factores de Seguridad - Rankine",
+                                       barmode='group',
+                                       color_discrete_map={
+                                           'Factor de Seguridad': '#4ECDC4',
+                                           'Límite': '#FF6B6B'
+                                       })
+                        
+                        fig_fs.update_layout(
+                            xaxis_title="Verificación",
+                            yaxis_title="Factor de Seguridad",
+                            height=400
+                        )
+                        
+                        fig_fs.update_traces(texttemplate='%{y:.2f}', textposition='outside')
+                        st.plotly_chart(fig_fs, use_container_width=True)
+                
+                with col2:
+                    # Gráfico de presiones
+                    datos_presiones = pd.DataFrame({
+                        'Presión': ['Máxima', 'Mínima'],
+                        'Valor (kg/cm²)': [resultados['q_max_kg_cm2'], resultados['q_min_kg_cm2']]
+                    })
+                    
+                    if PLOTLY_AVAILABLE:
+                        fig_pres = px.bar(datos_presiones, x='Presión', y='Valor (kg/cm²)',
+                                         title="Presiones sobre el Suelo - Rankine",
+                                         color='Presión',
+                                         color_discrete_map={
+                                             'Máxima': '#FF6B6B',
+                                             'Mínima': '#4ECDC4'
+                                         })
+                        
+                        fig_pres.update_layout(
+                            xaxis_title="Tipo de Presión",
+                            yaxis_title="Valor (kg/cm²)",
+                            height=400
+                        )
+                        
+                        fig_pres.update_traces(texttemplate='%{y:.2f}', textposition='outside')
+                        st.plotly_chart(fig_pres, use_container_width=True)
                 
                 # Gráfico del muro de contención
-                st.subheader("🏗️ Visualización del Muro de Contención")
-                st.info("Representación gráfica detallada del muro diseñado")
+                st.subheader("🏗️ Visualización del Muro de Contención - Rankine")
+                st.info("Representación gráfica detallada del muro diseñado según teoría de Rankine")
                 
                 # Crear dimensiones para el gráfico
                 dimensiones_grafico = {
@@ -2824,36 +3340,38 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                 
                 # Información adicional sobre el gráfico
                 st.markdown("""
-                **Leyenda del Gráfico:**
+                **Leyenda del Gráfico - Análisis Rankine:**
                 - 🔵 **Zapata (Azul claro):** Base de cimentación del muro
-                - 🔴 **Muro (Rosa):** Estructura principal de contención
+                - 🔴 **Muro (Rosa):** Estructura principal de contención (vertical según Rankine)
                 - 🟡 **Relleno (Amarillo):** Material de relleno detrás del muro
                 - 🟤 **Suelo (Marrón):** Suelo de cimentación
                 - 🔴 **Flechas rojas:** Sobrecarga aplicada (qsc)
                 - 🔵 **Dimensiones en azul:** Medidas calculadas del muro
+                - 📐 **Teoría Rankine:** Muro vertical liso, sin fricción muro-suelo
                 """)
+            
+            elif metodo_seleccionado == "🔬 Análisis Coulomb" and resultados_coulomb_disponibles:
+                st.subheader("🔬 Gráficos del Análisis Coulomb")
+                resultados_coulomb = st.session_state['resultados_coulomb']
                 
-                # Mostrar gráficos de Coulomb si están disponibles
-                if resultados_coulomb_disponibles:
-                    st.markdown("---")
-                    st.subheader("🔬 Gráficos Adicionales - Análisis Coulomb")
-                    st.info("Gráficos complementarios del análisis según teoría de Coulomb")
+                # Gráfico comparativo Rankine vs Coulomb
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    # Calcular Ka de Rankine para comparación
+                    if 'datos_entrada_coulomb' in st.session_state:
+                        phi1_rankine = st.session_state['datos_entrada_coulomb']['phi1']
+                    else:
+                        phi1_rankine = 32  # Valor por defecto
                     
-                    resultados_coulomb = st.session_state['resultados_coulomb']
+                    ka_rankine = math.tan(math.radians(45 - phi1_rankine/2))**2
                     
-                    # Gráfico comparativo Rankine vs Coulomb
-                    col1, col2 = st.columns(2)
+                    datos_comparacion = pd.DataFrame({
+                        'Teoría': ['Rankine', 'Coulomb'],
+                        'Coeficiente Ka': [ka_rankine, resultados_coulomb['Ka']]
+                    })
                     
-                    with col1:
-                        # Calcular Ka de Rankine para comparación
-                        phi1_rankine = 30  # Valor típico
-                        ka_rankine = math.tan(math.radians(45 - phi1_rankine/2))**2
-                        
-                        datos_comparacion = pd.DataFrame({
-                            'Teoría': ['Rankine', 'Coulomb'],
-                            'Coeficiente Ka': [ka_rankine, resultados_coulomb['Ka']]
-                        })
-                        
+                    if PLOTLY_AVAILABLE:
                         fig_comp = px.bar(datos_comparacion, x='Teoría', y='Coeficiente Ka',
                                          title="Comparación Ka: Rankine vs Coulomb",
                                          color='Teoría',
@@ -2867,14 +3385,15 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                         
                         fig_comp.update_traces(texttemplate='%{y:.6f}', textposition='outside')
                         st.plotly_chart(fig_comp, use_container_width=True)
+                
+                with col2:
+                    # Gráfico de componentes del empuje Coulomb
+                    datos_componentes = pd.DataFrame({
+                        'Componente': ['Empuje Total (Pa)', 'Componente Horizontal (Ph)', 'Componente Vertical (Pv)', 'Empuje Sobrecarga (PSC)'],
+                        'Valor (t/m)': [resultados_coulomb['Pa'], resultados_coulomb['Ph'], resultados_coulomb['Pv'], resultados_coulomb['PSC']]
+                    })
                     
-                    with col2:
-                        # Gráfico de componentes del empuje Coulomb
-                        datos_componentes = pd.DataFrame({
-                            'Componente': ['Empuje Total (Pa)', 'Componente Horizontal (Ph)', 'Componente Vertical (Pv)', 'Empuje Sobrecarga (PSC)'],
-                            'Valor (t/m)': [resultados_coulomb['Pa'], resultados_coulomb['Ph'], resultados_coulomb['Pv'], resultados_coulomb['PSC']]
-                        })
-                        
+                    if PLOTLY_AVAILABLE:
                         fig_comp2 = px.bar(datos_componentes, x='Componente', y='Valor (t/m)',
                                           title="Componentes del Empuje - Coulomb",
                                           color='Componente',
@@ -2893,20 +3412,21 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                         
                         fig_comp2.update_traces(texttemplate='%{y:.3f}', textposition='outside')
                         st.plotly_chart(fig_comp2, use_container_width=True)
+                
+                # Gráfico de parámetros geométricos de Coulomb
+                st.subheader("📐 Parámetros Geométricos - Coulomb")
+                
+                if 'datos_entrada_coulomb' in st.session_state:
+                    datos_entrada_coulomb = st.session_state['datos_entrada_coulomb']
                     
-                    # Gráfico de parámetros geométricos de Coulomb
-                    st.subheader("📐 Parámetros Geométricos - Coulomb")
+                    datos_geometricos = pd.DataFrame({
+                        'Parámetro': ['Altura Total (H)', 'Altura Efectiva (H\')', 'Ángulo β', 'Ángulo α', 'Ángulo δ'],
+                        'Valor': [datos_entrada_coulomb['H'], resultados_coulomb['H_efectiva'], 
+                                 resultados_coulomb['beta'], datos_entrada_coulomb['alpha'], datos_entrada_coulomb['delta']],
+                        'Unidad': ['m', 'm', '°', '°', '°']
+                    })
                     
-                    if 'datos_entrada_coulomb' in st.session_state:
-                        datos_entrada_coulomb = st.session_state['datos_entrada_coulomb']
-                        
-                        datos_geometricos = pd.DataFrame({
-                            'Parámetro': ['Altura Total (H)', 'Altura Efectiva (H\')', 'Ángulo β', 'Ángulo α', 'Ángulo δ'],
-                            'Valor': [datos_entrada_coulomb['H'], resultados_coulomb['H_efectiva'], 
-                                     resultados_coulomb['beta'], datos_entrada_coulomb['alpha'], datos_entrada_coulomb['delta']],
-                            'Unidad': ['m', 'm', '°', '°', '°']
-                        })
-                        
+                    if PLOTLY_AVAILABLE:
                         fig_geo = px.bar(datos_geometricos, x='Parámetro', y='Valor',
                                         title="Parámetros Geométricos - Análisis Coulomb",
                                         color='Parámetro',
@@ -2926,18 +3446,54 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                         
                         fig_geo.update_traces(texttemplate='%{y:.2f}', textposition='outside')
                         st.plotly_chart(fig_geo, use_container_width=True)
-                        
-                        # Información técnica adicional
-                        st.info("""
-                        **Explicación de Parámetros:**
-                        - **H:** Altura total del muro de contención
-                        - **H':** Altura efectiva que incluye el efecto de la inclinación del terreno
-                        - **β:** Ángulo de inclinación del muro respecto a la vertical
-                        - **α:** Ángulo de inclinación del terreno natural
-                        - **δ:** Ángulo de fricción entre el muro y el relleno
-                        """)
+                
+                # Gráfico del muro de contención para Coulomb
+                st.subheader("🏗️ Visualización del Muro de Contención - Coulomb")
+                st.info("Representación gráfica del muro con análisis Coulomb")
+                
+                # Crear dimensiones para el gráfico (usando valores típicos para Coulomb)
+                if 'datos_entrada_coulomb' in st.session_state:
+                    datos_entrada_coulomb = st.session_state['datos_entrada_coulomb']
+                    dimensiones_coulomb = {
+                        'Bz': datos_entrada_coulomb['t2'] + datos_entrada_coulomb['b2'] + 0.5,  # Base total estimada
+                        'hz': 0.4,  # Peralte de zapata típico
+                        'b': 0.3,   # Espesor del muro
+                        'r': datos_entrada_coulomb['t2'],    # Longitud de puntera
+                        't': datos_entrada_coulomb['b2'],    # Longitud de talón
+                        'hm': 0.2   # Altura de coronación
+                    }
+                    
+                    # Generar el gráfico del muro para Coulomb
+                    fig_muro_coulomb = dibujar_muro_streamlit(dimensiones_coulomb, datos_entrada_coulomb['h1'], 0.5, datos_entrada_coulomb['S_c'])
+                    
+                    # Mostrar el gráfico en Streamlit
+                    st.pyplot(fig_muro_coulomb)
+                    
+                    # Información adicional sobre el gráfico
+                    st.markdown("""
+                    **Leyenda del Gráfico - Análisis Coulomb:**
+                    - 🔵 **Zapata (Azul claro):** Base de cimentación del muro
+                    - 🔴 **Muro (Rosa):** Estructura principal de contención (inclinada según β)
+                    - 🟡 **Relleno (Amarillo):** Material de relleno detrás del muro
+                    - 🟤 **Suelo (Marrón):** Suelo de cimentación
+                    - 🔴 **Flechas rojas:** Sobrecarga aplicada (S/c)
+                    - 🔵 **Dimensiones en azul:** Medidas calculadas del muro
+                    - 📐 **Ángulo β:** Inclinación del muro respecto a la vertical
+                    - 📐 **Ángulo α:** Inclinación del terreno natural
+                    - 📐 **Ángulo δ:** Fricción entre muro y relleno
+                    """)
+                    
+                    # Información técnica adicional
+                    st.info("""
+                    **Explicación de Parámetros:**
+                    - **H:** Altura total del muro de contención
+                    - **H':** Altura efectiva que incluye el efecto de la inclinación del terreno
+                    - **β:** Ángulo de inclinación del muro respecto a la vertical
+                    - **α:** Ángulo de inclinación del terreno natural
+                    - **δ:** Ángulo de fricción entre el muro y el relleno
+                    """)
             else:
-                st.warning("⚠️ No hay resultados disponibles. Realiza primero el análisis completo.")
+                st.warning("⚠️ No hay resultados disponibles para el método seleccionado.")
 
     elif opcion == "ℹ️ Acerca de":
         st.title("Acerca de CONSORCIO DEJ")
