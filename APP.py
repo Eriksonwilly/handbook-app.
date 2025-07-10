@@ -37,6 +37,72 @@ except ImportError:
     REPORTLAB_AVAILABLE = False
     st.warning("⚠️ ReportLab no está instalado. La generación de PDFs no estará disponible.")
 
+# Función para calcular empuje activo según teoría de Coulomb
+def calcular_empuje_coulomb(datos_entrada):
+    """
+    Calcula el empuje activo según la teoría de Coulomb
+    """
+    # Extraer datos de entrada
+    H = datos_entrada['H']  # Altura total del muro
+    h1 = datos_entrada['h1']  # Altura del talud
+    t2 = datos_entrada['t2']  # Base del triángulo 2
+    b2 = datos_entrada['b2']  # Longitud del talón
+    phi1 = datos_entrada['phi1']  # Ángulo de fricción del suelo de relleno
+    delta = datos_entrada['delta']  # Ángulo de fricción entre muro y relleno
+    alpha = datos_entrada['alpha']  # Ángulo de inclinación del terreno
+    gamma1 = datos_entrada['gamma1']  # Peso específico del suelo de relleno
+    S_c = datos_entrada['S_c']  # Sobrecarga
+    
+    # 1. Cálculo del ángulo de inclinación del muro (β)
+    beta = math.atan((H - h1) / t2)
+    beta_deg = math.degrees(beta)
+    
+    # 2. Coeficiente de empuje activo según Coulomb
+    phi1_rad = math.radians(phi1)
+    delta_rad = math.radians(delta)
+    alpha_rad = math.radians(alpha)
+    
+    # Fórmula de Coulomb para Ka
+    numerador = math.sin(beta + phi1_rad)**2
+    denominador = math.sin(beta)**2 * math.sin(beta - delta_rad) * (
+        1 + math.sqrt(
+            (math.sin(phi1_rad + delta_rad) * math.sin(phi1_rad - alpha_rad)) /
+            (math.sin(beta - delta_rad) * math.sin(beta + alpha_rad))
+        )
+    )**2
+    
+    Ka = numerador / denominador
+    
+    # 3. Altura efectiva del muro (H')
+    H_efectiva = H + (t2/2 + b2/2) * math.tan(alpha_rad)
+    
+    # 4. Empuje activo total (Pa)
+    Pa = 0.5 * Ka * gamma1 * (H_efectiva)**2
+    
+    # 5. Componentes del empuje activo
+    # Componente horizontal (Ph)
+    Ph = Pa * math.cos(math.radians(90) - beta + delta_rad)
+    
+    # Componente vertical (Pv)
+    Pv = Pa * math.sin(math.radians(90) - beta + delta_rad)
+    
+    # 6. Empuje por sobrecarga (PSC)
+    PSC = Ka * H * (S_c / 1000) * (math.sin(beta) / math.sin(beta + alpha_rad))
+    
+    # 7. Empuje total (horizontal + sobrecarga)
+    P_total_horizontal = Ph + PSC
+    
+    return {
+        'beta': beta_deg,
+        'Ka': Ka,
+        'H_efectiva': H_efectiva,
+        'Pa': Pa,
+        'Ph': Ph,
+        'Pv': Pv,
+        'PSC': PSC,
+        'P_total_horizontal': P_total_horizontal
+    }
+
 # Función para calcular diseño del fuste del muro
 def calcular_diseno_fuste(resultados, datos_entrada):
     """
@@ -891,7 +957,7 @@ else:
         st.sidebar.success("⭐ Plan Premium")
     
     opcion = st.sidebar.selectbox("Selecciona una opción", 
-                                 ["🏗️ Cálculo Básico", "📊 Análisis Completo", "🏗️ Diseño del Fuste", "📄 Generar Reporte", "📈 Gráficos", "ℹ️ Acerca de", "✉️ Contacto"])
+                                 ["🏗️ Cálculo Básico", "📊 Análisis Completo (Rankine)", "🔬 Análisis Coulomb", "🏗️ Diseño del Fuste", "📄 Generar Reporte", "📈 Gráficos", "ℹ️ Acerca de", "✉️ Contacto"])
 
     if opcion == "🏗️ Cálculo Básico":
         st.title("Cálculo Básico de Muro de Contención")
@@ -1058,7 +1124,7 @@ else:
                 ax2.set_title("Distribución de Momentos - Plan Gratuito")
                 st.pyplot(fig2)
 
-    elif opcion == "📊 Análisis Completo":
+    elif opcion == "📊 Análisis Completo (Rankine)":
         # Verificar acceso basado en plan del usuario
         user_plan = st.session_state.get('plan', 'gratuito')
         user_email = st.session_state.get('user', '')
@@ -1094,8 +1160,45 @@ else:
                     st.session_state['show_pricing'] = True
                     st.rerun()
         else:
-            st.title("Análisis Completo de Muro de Contención")
+            st.title("Análisis Completo de Muro de Contención - Teoría de Rankine")
             st.success("⭐ Plan Premium: Análisis completo con teoría de Rankine")
+            
+            # Mostrar fórmulas de Rankine
+            st.subheader("📚 Fórmulas de la Teoría de Rankine")
+            
+            with st.expander("📖 VER FÓRMULAS DE RANKINE", expanded=False):
+                st.markdown("""
+                ### Fórmulas de la Teoría de Rankine para Muros de Contención:
+                
+                #### 1. Coeficiente de Empuje Activo (Ka)
+                ```
+                Ka = tan²(45° - φ/2)
+                ```
+                
+                Donde:
+                - **φ**: Ángulo de fricción interna del suelo
+                
+                #### 2. Empuje Activo por Relleno
+                ```
+                Ea_relleno = ½ · Ka · γ · h₁²
+                ```
+                
+                #### 3. Empuje Activo por Sobrecarga
+                ```
+                Ea_sobrecarga = Ka · qsc · h₁
+                ```
+                
+                #### 4. Empuje Activo Total
+                ```
+                Ea_total = Ea_relleno + Ea_sobrecarga
+                ```
+                
+                **Características de Rankine:**
+                - Muro vertical liso
+                - No considera fricción muro-suelo
+                - Aproximación conservadora
+                - Fórmulas más simples
+                """)
             
             # Datos de entrada completos
             col1, col2 = st.columns(2)
@@ -1123,7 +1226,49 @@ else:
                 fc = st.number_input("Resistencia del concreto (kg/cm²)", value=210, step=10)
                 fy = st.number_input("Resistencia del acero (kg/cm²)", value=4200, step=100)
             
-            if st.button("🔬 Ejecutar Análisis Completo", type="primary"):
+            # Botones para diferentes cálculos de Rankine
+            st.subheader("🔬 Cálculos Específicos - Rankine")
+            
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                if st.button("📊 Calcular Coeficiente Ka", type="primary", key="rankine_ka"):
+                    # Calcular coeficiente de empuje activo de Rankine
+                    phi_relleno_rad = math.radians(phi_relleno)
+                    ka = math.tan(math.radians(45 - phi_relleno/2))**2
+                    
+                    st.success(f"✅ Coeficiente de empuje activo (Ka) = {ka:.6f}")
+                    st.info(f"Ka = tan²(45° - φ/2) = tan²(45° - {phi_relleno}/2) = {ka:.6f}")
+            
+            with col2:
+                if st.button("📏 Calcular Altura Equivalente", type="primary", key="rankine_hs"):
+                    # Calcular altura equivalente por sobrecarga
+                    hs = qsc / gamma_relleno
+                    
+                    st.success(f"✅ Altura equivalente por sobrecarga (hs) = {hs:.3f} m")
+                    st.info(f"hs = qsc / γ = {qsc} / {gamma_relleno} = {hs:.3f} m")
+            
+            with col3:
+                if st.button("⚖️ Calcular Empuje Relleno", type="primary", key="rankine_ea_relleno"):
+                    # Calcular empuje activo por relleno
+                    phi_relleno_rad = math.radians(phi_relleno)
+                    ka = math.tan(math.radians(45 - phi_relleno/2))**2
+                    Ea_relleno = 0.5 * ka * (gamma_relleno/1000) * h1**2
+                    
+                    st.success(f"✅ Empuje activo por relleno = {Ea_relleno:.3f} tn/m")
+                    st.info(f"Ea_relleno = ½ · Ka · γ · h₁² = 0.5 · {ka:.6f} · {gamma_relleno/1000:.3f} · {h1}² = {Ea_relleno:.3f} tn/m")
+            
+            with col4:
+                if st.button("📋 Calcular Empuje Sobrecarga", type="primary", key="rankine_ea_sobrecarga"):
+                    # Calcular empuje activo por sobrecarga
+                    phi_relleno_rad = math.radians(phi_relleno)
+                    ka = math.tan(math.radians(45 - phi_relleno/2))**2
+                    Ea_sobrecarga = ka * (qsc/1000) * h1
+                    
+                    st.success(f"✅ Empuje activo por sobrecarga = {Ea_sobrecarga:.3f} tn/m")
+                    st.info(f"Ea_sobrecarga = Ka · qsc · h₁ = {ka:.6f} · {qsc/1000:.3f} · {h1} = {Ea_sobrecarga:.3f} tn/m")
+            
+            if st.button("🚀 Ejecutar Análisis Completo Rankine", type="primary"):
                 # Cálculos completos basados en TAREA_DE_PROGRAMACION2.py
                 
                 # Coeficiente de empuje activo (fórmula correcta de Rankine)
@@ -1480,6 +1625,278 @@ else:
                         st.write(f"• Separación entre barras: {diseno_fuste['separacion']:.1f} cm")
                         st.write(f"• Acero por retracción: {diseno_fuste['As_retraccion']:.2f} cm²")
                         st.write(f"• Barras retracción 1/2\": {diseno_fuste['num_barras_retraccion']}")
+
+    elif opcion == "🔬 Análisis Coulomb":
+        st.title("Análisis de Empuje Activo según Teoría de Coulomb")
+        st.success("🔬 Plan Premium: Análisis completo con teoría de Coulomb")
+        
+        # Mostrar fórmulas de Coulomb
+        st.subheader("📚 Fórmulas de la Teoría de Coulomb")
+        
+        with st.expander("📖 VER FÓRMULAS COMPLETAS DE COULOMB", expanded=False):
+            st.markdown("""
+            ### Resumen de las Fórmulas para el Empuje Activo según la Teoría de Coulomb en Muros de Contención:
+            
+            #### 1. Coeficiente de Empuje Activo (Ka)
+            La fórmula general para el coeficiente de empuje activo según Coulomb es:
+            
+            ```
+            Ka = sin²(β + φ₁') / [sin²(β) · sin(β - δ) · (1 + √(sin(φ₁' + δ) · sin(φ₁' - α) / sin(β - δ) · sin(β + α)))²]
+            ```
+            
+            Donde:
+            - **β**: Ángulo de inclinación del muro respecto a la vertical
+            - **φ₁'**: Ángulo de fricción interna del suelo de relleno
+            - **δ**: Ángulo de fricción entre el muro y el relleno
+            - **α**: Ángulo de inclinación del terreno
+            
+            #### 2. Altura Efectiva del Muro (H')
+            ```
+            H' = H + (t₂/2 + b₂/2) · tan(α)
+            ```
+            
+            #### 3. Empuje Activo Total (Pa)
+            ```
+            Pa = ½ · Ka · γ₁ · (H')²
+            ```
+            
+            #### 4. Componentes del Empuje Activo:
+            **Componente Horizontal (Ph):**
+            ```
+            Ph = Pa · cos(90° - β + δ)
+            ```
+            
+            **Componente Vertical (Pv):**
+            ```
+            Pv = Pa · sin(90° - β + δ)
+            ```
+            
+            #### 5. Empuje por Sobrecarga (PSC)
+            ```
+            PSC = Ka · H · (S/c / 1000) · (sin(β) / sin(β + α))
+            ```
+            
+            **Observaciones:**
+            - Los valores de δ dependen del material de relleno (ejemplo: 21° para arena gruesa)
+            - La teoría de Coulomb considera la fricción entre el muro y el suelo (δ), a diferencia de Rankine
+            """)
+        
+        # Datos de entrada para Coulomb
+        st.subheader("📊 Datos de Entrada para Análisis Coulomb")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("Dimensiones del Muro")
+            H = st.number_input("Altura total del muro (H) [m]", value=4.0, step=0.1, help="Altura total del muro de contención")
+            h1 = st.number_input("Altura del talud (h1) [m]", value=3.5, step=0.1, help="Altura del talud que contiene el suelo")
+            t2 = st.number_input("Base del triángulo 2 (t2) [m]", value=0.3, step=0.05, help="Base del triángulo de inclinación del muro")
+            b2 = st.number_input("Longitud del talón (b2) [m]", value=1.0, step=0.1, help="Longitud del talón del muro")
+            
+            st.subheader("Propiedades del Suelo")
+            phi1 = st.number_input("Ángulo de fricción del suelo (φ₁') [°]", value=32.0, step=1.0, help="Ángulo de fricción interna del suelo de relleno")
+            delta = st.number_input("Ángulo de fricción muro-suelo (δ) [°]", value=21.0, step=1.0, help="Ángulo de fricción entre el muro y el relleno")
+            gamma1 = st.number_input("Peso específico del suelo (γ₁) [t/m³]", value=1.85, step=0.05, help="Peso específico del suelo de relleno")
+        
+        with col2:
+            st.subheader("Geometría del Terreno")
+            alpha = st.number_input("Ángulo de inclinación del terreno (α) [°]", value=10.0, step=1.0, help="Ángulo de inclinación del terreno natural")
+            
+            st.subheader("Cargas")
+            S_c = st.number_input("Sobrecarga (S/c) [kg/m²]", value=750, step=50, help="Sobrecarga aplicada sobre el terreno")
+            
+            st.subheader("Información Adicional")
+            st.info("**Valores típicos de δ (ángulo de fricción muro-suelo):**")
+            st.write("• Arena gruesa: 21°")
+            st.write("• Arena fina: 17°")
+            st.write("• Grava: 25°")
+            st.write("• Arcilla: 15°")
+        
+        # Botones para diferentes cálculos
+        st.subheader("🔬 Cálculos Específicos")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            if st.button("📐 Calcular Ángulo β", type="primary"):
+                # Calcular ángulo de inclinación del muro
+                beta = math.atan((H - h1) / t2)
+                beta_deg = math.degrees(beta)
+                
+                st.success(f"✅ Ángulo de inclinación del muro (β) = {beta_deg:.2f}°")
+                st.info(f"β = arctan((H - h1) / t2) = arctan(({H} - {h1}) / {t2}) = {beta_deg:.2f}°")
+        
+        with col2:
+            if st.button("📊 Calcular Coeficiente Ka", type="primary"):
+                # Calcular coeficiente de empuje activo
+                beta = math.atan((H - h1) / t2)
+                phi1_rad = math.radians(phi1)
+                delta_rad = math.radians(delta)
+                alpha_rad = math.radians(alpha)
+                
+                # Fórmula de Coulomb para Ka
+                numerador = math.sin(beta + phi1_rad)**2
+                denominador = math.sin(beta)**2 * math.sin(beta - delta_rad) * (
+                    1 + math.sqrt(
+                        (math.sin(phi1_rad + delta_rad) * math.sin(phi1_rad - alpha_rad)) /
+                        (math.sin(beta - delta_rad) * math.sin(beta + alpha_rad))
+                    )
+                )**2
+                
+                Ka = numerador / denominador
+                
+                st.success(f"✅ Coeficiente de empuje activo (Ka) = {Ka:.6f}")
+                st.info("Calculado según la fórmula de Coulomb")
+        
+        with col3:
+            if st.button("📏 Calcular Altura Efectiva", type="primary"):
+                # Calcular altura efectiva
+                alpha_rad = math.radians(alpha)
+                H_efectiva = H + (t2/2 + b2/2) * math.tan(alpha_rad)
+                
+                st.success(f"✅ Altura efectiva del muro (H') = {H_efectiva:.2f} m")
+                st.info(f"H' = H + (t₂/2 + b₂/2) · tan(α) = {H} + ({t2/2:.2f} + {b2/2:.2f}) · tan({alpha}°) = {H_efectiva:.2f} m")
+        
+        with col4:
+            if st.button("⚖️ Calcular Empuje Total", type="primary"):
+                # Calcular empuje activo total
+                datos_entrada = {
+                    'H': H, 'h1': h1, 't2': t2, 'b2': b2,
+                    'phi1': phi1, 'delta': delta, 'alpha': alpha,
+                    'gamma1': gamma1, 'S_c': S_c
+                }
+                
+                resultados_coulomb = calcular_empuje_coulomb(datos_entrada)
+                
+                st.success("✅ Empuje activo calculado según Coulomb")
+                st.info(f"Empuje total horizontal = {resultados_coulomb['P_total_horizontal']:.3f} t/m")
+        
+        # Botón para análisis completo
+        if st.button("🚀 Ejecutar Análisis Completo Coulomb", type="primary"):
+            # Calcular todos los parámetros
+            datos_entrada = {
+                'H': H, 'h1': h1, 't2': t2, 'b2': b2,
+                'phi1': phi1, 'delta': delta, 'alpha': alpha,
+                'gamma1': gamma1, 'S_c': S_c
+            }
+            
+            resultados_coulomb = calcular_empuje_coulomb(datos_entrada)
+            
+            # Guardar resultados en session state
+            st.session_state['resultados_coulomb'] = resultados_coulomb
+            st.session_state['datos_entrada_coulomb'] = datos_entrada
+            
+            st.success("¡Análisis Coulomb completado exitosamente!")
+            st.balloons()
+            
+            # MOSTRAR RESULTADOS COMPLETOS
+            st.subheader("📊 Resultados del Análisis Coulomb")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.metric("Ángulo de inclinación (β)", f"{resultados_coulomb['beta']:.2f}°")
+                st.metric("Coeficiente Ka", f"{resultados_coulomb['Ka']:.6f}")
+                st.metric("Altura efectiva (H')", f"{resultados_coulomb['H_efectiva']:.2f} m")
+                st.metric("Empuje activo total (Pa)", f"{resultados_coulomb['Pa']:.3f} t/m")
+            
+            with col2:
+                st.metric("Componente horizontal (Ph)", f"{resultados_coulomb['Ph']:.3f} t/m")
+                st.metric("Componente vertical (Pv)", f"{resultados_coulomb['Pv']:.3f} t/m")
+                st.metric("Empuje por sobrecarga (PSC)", f"{resultados_coulomb['PSC']:.3f} t/m")
+                st.metric("Empuje total horizontal", f"{resultados_coulomb['P_total_horizontal']:.3f} t/m")
+            
+            # Comparación con Rankine
+            st.subheader("🔄 Comparación: Coulomb vs Rankine")
+            
+            # Calcular Ka de Rankine para comparación
+            phi1_rad = math.radians(phi1)
+            ka_rankine = math.tan(math.radians(45 - phi1/2))**2
+            
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.info("**Teoría de Coulomb:**")
+                st.write(f"• Ka = {resultados_coulomb['Ka']:.6f}")
+                st.write(f"• Considera fricción muro-suelo")
+                st.write(f"• Más realista para muros rugosos")
+            
+            with col2:
+                st.info("**Teoría de Rankine:**")
+                st.write(f"• Ka = {ka_rankine:.6f}")
+                st.write(f"• Muro vertical liso")
+                st.write(f"• Aproximación conservadora")
+            
+            with col3:
+                st.info("**Diferencia:**")
+                diferencia = ((ka_rankine - resultados_coulomb['Ka']) / ka_rankine) * 100
+                st.write(f"• Diferencia: {diferencia:.1f}%")
+                if diferencia > 0:
+                    st.success("Coulomb es menos conservador")
+                else:
+                    st.warning("Coulomb es más conservador")
+            
+            # Gráfico comparativo
+            st.subheader("📈 Gráfico Comparativo")
+            
+            datos_comparacion = pd.DataFrame({
+                'Teoría': ['Coulomb', 'Rankine'],
+                'Coeficiente Ka': [resultados_coulomb['Ka'], ka_rankine],
+                'Empuje Horizontal (t/m)': [resultados_coulomb['Ph'], resultados_coulomb['Pa'] * math.cos(math.radians(90 - resultados_coulomb['beta'] + delta))]
+            })
+            
+            if PLOTLY_AVAILABLE:
+                fig = px.bar(datos_comparacion, x='Teoría', y='Coeficiente Ka',
+                            title="Comparación de Coeficientes Ka: Coulomb vs Rankine",
+                            color='Teoría',
+                            color_discrete_map={'Coulomb': '#FF6B6B', 'Rankine': '#4ECDC4'})
+                
+                fig.update_layout(
+                    xaxis_title="Teoría",
+                    yaxis_title="Coeficiente Ka",
+                    height=400
+                )
+                
+                fig.update_traces(texttemplate='%{y:.6f}', textposition='outside')
+                st.plotly_chart(fig, use_container_width=True)
+            
+            # Información técnica adicional
+            st.subheader("📚 Información Técnica")
+            
+            with st.expander("🔍 DETALLES DEL CÁLCULO", expanded=False):
+                st.markdown(f"""
+                **Cálculo del ángulo β:**
+                ```
+                β = arctan((H - h1) / t2) = arctan(({H} - {h1}) / {t2}) = {resultados_coulomb['beta']:.2f}°
+                ```
+                
+                **Cálculo del coeficiente Ka (Coulomb):**
+                ```
+                Ka = sin²(β + φ₁') / [sin²(β) · sin(β - δ) · (1 + √(sin(φ₁' + δ) · sin(φ₁' - α) / sin(β - δ) · sin(β + α)))²]
+                Ka = {resultados_coulomb['Ka']:.6f}
+                ```
+                
+                **Cálculo de la altura efectiva:**
+                ```
+                H' = H + (t₂/2 + b₂/2) · tan(α) = {H} + ({t2/2:.2f} + {b2/2:.2f}) · tan({alpha}°) = {resultados_coulomb['H_efectiva']:.2f} m
+                ```
+                
+                **Cálculo del empuje activo total:**
+                ```
+                Pa = ½ · Ka · γ₁ · (H')² = 0.5 · {resultados_coulomb['Ka']:.6f} · {gamma1} · ({resultados_coulomb['H_efectiva']:.2f})² = {resultados_coulomb['Pa']:.3f} t/m
+                ```
+                
+                **Componentes del empuje:**
+                ```
+                Ph = Pa · cos(90° - β + δ) = {resultados_coulomb['Pa']:.3f} · cos(90° - {resultados_coulomb['beta']:.2f}° + {delta}°) = {resultados_coulomb['Ph']:.3f} t/m
+                Pv = Pa · sin(90° - β + δ) = {resultados_coulomb['Pa']:.3f} · sin(90° - {resultados_coulomb['beta']:.2f}° + {delta}°) = {resultados_coulomb['Pv']:.3f} t/m
+                ```
+                
+                **Empuje por sobrecarga:**
+                ```
+                PSC = Ka · H · (S/c / 1000) · (sin(β) / sin(β + α)) = {resultados_coulomb['Ka']:.6f} · {H} · ({S_c}/1000) · (sin({resultados_coulomb['beta']:.2f}°) / sin({resultados_coulomb['beta']:.2f}° + {alpha}°)) = {resultados_coulomb['PSC']:.3f} t/m
+                ```
+                """)
 
     elif opcion == "🏗️ Diseño del Fuste":
         st.title("Diseño y Verificación del Fuste del Muro")
@@ -2123,17 +2540,36 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
         - ✅ Análisis de factor de seguridad
         
         **Características del Plan Premium:**
-        - ⭐ Análisis completo con teoría de Rankine
+        - ⭐ **Análisis completo con teoría de Rankine** (NUEVO)
+        - ⭐ **Análisis completo con teoría de Coulomb** (NUEVO)
         - ⭐ Cálculos de dimensiones automáticos
-        - ⭐ **Diseño y verificación del fuste del muro** (NUEVO)
-        - ⭐ **Cálculo de refuerzo estructural** (NUEVO)
-        - ⭐ **Reportes técnicos en PDF** (NUEVO)
+        - ⭐ **Diseño y verificación del fuste del muro**
+        - ⭐ **Cálculo de refuerzo estructural**
+        - ⭐ **Reportes técnicos en PDF**
         - ⭐ Gráficos avanzados y visualizaciones
         - ⭐ Verificaciones de estabilidad completas
-        - ⭐ **Altura de coronación optimizada** (NUEVO)
+        - ⭐ **Altura de coronación optimizada**
+        - ⭐ **Botones específicos para cada fórmula** (NUEVO)
+        - ⭐ **Comparación Rankine vs Coulomb** (NUEVO)
+        
+        **Métodos de Análisis Disponibles:**
+        
+        **🔬 Teoría de Rankine:**
+        - Muro vertical liso
+        - No considera fricción muro-suelo
+        - Fórmulas más simples
+        - Aproximación conservadora
+        - Ka = tan²(45° - φ/2)
+        
+        **🔬 Teoría de Coulomb:**
+        - Considera fricción muro-suelo (δ)
+        - Muro inclinado
+        - Fórmulas más complejas
+        - Más realista para muros rugosos
+        - Ka = f(β, φ, δ, α)
         
         **Desarrollado con:** Python, Streamlit, Plotly
-        **Normativas:** Aplicación de la teoría de Rankine para muros de contención
+        **Normativas:** Aplicación de las teorías de Rankine y Coulomb para muros de contención
         """)
 
     elif opcion == "✉️ Contacto":
@@ -2142,10 +2578,10 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
         ### 🏗️ CONSORCIO DEJ
         **Información de Contacto:**
         
-        📧 Email: Administrador@consorciodej.com  
-        📱 Teléfono: +51967573364  
+        📧 Email: contacto@consorciodej.com  
+        📱 Teléfono: +123 456 7890  
         🌐 Web: www.consorciodej.com  
-        📍 Dirección: [Adepa - Jose Luis B. y Rivero]
+        📍 Dirección: [Tu dirección aquí]
         
         **Horarios de Atención:**
         Lunes a Viernes: 8:00 AM - 6:00 PM
