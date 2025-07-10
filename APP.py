@@ -716,7 +716,7 @@ Generado por: CONSORCIO DEJ
     return pdf_buffer
 
 # Función para dibujar el muro de contención
-def dibujar_muro_streamlit(dimensiones, h1, Df, qsc):
+def dibujar_muro_streamlit(dimensiones, h1, Df, qsc, metodo="rankine", datos_coulomb=None):
     """
     Dibuja el muro de contención con las dimensiones calculadas para Streamlit.
     
@@ -730,6 +730,10 @@ def dibujar_muro_streamlit(dimensiones, h1, Df, qsc):
         Profundidad de desplante (m)
     qsc : float
         Sobrecarga (kg/m²)
+    metodo : str
+        Método de análisis ("rankine" o "coulomb")
+    datos_coulomb : dict, optional
+        Datos específicos del método Coulomb (ángulos β, α, δ, etc.)
     
     Retorna:
     --------
@@ -859,7 +863,16 @@ def dibujar_muro_streamlit(dimensiones, h1, Df, qsc):
     
     # Configurar aspecto y títulos profesionales
     ax.set_aspect('equal')
-    ax.set_title('DISEÑO PROFESIONAL DE MURO DE CONTENCIÓN\nCONSORCIO DEJ - Ingeniería y Construcción', 
+    
+    # Título según el método
+    if metodo == "coulomb" and datos_coulomb:
+        titulo = f'DISEÑO PROFESIONAL DE MURO DE CONTENCIÓN - MÉTODO COULOMB\nCONSORCIO DEJ - Ingeniería y Construcción'
+        subtitulo = f'β={datos_coulomb.get("beta", 0):.1f}°, α={datos_coulomb.get("alpha", 0):.1f}°, δ={datos_coulomb.get("delta", 0):.1f}°'
+    else:
+        titulo = 'DISEÑO PROFESIONAL DE MURO DE CONTENCIÓN - MÉTODO RANKINE\nCONSORCIO DEJ - Ingeniería y Construcción'
+        subtitulo = 'Muro vertical liso - Sin fricción muro-suelo'
+    
+    ax.set_title(f'{titulo}\n{subtitulo}', 
                 fontsize=16, fontweight='bold', pad=20, color='#1565C0')
     ax.set_xlabel('Distancia (metros)', fontsize=12, fontweight='bold', color='#424242')
     ax.set_ylabel('Altura (metros)', fontsize=12, fontweight='bold', color='#424242')
@@ -875,6 +888,57 @@ def dibujar_muro_streamlit(dimensiones, h1, Df, qsc):
     ax.legend(handles=legend_elements, loc='upper left', fontsize=8, 
              frameon=True, fancybox=True, shadow=True, 
              title='ELEMENTOS', title_fontsize=9, bbox_to_anchor=(0.02, 0.98))
+    
+    # Agregar visualización de ángulos para método Coulomb
+    if metodo == "coulomb" and datos_coulomb:
+        # Dibujar ángulo β (inclinación del muro)
+        beta = datos_coulomb.get("beta", 0)
+        if beta > 0:
+            # Línea vertical de referencia
+            ax.plot([r+b/2, r+b/2], [hz, hz+h1], 'k--', linewidth=1, alpha=0.5)
+            # Línea del muro inclinado
+            ax.plot([r+b/2, r+b/2 + 0.3*math.cos(math.radians(90-beta))], 
+                   [hz+h1, hz+h1 + 0.3*math.sin(math.radians(90-beta))], 
+                   'r-', linewidth=2)
+            # Arco del ángulo β
+            arc_beta = np.linspace(90-beta, 90, 20)
+            arc_x = r+b/2 + 0.15 * np.cos(np.radians(arc_beta))
+            arc_y = hz+h1 + 0.15 * np.sin(np.radians(arc_beta))
+            ax.plot(arc_x, arc_y, 'r-', linewidth=2)
+            ax.text(r+b/2 + 0.2, hz+h1 + 0.1, f'β={beta:.1f}°', 
+                   fontsize=10, fontweight='bold', color='red',
+                   bbox=dict(boxstyle="round,pad=0.2", facecolor='white', edgecolor='red', alpha=0.8))
+        
+        # Dibujar ángulo α (inclinación del terreno)
+        alpha = datos_coulomb.get("alpha", 0)
+        if alpha > 0:
+            # Línea horizontal de referencia
+            ax.plot([r+b, Bz], [hz, hz], 'k--', linewidth=1, alpha=0.5)
+            # Línea del terreno inclinado
+            ax.plot([r+b, Bz], [hz, hz + (Bz-r-b)*math.tan(math.radians(alpha))], 
+                   'g-', linewidth=2)
+            # Arco del ángulo α
+            arc_alpha = np.linspace(0, alpha, 20)
+            arc_x = r+b + 0.3 * np.cos(np.radians(arc_alpha))
+            arc_y = hz + 0.3 * np.sin(np.radians(arc_alpha))
+            ax.plot(arc_x, arc_y, 'g-', linewidth=2)
+            ax.text(r+b + 0.4, hz + 0.2, f'α={alpha:.1f}°', 
+                   fontsize=10, fontweight='bold', color='green',
+                   bbox=dict(boxstyle="round,pad=0.2", facecolor='white', edgecolor='green', alpha=0.8))
+        
+        # Mostrar información adicional de Coulomb
+        info_text = f"""
+        MÉTODO COULOMB:
+        • β (inclinación muro): {beta:.1f}°
+        • α (inclinación terreno): {alpha:.1f}°
+        • δ (fricción muro-suelo): {datos_coulomb.get("delta", 0):.1f}°
+        • Ka: {datos_coulomb.get("Ka", 0):.4f}
+        • H efectiva: {datos_coulomb.get("H_efectiva", 0):.2f} m
+        """
+        ax.text(Bz + 0.3, hz + h1/2, info_text, fontsize=9, fontweight='bold',
+               bbox=dict(boxstyle="round,pad=0.3", facecolor='#E8F5E8', 
+                        edgecolor='#4CAF50', linewidth=2, alpha=0.9),
+               verticalalignment='center')
     
     # Agregar grid sutil
     ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
@@ -2666,7 +2730,14 @@ else:
             }
             
             # Generar el gráfico del muro para Coulomb
-            fig_muro_coulomb = dibujar_muro_streamlit(dimensiones_coulomb, h1, 0.5, S_c)
+            datos_coulomb_grafico = {
+                'beta': resultados_coulomb['beta'],
+                'alpha': alpha,
+                'delta': delta,
+                'Ka': resultados_coulomb['Ka'],
+                'H_efectiva': resultados_coulomb['H_efectiva']
+            }
+            fig_muro_coulomb = dibujar_muro_streamlit(dimensiones_coulomb, h1, 0.5, S_c, "coulomb", datos_coulomb_grafico)
             
             # Mostrar el gráfico en Streamlit
             st.pyplot(fig_muro_coulomb)
@@ -3652,7 +3723,7 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                 }
                 
                 # Generar el gráfico del muro con valores reales
-                fig_muro = dibujar_muro_streamlit(dimensiones_grafico, resultados['h1'], resultados['Df'], resultados['qsc'])
+                fig_muro = dibujar_muro_streamlit(dimensiones_grafico, resultados['h1'], resultados['Df'], resultados['qsc'], "rankine")
                 
                 # Mostrar el gráfico en Streamlit
                 st.pyplot(fig_muro)
@@ -3783,7 +3854,14 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                     }
                     
                     # Generar el gráfico del muro para Coulomb
-                    fig_muro_coulomb = dibujar_muro_streamlit(dimensiones_coulomb, datos_entrada_coulomb['h1'], 0.5, datos_entrada_coulomb['S_c'])
+                    datos_coulomb_grafico = {
+                        'beta': resultados_coulomb['beta'],
+                        'alpha': datos_entrada_coulomb['alpha'],
+                        'delta': datos_entrada_coulomb['delta'],
+                        'Ka': resultados_coulomb['Ka'],
+                        'H_efectiva': resultados_coulomb['H_efectiva']
+                    }
+                    fig_muro_coulomb = dibujar_muro_streamlit(dimensiones_coulomb, datos_entrada_coulomb['h1'], 0.5, datos_entrada_coulomb['S_c'], "coulomb", datos_coulomb_grafico)
                     
                     # Mostrar el gráfico en Streamlit
                     st.pyplot(fig_muro_coulomb)
