@@ -2419,20 +2419,20 @@ else:
                 st.info(f"β = arctan((H - h1) / t2) = arctan(({H} - {h1}) / {t2}) = {beta_deg:.2f}°")
         with col2:
             if st.button("📊 Calcular Coeficiente Ka", type="primary"):
-                beta = math.atan((H - h1) / t2)
-                phi1_rad = math.radians(phi1)
-                delta_rad = math.radians(delta)
-                alpha_rad = math.radians(alpha)
-                numerador = math.sin(math.radians(beta + phi1_rad))**2
-                denominador = math.sin(math.radians(beta))**2 * math.sin(math.radians(beta - delta_rad)) * (
+                if t2 != 0:
+                    beta = math.degrees(math.atan((H - h1) / t2))
+                else:
+                    beta = 90.0
+                num = math.sin(math.radians(beta + phi1)) ** 2
+                den = (math.sin(math.radians(beta)) ** 2) * math.sin(math.radians(beta - delta)) * (
                     1 + math.sqrt(
-                        (math.sin(math.radians(phi1_rad + delta_rad)) * math.sin(math.radians(phi1_rad - alpha_rad))) /
-                        (math.sin(math.radians(beta - delta_rad)) * math.sin(math.radians(beta + alpha_rad)))
+                        (math.sin(math.radians(phi1 + delta)) * math.sin(math.radians(phi1 - alpha))) /
+                        (math.sin(math.radians(beta - delta)) * math.sin(math.radians(beta + alpha)))
                     )
-                )**2
-                Ka = numerador / denominador
+                ) ** 2
+                Ka = num / den
                 st.success(f"✅ Coeficiente de empuje activo (Ka) = {Ka:.6f}")
-                st.info("Calculado según la fórmula de Coulomb")
+                st.info("Calculado según la fórmula de Coulomb profesional (todos los ángulos en grados, conversión a radianes solo en las funciones trigonométricas)")
         with col3:
             if st.button("📏 Calcular Altura Efectiva", type="primary"):
                 alpha_rad = math.radians(alpha)
@@ -3447,11 +3447,11 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                         fig1 = px.bar(
                             datos_fuerzas, x='Fuerza', y='Valor (tn/m)',
                             title="Análisis de Fuerzas - Rankine",
-                            color='Fuerza',
-                            color_discrete_map={
-                                'Empuje Activo': '#DC143C',
-                                'Empuje Pasivo': '#2E8B57',
-                                'Peso Total': '#4169E1'
+                                 color='Fuerza',
+                                 color_discrete_map={
+                                     'Empuje Activo': '#DC143C',
+                                     'Empuje Pasivo': '#2E8B57',
+                                     'Peso Total': '#4169E1'
                             },
                             custom_data=[
                                 'h1 (m)', 'Df (m)', 'hm (m)', 'γ_relleno (kg/m³)', 'φ_relleno (°)',
@@ -3477,7 +3477,7 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                             "<br>fc: %{customdata[11]} kg/cm²" +
                             "<br>fy: %{customdata[12]} kg/cm²<extra></extra>"
                         )
-                        st.plotly_chart(fig1, use_container_width=True)
+                    st.plotly_chart(fig1, use_container_width=True)
                     
                     # Leyenda textual de parámetros Rankine
                     st.markdown(f"""
@@ -3498,12 +3498,12 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                     })
                     
                     if PLOTLY_AVAILABLE:
-                        fig2 = px.pie(datos_momentos, values='Valor (tn·m/m)', names='Momento',
+                    fig2 = px.pie(datos_momentos, values='Valor (tn·m/m)', names='Momento',
                                      title="Distribución de Momentos - Rankine",
-                                     color_discrete_map={'Volcador': '#FF6B6B', 'Estabilizador': '#4ECDC4'})
-                        
-                        fig2.update_traces(textposition='inside', textinfo='percent+label+value')
-                        st.plotly_chart(fig2, use_container_width=True)
+                                 color_discrete_map={'Volcador': '#FF6B6B', 'Estabilizador': '#4ECDC4'})
+                    
+                    fig2.update_traces(textposition='inside', textinfo='percent+label+value')
+                    st.plotly_chart(fig2, use_container_width=True)
                 
                 # Gráfico de dimensiones
                 st.subheader("📏 Dimensiones del Muro - Rankine")
@@ -3530,13 +3530,13 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                     fig3 = px.bar(
                         pd.DataFrame(dimensiones), x='Dimensión', y='Valor (m)',
                         title="Dimensiones Calculadas del Muro - Rankine",
-                        color='Dimensión',
-                        color_discrete_map={
-                            'Bz': '#FF1493',
-                            'hz': '#00CED1',
-                            'b': '#32CD32',
-                            'r': '#FFD700',
-                            't': '#FF6347'
+                             color='Dimensión',
+                             color_discrete_map={
+                                 'Bz': '#FF1493',
+                                 'hz': '#00CED1',
+                                 'b': '#32CD32',
+                                 'r': '#FFD700',
+                                 't': '#FF6347'
                         },
                         custom_data=[
                             'h1 (m)', 'Df (m)', 'hm (m)', 'γ_relleno (kg/m³)', 'φ_relleno (°)',
@@ -3743,7 +3743,7 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                     # Calcular Ka de Rankine para comparación
                     if 'datos_entrada_coulomb' in st.session_state:
                         phi1_rankine = st.session_state['datos_entrada_coulomb']['phi1']
-                    else:
+            else:
                         phi1_rankine = 32  # Valor por defecto
                     
                     ka_rankine = math.tan(math.radians(45 - phi1_rankine/2))**2
