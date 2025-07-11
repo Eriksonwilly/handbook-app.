@@ -275,7 +275,7 @@ Generado por: CONSORCIO DEJ
         elements.append(Paragraph("1. DATOS DE ENTRADA - TEORÍA DE RANKINE", styleH))
         datos_tabla = [
             ["Parámetro", "Valor", "Unidad"],
-            ["Altura del talud (h1)", f"{datos_entrada['h1']:.2f}", "m"],
+            ["Peralte de Zapata (h1)", f"{datos_entrada['h1']:.2f}", "m"],
             ["Densidad del relleno", f"{datos_entrada['gamma_relleno']}", "kg/m³"],
             ["Ángulo de fricción del relleno", f"{datos_entrada['phi_relleno']}", "°"],
             ["Profundidad de desplante (Df)", f"{datos_entrada['Df']:.2f}", "m"],
@@ -417,7 +417,7 @@ Generado por: CONSORCIO DEJ
             ["Sobrecarga (S/c)", f"{datos_entrada.get('S_c', '')}", "kg/m²"],
             ["Altura total (H)", f"{datos_entrada.get('H', '')}", "m"],
             ["Profundidad de desplante (D)", f"{datos_entrada.get('D', '')}", "m"],
-            ["Altura del talud (h1)", f"{datos_entrada.get('h1', '')}", "m"],
+            ["Peralte de Zapata (h1)", f"{datos_entrada.get('h1', '')}", "m"],
             ["Base del triángulo (t2)", f"{datos_entrada.get('t2', '')}", "m"],
             ["Longitud del talón (b2)", f"{datos_entrada.get('b2', '')}", "m"],
             ["Ángulo de fricción muro-suelo (δ)", f"{datos_entrada.get('delta', '')}", "°"]
@@ -480,7 +480,7 @@ Generado por: CONSORCIO DEJ
         elements.append(Paragraph("1. DATOS DE ENTRADA - TEORÍA DE RANKINE", styleH))
         datos_tabla = [
             ["Parámetro", "Valor", "Unidad"],
-            ["Altura del talud (h1)", f"{datos_entrada['h1']:.2f}", "m"],
+            ["Peralte de Zapata (h1)", f"{datos_entrada['h1']:.2f}", "m"],
             ["Profundidad de desplante (Df)", f"{datos_entrada['Df']:.2f}", "m"],
             ["Altura de coronación (hm)", f"{datos_entrada['hm']:.2f}", "m"],
             ["Densidad del relleno", f"{datos_entrada['gamma_relleno']}", "kg/m³"],
@@ -600,7 +600,7 @@ Generado por: CONSORCIO DEJ
         datos_tabla = [
             ["Parámetro", "Valor", "Unidad"],
             ["Altura total del muro (H)", f"{datos_entrada['H']:.2f}", "m"],
-            ["Altura del talud (h1)", f"{datos_entrada['h1']:.2f}", "m"],
+            ["Peralte de Zapata (h1)", f"{datos_entrada['h1']:.2f}", "m"],
             ["Base del triángulo (t2)", f"{datos_entrada['t2']:.2f}", "m"],
             ["Longitud del talón (b2)", f"{datos_entrada['b2']:.2f}", "m"],
             ["Ángulo de fricción (φ1)", f"{datos_entrada['phi1']}", "°"],
@@ -717,7 +717,7 @@ def dibujar_muro_streamlit(dimensiones, h1, Df, qsc, metodo="rankine", datos_cou
     dimensiones : dict
         Diccionario con las dimensiones calculadas del muro
     h1 : float
-        Altura del talud (m)
+        Peralte de Zapata (m)
     Df : float
         Profundidad de desplante (m)
     qsc : float
@@ -1583,7 +1583,7 @@ else:
             
             with col1:
                 st.subheader("Dimensiones")
-                h1 = st.number_input("Altura del talud (m)", value=2.8, step=0.1)
+                h1 = st.number_input("Peralte de Zapata (m)", value=2.8, step=0.1)
                 Df = st.number_input("Profundidad de desplante (m)", value=1.2, step=0.1)
                 hm = st.number_input("Altura de coronación (m)", value=1.2, step=0.1, help="Según TAREA_DE_PROGRAMACION2.py, altura recomendada para mejor estabilidad")
                 
@@ -2148,7 +2148,7 @@ else:
 ### Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}
 
 ### 1. DATOS DE ENTRADA:
-- Altura del talud (h1): {h1:.2f} m
+- Peralte de Zapata (h1): {h1:.2f} m
 - Profundidad de desplante (Df): {Df:.2f} m
 - Altura de coronación (hm): {hm:.2f} m
 - Densidad del relleno: {gamma_relleno} kg/m³
@@ -2403,7 +2403,7 @@ else:
             S_c = st.number_input("Sobrecarga (S/c) [kg/m²]", value=750, step=10, help="Sobrecarga aplicada sobre el terreno")
             H = st.number_input("Altura total del muro (H) [m]", value=4.00, step=0.01, help="Altura total del muro de contención")
             D = st.number_input("Profundidad de desplante (D) [m]", value=1.00, step=0.01, help="Profundidad de desplante del muro")
-            h1 = st.number_input("Altura del talud (h1) [m]", value=3.00, step=0.01, help="Altura del talud que contiene el suelo")
+            h1 = st.number_input("Peralte de Zapata (h1) [m]", value=3.00, step=0.01, help="Peralte de Zapata que contiene el suelo")
             t2 = st.number_input("Base del triángulo 2 (t2) [m]", value=0.30, step=0.01, help="Base del triángulo de inclinación del muro")
             b2 = st.number_input("Longitud del talón (b2) [m]", value=1.00, step=0.01, help="Longitud del talón del muro")
             delta = st.number_input("Ángulo de fricción muro-suelo (δ) [°]", value=21.0, step=0.1, help="Ángulo de fricción entre el muro y el relleno")
@@ -2765,7 +2765,7 @@ else:
 
 ### 1. DATOS DE ENTRADA:
 - Altura total del muro (H): {H:.2f} m
-- Altura del talud (h1): {h1:.2f} m
+- Peralte de Zapata (h1): {h1:.2f} m
 - Base del triángulo 2 (t2): {t2:.2f} m
 - Longitud del talón (b2): {b2:.2f} m
 - Ángulo de fricción del suelo (φ₁'): {phi1:.1f}°
@@ -3143,7 +3143,7 @@ Plan: Gratuito
 - Espesor del muro (b): {resultados['b']:.2f} m
 - Longitud de puntera (r): {resultados['r']:.2f} m
 - Longitud de talón (t): {resultados['t']:.2f} m
-- Altura del talud (h1): {resultados['h1']:.2f} m
+- Peralte de Zapata (h1): {resultados['h1']:.2f} m
 - Profundidad de desplante (Df): {resultados['Df']:.2f} m
 
 ### 3. ANÁLISIS DE EMPUJES:
