@@ -43,7 +43,7 @@ def calcular_empuje_coulomb(datos_entrada):
     Calcula el empuje activo según la teoría de Coulomb (fórmula Excel exacta de la imagen)
     """
     H = datos_entrada['H']
-    h1 = datos_entrada['h1']
+    h1 = datos_entrada['h1']  # ← aquí se usa el valor editable
     t1 = datos_entrada.get('t1', 0)
     t2 = datos_entrada['t2']
     b2 = datos_entrada['b2']
