@@ -2043,12 +2043,14 @@ else:
                     })
                     
                     if PLOTLY_AVAILABLE:
-                        fig_momentos = px.pie(datos_momentos, values='Valor (tn·m/m)', names='Momento',
-                                             title="Distribución de Momentos - Rankine",
-                                             color_discrete_map={'Volcador': '#FF6B6B', 'Estabilizador': '#4ECDC4'})
+                        fig2 = px.pie(datos_momentos, values='Valor (tn·m/m)', names='Momento',
+                                     title="Distribución de Momentos - Rankine",
+                                     color_discrete_map={'Volcador': '#FF6B6B', 'Estabilizador': '#4ECDC4'})
                         
-                        fig_momentos.update_traces(textposition='inside', textinfo='percent+label+value')
-                        st.plotly_chart(fig_momentos, use_container_width=True)
+                        fig2.update_traces(textposition='inside', textinfo='percent+label+value')
+                        st.plotly_chart(fig2, use_container_width=True)
+                    else:
+                        pass
                 
                 # Gráfico de dimensiones
                 st.subheader("📏 Dimensiones del Muro - Rankine")
