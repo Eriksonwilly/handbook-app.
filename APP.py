@@ -53,17 +53,17 @@ def calcular_empuje_coulomb(datos_entrada):
     gamma1 = datos_entrada['gamma1']
     S_c = datos_entrada['S_c']
     # 1. Ángulo de inclinación del muro (β)
-    beta_deg = math.degrees(math.atan((H - h1) / t2)) if t2 != 0 else 90.0
-    beta = math.radians(beta_deg)
+    beta = math.degrees(math.atan((H - h1) / t2)) if t2 != 0 else 90.0
+    beta_rad = math.radians(beta)
     # 2. Coeficiente de empuje activo (Ka) - fórmula Excel exacta
     phi1_rad = math.radians(phi1)
     delta_rad = math.radians(delta)
     alpha_rad = math.radians(alpha)
-    num = math.sin(beta + phi1_rad) ** 2
-    den = (math.sin(beta) ** 2) * math.sin(beta - delta_rad) * (
+    num = math.sin(math.radians(beta_rad + phi1_rad)) ** 2
+    den = (math.sin(math.radians(beta_rad)) ** 2) * math.sin(math.radians(beta_rad - delta_rad)) * (
         1 + math.sqrt(
-            (math.sin(phi1_rad + delta_rad) * math.sin(phi1_rad - alpha_rad)) /
-            (math.sin(beta - delta_rad) * math.sin(beta + alpha_rad))
+            (math.sin(math.radians(phi1_rad + delta_rad)) * math.sin(math.radians(phi1_rad - alpha_rad))) /
+            (math.sin(math.radians(beta_rad - delta_rad)) * math.sin(math.radians(beta_rad + alpha_rad)))
         )
     ) ** 2
     Ka = num / den
@@ -72,14 +72,14 @@ def calcular_empuje_coulomb(datos_entrada):
     # 4. Empuje activo total (Pa)
     Pa = 0.5 * Ka * gamma1 * (H_efectiva) ** 2
     # 5. Componentes del empuje activo
-    Ph = Pa * math.cos(math.radians(90) - beta + delta_rad)
-    Pv = Pa * math.sin(math.radians(90) - beta + delta_rad)
+    Ph = Pa * math.cos(math.radians(90) - beta_rad + delta_rad)
+    Pv = Pa * math.sin(math.radians(90) - beta_rad + delta_rad)
     # 6. Empuje por sobrecarga (PSC)
-    PSC = Ka * H * (S_c / 1000) * (math.sin(beta) / math.sin(beta + alpha_rad))
+    PSC = Ka * H * (S_c / 1000) * (math.sin(beta_rad) / math.sin(beta_rad + alpha_rad))
     # 7. Empuje total (horizontal + sobrecarga)
     P_total_horizontal = Ph + PSC
     return {
-        'beta': beta_deg,
+        'beta': beta,
         'Ka': Ka,
         'H_efectiva': H_efectiva,
         'Pa': Pa,
@@ -2417,11 +2417,11 @@ else:
                 phi1_rad = math.radians(phi1)
                 delta_rad = math.radians(delta)
                 alpha_rad = math.radians(alpha)
-                numerador = math.sin(beta + phi1_rad)**2
-                denominador = math.sin(beta)**2 * math.sin(beta - delta_rad) * (
+                numerador = math.sin(math.radians(beta + phi1_rad))**2
+                denominador = math.sin(math.radians(beta))**2 * math.sin(math.radians(beta - delta_rad)) * (
                     1 + math.sqrt(
-                        (math.sin(phi1_rad + delta_rad) * math.sin(phi1_rad - alpha_rad)) /
-                        (math.sin(beta - delta_rad) * math.sin(beta + alpha_rad))
+                        (math.sin(math.radians(phi1_rad + delta_rad)) * math.sin(math.radians(phi1_rad - alpha_rad))) /
+                        (math.sin(math.radians(beta - delta_rad)) * math.sin(math.radians(beta + alpha_rad)))
                     )
                 )**2
                 Ka = numerador / denominador
