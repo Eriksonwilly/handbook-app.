@@ -3500,12 +3500,12 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                     })
                     
                     if PLOTLY_AVAILABLE:
-                    fig2 = px.pie(datos_momentos, values='Valor (tn·m/m)', names='Momento',
+                        fig2 = px.pie(datos_momentos, values='Valor (tn·m/m)', names='Momento',
                                      title="Distribución de Momentos - Rankine",
-                                 color_discrete_map={'Volcador': '#FF6B6B', 'Estabilizador': '#4ECDC4'})
-                    
-                    fig2.update_traces(textposition='inside', textinfo='percent+label+value')
-                    st.plotly_chart(fig2, use_container_width=True)
+                                     color_discrete_map={'Volcador': '#FF6B6B', 'Estabilizador': '#4ECDC4'})
+                        
+                        fig2.update_traces(textposition='inside', textinfo='percent+label+value')
+                        st.plotly_chart(fig2, use_container_width=True)
                 
                 # Gráfico de dimensiones
                 st.subheader("📏 Dimensiones del Muro - Rankine")
@@ -3745,7 +3745,7 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                     # Calcular Ka de Rankine para comparación
                     if 'datos_entrada_coulomb' in st.session_state:
                         phi1_rankine = st.session_state['datos_entrada_coulomb']['phi1']
-            else:
+                    else:
                         phi1_rankine = 32  # Valor por defecto
                     
                     ka_rankine = math.tan(math.radians(45 - phi1_rankine/2))**2
