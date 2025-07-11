@@ -40,58 +40,44 @@ except ImportError:
 # Función para calcular empuje activo según teoría de Coulomb
 def calcular_empuje_coulomb(datos_entrada):
     """
-    Calcula el empuje activo según la teoría de Coulomb
+    Calcula el empuje activo según la teoría de Coulomb (fórmula Excel exacta de la imagen)
     """
-    # Extraer datos de entrada
-    H = datos_entrada['H']  # Altura total del muro
-    h1 = datos_entrada['h1']  # Altura del talud
-    t2 = datos_entrada['t2']  # Base del triángulo 2
-    b2 = datos_entrada['b2']  # Longitud del talón
-    phi1 = datos_entrada['phi1']  # Ángulo de fricción del suelo de relleno
-    delta = datos_entrada['delta']  # Ángulo de fricción entre muro y relleno
-    alpha = datos_entrada['alpha']  # Ángulo de inclinación del terreno
-    gamma1 = datos_entrada['gamma1']  # Peso específico del suelo de relleno
-    S_c = datos_entrada['S_c']  # Sobrecarga
-    
-    # 1. Cálculo del ángulo de inclinación del muro (β)
-    beta = math.atan((H - h1) / t2)
+    H = datos_entrada['H']
+    h1 = datos_entrada['h1']
+    t1 = datos_entrada.get('t1', 0)
+    t2 = datos_entrada['t2']
+    b2 = datos_entrada['b2']
+    phi1 = datos_entrada['phi1']
+    delta = datos_entrada['delta']
+    alpha = datos_entrada['alpha']
+    gamma1 = datos_entrada['gamma1']
+    S_c = datos_entrada['S_c']
+    # 1. Ángulo de inclinación del muro (β)
+    beta = math.atan((H - h1) / t2) if t2 != 0 else math.radians(90)
     beta_deg = math.degrees(beta)
-    
-    # 2. Coeficiente de empuje activo según Coulomb
+    # 2. Coeficiente de empuje activo (Ka) - fórmula Excel exacta
     phi1_rad = math.radians(phi1)
     delta_rad = math.radians(delta)
     alpha_rad = math.radians(alpha)
-    
-    # Fórmula de Coulomb para Ka
-    numerador = math.sin(beta + phi1_rad)**2
-    denominador = math.sin(beta)**2 * math.sin(beta - delta_rad) * (
+    num = math.sin(beta + phi1_rad) ** 2
+    den = (math.sin(beta) ** 2) * math.sin(beta - delta_rad) * (
         1 + math.sqrt(
             (math.sin(phi1_rad + delta_rad) * math.sin(phi1_rad - alpha_rad)) /
             (math.sin(beta - delta_rad) * math.sin(beta + alpha_rad))
         )
-    )**2
-    
-    Ka = numerador / denominador
-    
+    ) ** 2
+    Ka = num / den
     # 3. Altura efectiva del muro (H')
-    H_efectiva = H + (t2/2 + b2/2) * math.tan(alpha_rad)
-    
+    H_efectiva = H + (t1 + t2) * math.tan(alpha_rad)
     # 4. Empuje activo total (Pa)
-    Pa = 0.5 * Ka * gamma1 * (H_efectiva)**2
-    
+    Pa = 0.5 * Ka * gamma1 * (H_efectiva) ** 2
     # 5. Componentes del empuje activo
-    # Componente horizontal (Ph)
     Ph = Pa * math.cos(math.radians(90) - beta + delta_rad)
-    
-    # Componente vertical (Pv)
     Pv = Pa * math.sin(math.radians(90) - beta + delta_rad)
-    
     # 6. Empuje por sobrecarga (PSC)
     PSC = Ka * H * (S_c / 1000) * (math.sin(beta) / math.sin(beta + alpha_rad))
-    
     # 7. Empuje total (horizontal + sobrecarga)
     P_total_horizontal = Ph + PSC
-    
     return {
         'beta': beta_deg,
         'Ka': Ka,
