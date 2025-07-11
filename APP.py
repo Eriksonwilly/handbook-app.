@@ -52,10 +52,10 @@ def calcular_empuje_coulomb(datos_entrada):
     alpha = datos_entrada['alpha']
     gamma1 = datos_entrada['gamma1']
     S_c = datos_entrada['S_c']
-    # 1. Ángulo de inclinación del muro (β)
+    # 1. Ángulo de inclinación del muro (β) en grados
     beta = math.degrees(math.atan((H - h1) / t2)) if t2 != 0 else 90.0
     beta_rad = math.radians(beta)
-    # 2. Coeficiente de empuje activo (Ka) - fórmula profesional exacta
+    # 2. Coeficiente de empuje activo (Ka) - fórmula profesional con conversión explícita a radianes
     phi1_rad = math.radians(phi1)
     delta_rad = math.radians(delta)
     alpha_rad = math.radians(alpha)
