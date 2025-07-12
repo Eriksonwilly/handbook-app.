@@ -2515,28 +2515,22 @@ else:
                 with col2:
                     # Generar PDF para Rankine
                     try:
-                        # Crear datos de entrada para el PDF
-                        datos_entrada_rankine = {
-                            'h1': h1, 'Df': Df, 'hm': hm,
-                            'gamma_relleno': gamma_relleno, 'phi_relleno': phi_relleno,
-                            'gamma_cimentacion': gamma_cimentacion, 'phi_cimentacion': phi_cimentacion,
-                            'cohesion': cohesion, 'sigma_adm': sigma_adm,
-                            'gamma_concreto': gamma_concreto, 'qsc': qsc,
-                            'fc': fc, 'fy': fy
-                        }
+                        # Verificar si hay resultados de Rankine disponibles
+                        if 'resultados_rankine' in st.session_state and 'datos_entrada_rankine' in st.session_state:
+                            resultados_rankine_pdf = st.session_state['resultados_rankine']
+                            datos_entrada_rankine = st.session_state['datos_entrada_rankine']
+                        else:
+                            st.error("⚠️ No hay resultados de análisis Rankine disponibles.")
+                            st.info("Ejecuta primero el análisis completo de Rankine.")
+                            st.stop()
                         
-                        # Crear resultados para el PDF
-                        resultados_rankine_pdf = {
-                            'ka': ka, 'kp': kp, 'hs': hs,
-                            'Bz': Bz, 'hz': hz, 'b': b, 'r': r, 't': t, 'hm': hm,
-                            'Ea_relleno': Ea_relleno, 'Ea_sobrecarga': Ea_sobrecarga,
-                            'Ea_total': Ea_total, 'Ep': Ep,
-                            'W_muro': W_muro, 'W_zapata': W_zapata, 'W_relleno': W_relleno, 'W_total': W_total,
-                            'M_volcador': M_volcador, 'M_estabilizador': M_estabilizador,
-                            'FS_volcamiento': FS_volcamiento, 'FS_deslizamiento': FS_deslizamiento,
-                            'q_max_kg_cm2': q_max_kg_cm2, 'q_min_kg_cm2': q_min_kg_cm2,
-                            'e': e, 'tension': tension
-                        }
+                        # Verificar si hay diseño del fuste disponible
+                        if 'diseno_fuste' not in st.session_state:
+                            st.error("⚠️ No hay datos de diseño del fuste disponibles.")
+                            st.info("Ejecuta primero el análisis completo de Rankine.")
+                            st.stop()
+                        
+                        diseno_fuste = st.session_state['diseno_fuste']
                         
                         # Verificar si hay resultados de Coulomb disponibles
                         resultados_coulomb_pdf = None
