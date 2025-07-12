@@ -528,23 +528,30 @@ Generado por: CONSORCIO DEJ
             elements.append(tabla_resultados_coulomb)
             elements.append(Spacer(1, 20))
             
-            # Comparación de métodos
-            elements.append(Paragraph("7. COMPARACIÓN DE MÉTODOS: RANKINE vs COULOMB", styleH))
-            comparacion_tabla = [
-                ["Parámetro", "Rankine", "Coulomb", "Diferencia"],
-                ["Coeficiente Ka", f"{resultados.get('ka', 0):.6f}", f"{resultados_coulomb['ka']:.6f}", f"{abs(resultados.get('ka', 0) - resultados_coulomb['ka']):.6f}"],
-                ["Empuje activo (t/m)", f"{resultados.get('Ea_total', 0):.3f}", f"{resultados_coulomb['Pa']:.3f}", f"{abs(resultados.get('Ea_total', 0) - resultados_coulomb['Pa']):.3f}"],
-                ["Método", "Muro vertical liso", "Considera fricción", "Más realista"],
-                ["Aplicación", "Conservador", "Más preciso", "Recomendado"]
-            ]
-            
-            tabla_comparacion = Table(comparacion_tabla, colWidths=[150, 100, 100, 100])
-            tabla_comparacion.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.lightcoral),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ]))
-            elements.append(tabla_comparacion)
+            # Comparación de métodos (solo si hay resultados de Rankine)
+            if resultados and 'ka' in resultados and 'Ea_total' in resultados:
+                elements.append(Paragraph("7. COMPARACIÓN DE MÉTODOS: RANKINE vs COULOMB", styleH))
+                comparacion_tabla = [
+                    ["Parámetro", "Rankine", "Coulomb", "Diferencia"],
+                    ["Coeficiente Ka", f"{resultados.get('ka', 0):.6f}", f"{resultados_coulomb['ka']:.6f}", f"{abs(resultados.get('ka', 0) - resultados_coulomb['ka']):.6f}"],
+                    ["Empuje activo (t/m)", f"{resultados.get('Ea_total', 0):.3f}", f"{resultados_coulomb['Pa']:.3f}", f"{abs(resultados.get('Ea_total', 0) - resultados_coulomb['Pa']):.3f}"],
+                    ["Método", "Muro vertical liso", "Considera fricción", "Más realista"],
+                    ["Aplicación", "Conservador", "Más preciso", "Recomendado"]
+                ]
+                
+                tabla_comparacion = Table(comparacion_tabla, colWidths=[150, 100, 100, 100])
+                tabla_comparacion.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.lightcoral),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ]))
+                elements.append(tabla_comparacion)
+                elements.append(Spacer(1, 20))
+        else:
+            # Si no hay resultados de Coulomb, mostrar mensaje
+            elements.append(Paragraph("6. RESULTADOS DEL ANÁLISIS - TEORÍA DE COULOMB", styleH))
+            elements.append(Paragraph("⚠️ No hay resultados de análisis Coulomb disponibles.", styleN))
+            elements.append(Paragraph("Para incluir resultados de Coulomb, ejecuta primero el análisis completo de Coulomb.", styleN))
             elements.append(Spacer(1, 20))
         
         # CONCLUSIONES Y RECOMENDACIONES
