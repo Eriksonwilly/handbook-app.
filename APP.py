@@ -218,7 +218,7 @@ def calcular_diseno_fuste(resultados, datos_entrada):
     }
 
 # Función para generar PDF del reporte
-def generar_pdf_reportlab(resultados, datos_entrada, diseno_fuste, plan="premium"):
+def generar_pdf_reportlab(resultados, datos_entrada, diseno_fuste, plan="premium", resultados_coulomb=None, datos_entrada_coulomb=None):
     """
     Genera un PDF profesional usando ReportLab
     """
@@ -271,8 +271,77 @@ Generado por: CONSORCIO DEJ
         elements.append(Paragraph("CONSORCIO DEJ - Reporte de Muro de Contención", styleN))
     
     if plan == "premium":
-        # Reporte premium completo (Rankine)
-        elements.append(Paragraph("1. DATOS DE ENTRADA - TEORÍA DE RANKINE", styleH))
+        # MEMORIA DESCRIPTIVA
+        elements.append(Paragraph("MEMORIA DESCRIPTIVA – MURO DE CONTENCIÓN EN SAN MIGUEL, PUNO (2025)", styleH))
+        elements.append(Spacer(1, 20))
+        
+        # 1. DESCRIPCIÓN GENERAL DEL PROYECTO
+        elements.append(Paragraph("1. DESCRIPCIÓN GENERAL DEL PROYECTO", styleH2))
+        elements.append(Paragraph("Justificación:", styleN))
+        elements.append(Paragraph("El proyecto del muro de contención en San Miguel, Puno, se justifica por la necesidad de estabilizar un talud natural en una zona con alta susceptibilidad a movimientos de masa (huaycos y erosión), que pone en riesgo viviendas, vías de acceso y terrenos agrícolas. La intervención busca garantizar la seguridad de la población y la infraestructura, así como optimizar el uso del terreno en una región con pendientes pronunciadas.", styleN))
+        elements.append(Spacer(1, 10))
+        
+        elements.append(Paragraph("Objetivos:", styleN))
+        elements.append(Paragraph("• Objetivo principal: Construir un muro de contención estable y durable que contenga presiones laterales del suelo y prevenga deslizamientos.", styleN))
+        elements.append(Paragraph("• Objetivos específicos:", styleN))
+        elements.append(Paragraph("  - Aplicar los métodos de Rankine y Coulomb para el diseño estructural, asegurando factores de seguridad ≥1.5.", styleN))
+        elements.append(Paragraph("  - Integrar materiales locales y técnicas constructivas adaptadas al clima frío y altitud (≈3,800 msnm).", styleN))
+        elements.append(Paragraph("  - Minimizar el impacto ambiental y social.", styleN))
+        elements.append(Spacer(1, 10))
+        
+        elements.append(Paragraph("Metas:", styleN))
+        elements.append(Paragraph("• Vida útil ≥50 años.", styleN))
+        elements.append(Paragraph("• Reducción del 100% de riesgos asociados a deslizamientos en el área intervenida.", styleN))
+        elements.append(Spacer(1, 20))
+        
+        # 2. CONSIDERACIONES TÉCNICAS GENERALES Y ALCANCES
+        elements.append(Paragraph("2. CONSIDERACIONES TÉCNICAS GENERALES Y ALCANCES", styleH2))
+        elements.append(Paragraph("Métodos de Diseño:", styleN))
+        elements.append(Paragraph("• Método de Rankine: Empleado para calcular el coeficiente de presión activa (Kₐ) en suelos granulares homogéneos, considerando un ángulo de fricción interna (φ) de 30°–35° (típico de suelos arenosos-arcillosos de la zona).", styleN))
+        elements.append(Paragraph("• Método de Coulomb: Utilizado para verificar presiones considerando fricción suelo-muro (δ = 2/3*φ) y geometría irregular.", styleN))
+        elements.append(Spacer(1, 10))
+        
+        elements.append(Paragraph("Parámetros Técnicos Clave:", styleN))
+        elements.append(Paragraph("• Altura del muro: 6.50 m (incluye 0.50 m de cimiento).", styleN))
+        elements.append(Paragraph("• Tipo de muro: Muro de gravedad de concreto ciclópeo (f'c=175 kg/cm²) con piedra embebida, optimizado para resistir esfuerzos por empuje y sismicidad (RNC-2025).", styleN))
+        elements.append(Paragraph("• Sistema de drenaje: Tuberías PVC Ø4\" con filtro de grava y geotextil para reducir presión hidrostática.", styleN))
+        elements.append(Spacer(1, 10))
+        
+        elements.append(Paragraph("Alcances:", styleN))
+        elements.append(Paragraph("• Diseño estructural y geotécnico.", styleN))
+        elements.append(Paragraph("• Construcción del muro y sistema de drenaje.", styleN))
+        elements.append(Paragraph("• No incluye: Estabilización de taludes aguas arriba ni pavimentación de áreas adyacentes.", styleN))
+        elements.append(Spacer(1, 20))
+        
+        # 3. INFORMACIÓN RELEVANTE DE LA UBICACIÓN
+        elements.append(Paragraph("3. INFORMACIÓN RELEVANTE DE LA UBICACIÓN", styleH2))
+        elements.append(Paragraph("Características Geográficas:", styleN))
+        elements.append(Paragraph("• Coordenadas: 14°45'S, 69°30'W (approx.).", styleN))
+        elements.append(Paragraph("• Topografía: Pendiente promedio de 40° en zona de intervención.", styleN))
+        elements.append(Paragraph("• Tipo de suelo: Suelo granular (arena arcillosa) con estratos superficiales de grava suelta. Capacidad portante: 1.8 kg/cm² (ensayos SPT).", styleN))
+        elements.append(Spacer(1, 10))
+        
+        elements.append(Paragraph("Climatología:", styleN))
+        elements.append(Paragraph("• Temperaturas: Entre -5°C (noches en invierno) y 18°C (día).", styleN))
+        elements.append(Paragraph("• Precipitación: 700 mm/año, concentrada en época de lluvias (diciembre–marzo).", styleN))
+        elements.append(Paragraph("• Vientos: Ráfagas hasta 50 km/h (requiere revisión de voladizo).", styleN))
+        elements.append(Spacer(1, 10))
+        
+        elements.append(Paragraph("Accesibilidad:", styleN))
+        elements.append(Paragraph("• Vías: Carretera afirmada hasta 500 m del sitio. Se requerirá transporte de materiales con volquetes 6x4.", styleN))
+        elements.append(Paragraph("• Suministros: Concreto premezclado desde Juliaca (2 horas de transporte).", styleN))
+        elements.append(Spacer(1, 20))
+        
+        # 4. CONSIDERACIONES ESPECIALES (2025)
+        elements.append(Paragraph("4. CONSIDERACIONES ESPECIALES (2025)", styleH2))
+        elements.append(Paragraph("• Sismicidad: Zona 3 según Norma E.030 RNC-2025. Se aplicará coeficiente sísmico Cₛ=0.25 para diseño.", styleN))
+        elements.append(Paragraph("• Sostenibilidad: Uso de piedra local para reducir huella de carbono.", styleN))
+        elements.append(Paragraph("• Monitoreo: Incluye 3 puntos de control de desplazamiento (inclinómetros) post-construcción.", styleN))
+        elements.append(Spacer(1, 20))
+        
+        # RESULTADOS DE ANÁLISIS - RANKINE
+        elements.append(Paragraph("5. RESULTADOS DEL ANÁLISIS - TEORÍA DE RANKINE", styleH))
+        elements.append(Paragraph("5.1 DATOS DE ENTRADA - TEORÍA DE RANKINE", styleH2))
         datos_tabla = [
             ["Parámetro", "Valor", "Unidad"],
             ["Peralte de Zapata (h1)", f"{datos_entrada['h1']:.2f}", "m"],
@@ -371,6 +440,136 @@ Generado por: CONSORCIO DEJ
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ]))
         elements.append(tabla_verif)
+        elements.append(Spacer(1, 20))
+        
+        # RESULTADOS DE ANÁLISIS - COULOMB
+        if resultados_coulomb and datos_entrada_coulomb:
+            elements.append(Paragraph("6. RESULTADOS DEL ANÁLISIS - TEORÍA DE COULOMB", styleH))
+            elements.append(Paragraph("6.1 DATOS DE ENTRADA - TEORÍA DE COULOMB", styleH2))
+            
+            # Datos del suelo de relleno
+            elements.append(Paragraph("A. DATOS DEL SUELO DE RELLENO", styleH2))
+            datos_relleno_coulomb = [
+                ["Parámetro", "Valor", "Unidad"],
+                ["Peso específico (γ₁)", f"{datos_entrada_coulomb.get('gamma1', '')}", "t/m³"],
+                ["Ángulo de fricción (φ'₁)", f"{datos_entrada_coulomb.get('phi1', '')}", "°"],
+                ["Cohesión (c'₁)", f"{datos_entrada_coulomb.get('cohesion1', '')}", "kg/cm²"],
+                ["Ángulo de inclinación (α)", f"{datos_entrada_coulomb.get('alpha', '')}", "°"]
+            ]
+            tabla_relleno_coulomb = Table(datos_relleno_coulomb, colWidths=[200, 100, 80])
+            tabla_relleno_coulomb.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ]))
+            elements.append(tabla_relleno_coulomb)
+            elements.append(Spacer(1, 10))
+            
+            # Datos del suelo de la base
+            elements.append(Paragraph("B. DATOS DEL SUELO DE LA BASE", styleH2))
+            datos_base_coulomb = [
+                ["Parámetro", "Valor", "Unidad"],
+                ["Peso específico (γ₂)", f"{datos_entrada_coulomb.get('gamma2', '')}", "t/m³"],
+                ["Cohesión (c'₂)", f"{datos_entrada_coulomb.get('cohesion2', '')}", "kg/cm²"],
+                ["Capacidad de carga (σᵤ)", f"{datos_entrada_coulomb.get('sigma_u', '')}", "kg/cm²"],
+                ["Ángulo de fricción (φ'₂)", f"{datos_entrada_coulomb.get('phi2', '')}", "°"]
+            ]
+            tabla_base_coulomb = Table(datos_base_coulomb, colWidths=[200, 100, 80])
+            tabla_base_coulomb.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgreen),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ]))
+            elements.append(tabla_base_coulomb)
+            elements.append(Spacer(1, 10))
+            
+            # Datos del muro
+            elements.append(Paragraph("C. DATOS DEL MURO", styleH2))
+            datos_muro_coulomb = [
+                ["Parámetro", "Valor", "Unidad"],
+                ["Peso específico del muro (γ_muro)", f"{datos_entrada_coulomb.get('gamma_muro', '')}", "t/m³"],
+                ["Sobrecarga (S/c)", f"{datos_entrada_coulomb.get('S_c', '')}", "kg/m²"],
+                ["Altura total (H)", f"{datos_entrada_coulomb.get('H', '')}", "m"],
+                ["Profundidad de desplante (D)", f"{datos_entrada_coulomb.get('D', '')}", "m"],
+                ["Peralte de Zapata (h1)", f"{datos_entrada_coulomb.get('h1', '')}", "m"],
+                ["Base del triángulo (t2)", f"{datos_entrada_coulomb.get('t2', '')}", "m"],
+                ["Longitud del talón (b2)", f"{datos_entrada_coulomb.get('b2', '')}", "m"],
+                ["Ángulo de fricción muro-suelo (δ)", f"{datos_entrada_coulomb.get('delta', '')}", "°"]
+            ]
+            tabla_muro_coulomb = Table(datos_muro_coulomb, colWidths=[200, 100, 80])
+            tabla_muro_coulomb.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.lightyellow),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ]))
+            elements.append(tabla_muro_coulomb)
+            elements.append(Spacer(1, 20))
+            
+            # Resultados de Coulomb
+            elements.append(Paragraph("6.2 RESULTADOS DEL ANÁLISIS COULOMB", styleH2))
+            resultados_coulomb_tabla = [
+                ["Parámetro", "Valor", "Unidad"],
+                ["Ángulo de inclinación del muro (β)", f"{resultados_coulomb['beta']:.2f}", "°"],
+                ["Coeficiente Ka (Coulomb)", f"{resultados_coulomb['ka']:.6f}", ""],
+                ["Altura efectiva (H')", f"{resultados_coulomb['H_efectiva']:.2f}", "m"],
+                ["Empuje activo total (Pa)", f"{resultados_coulomb['Pa']:.3f}", "t/m"],
+                ["Componente horizontal (Ph)", f"{resultados_coulomb['Ph']:.3f}", "t/m"],
+                ["Componente vertical (Pv)", f"{resultados_coulomb['Pv']:.3f}", "t/m"],
+                ["Empuje por sobrecarga (PSC)", f"{resultados_coulomb['PSC']:.3f}", "t/m"],
+                ["Empuje total horizontal", f"{resultados_coulomb['P_total_horizontal']:.3f}", "t/m"]
+            ]
+            
+            tabla_resultados_coulomb = Table(resultados_coulomb_tabla, colWidths=[200, 100, 80])
+            tabla_resultados_coulomb.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgreen),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ]))
+            elements.append(tabla_resultados_coulomb)
+            elements.append(Spacer(1, 20))
+            
+            # Comparación de métodos
+            elements.append(Paragraph("7. COMPARACIÓN DE MÉTODOS: RANKINE vs COULOMB", styleH))
+            comparacion_tabla = [
+                ["Parámetro", "Rankine", "Coulomb", "Diferencia"],
+                ["Coeficiente Ka", f"{resultados.get('ka', 0):.6f}", f"{resultados_coulomb['ka']:.6f}", f"{abs(resultados.get('ka', 0) - resultados_coulomb['ka']):.6f}"],
+                ["Empuje activo (t/m)", f"{resultados.get('Ea_total', 0):.3f}", f"{resultados_coulomb['Pa']:.3f}", f"{abs(resultados.get('Ea_total', 0) - resultados_coulomb['Pa']):.3f}"],
+                ["Método", "Muro vertical liso", "Considera fricción", "Más realista"],
+                ["Aplicación", "Conservador", "Más preciso", "Recomendado"]
+            ]
+            
+            tabla_comparacion = Table(comparacion_tabla, colWidths=[150, 100, 100, 100])
+            tabla_comparacion.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.lightcoral),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ]))
+            elements.append(tabla_comparacion)
+            elements.append(Spacer(1, 20))
+        
+        # CONCLUSIONES Y RECOMENDACIONES
+        elements.append(Paragraph("8. CONCLUSIONES Y RECOMENDACIONES", styleH))
+        elements.append(Paragraph("Conclusiones:", styleN))
+        elements.append(Paragraph("• El análisis mediante ambos métodos (Rankine y Coulomb) proporciona una visión completa del comportamiento del muro.", styleN))
+        elements.append(Paragraph("• El método de Coulomb considera la fricción suelo-muro, proporcionando resultados más realistas.", styleN))
+        elements.append(Paragraph("• Los factores de seguridad calculados cumplen con los requisitos normativos.", styleN))
+        elements.append(Spacer(1, 10))
+        
+        elements.append(Paragraph("Recomendaciones:", styleN))
+        elements.append(Paragraph("• Utilizar el método de Coulomb para el diseño final por su mayor precisión.", styleN))
+        elements.append(Paragraph("• Verificar la capacidad portante del suelo mediante ensayos in situ.", styleN))
+        elements.append(Paragraph("• Implementar sistema de drenaje adecuado para reducir presiones hidrostáticas.", styleN))
+        elements.append(Paragraph("• Realizar monitoreo continuo durante la construcción y operación.", styleN))
+        elements.append(Spacer(1, 20))
+        
+        # FIRMA Y DATOS DEL PROFESIONAL
+        elements.append(Paragraph("Elaborado por:", styleN))
+        elements.append(Paragraph("[Tu Nombre]", styleN))
+        elements.append(Paragraph("Ing. Civil UNI, CIP N° [XXXXX]", styleN))
+        elements.append(Paragraph("Especialista en Geotecnia y Muros de Contención", styleN))
+        elements.append(Paragraph(f"Julio 2025, Puno, Perú", styleN))
+        elements.append(Spacer(1, 10))
+        elements.append(Paragraph("Nota: Este documento es un modelo base. Ajustar valores según estudios geotécnicos específicos y expediente técnico completo.", styleN))
         
     elif plan == "coulomb":
         # Reporte Coulomb
@@ -2298,11 +2497,20 @@ else:
                             'e': e, 'tension': tension
                         }
                         
+                        # Verificar si hay resultados de Coulomb disponibles
+                        resultados_coulomb_pdf = None
+                        datos_entrada_coulomb_pdf = None
+                        if 'resultados_coulomb' in st.session_state and 'datos_entrada_coulomb' in st.session_state:
+                            resultados_coulomb_pdf = st.session_state['resultados_coulomb']
+                            datos_entrada_coulomb_pdf = st.session_state['datos_entrada_coulomb']
+                        
                         pdf_buffer_rankine = generar_pdf_reportlab(
                             resultados_rankine_pdf, 
                             datos_entrada_rankine, 
                             diseno_fuste, 
-                            "rankine"
+                            "premium",
+                            resultados_coulomb_pdf,
+                            datos_entrada_coulomb_pdf
                         )
                         
                         st.download_button(
@@ -2848,11 +3056,20 @@ else:
                         'P_total_horizontal': resultados_coulomb['P_total_horizontal']
                     }
                     
+                    # Verificar si hay resultados de Rankine disponibles
+                    resultados_rankine_pdf = None
+                    datos_entrada_rankine_pdf = None
+                    if 'resultados_rankine' in st.session_state and 'datos_entrada_rankine' in st.session_state:
+                        resultados_rankine_pdf = st.session_state['resultados_rankine']
+                        datos_entrada_rankine_pdf = st.session_state['datos_entrada_rankine']
+                    
                     pdf_buffer_coulomb = generar_pdf_reportlab(
                         resultados_coulomb_pdf, 
                         datos_entrada_coulomb, 
                         {}, 
-                        "coulomb"
+                        "premium",
+                        resultados_rankine_pdf,
+                        datos_entrada_rankine_pdf
                     )
                     
                     st.download_button(
