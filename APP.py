@@ -3070,26 +3070,14 @@ else:
             with col2:
                 # Generar PDF para Coulomb
                 try:
-                    # Crear datos de entrada para el PDF
-                    datos_entrada_coulomb = {
-                        'H': H, 'h1': h1, 't2': t2, 'b2': b2,
-                        'phi1': phi1, 'delta': delta, 'alpha': alpha,
-                        'gamma1': gamma1, 'S_c': S_c,
-                        'cohesion1': cohesion1, 'gamma2': gamma2, 'cohesion2': cohesion2,
-                        'sigma_u': sigma_u, 'phi2': phi2, 'gamma_muro': gamma_muro, 'D': D
-                    }
-                    
-                    # Crear resultados para el PDF
-                    resultados_coulomb_pdf = {
-                        'ka': resultados_coulomb['Ka'],
-                        'beta': resultados_coulomb['beta'],
-                        'H_efectiva': resultados_coulomb['H_efectiva'],
-                        'Pa': resultados_coulomb['Pa'],
-                        'Ph': resultados_coulomb['Ph'],
-                        'Pv': resultados_coulomb['Pv'],
-                        'PSC': resultados_coulomb['PSC'],
-                        'P_total_horizontal': resultados_coulomb['P_total_horizontal']
-                    }
+                    # Verificar si hay resultados de Coulomb disponibles
+                    if 'resultados_coulomb' in st.session_state and 'datos_entrada_coulomb' in st.session_state:
+                        resultados_coulomb_pdf = st.session_state['resultados_coulomb']
+                        datos_entrada_coulomb = st.session_state['datos_entrada_coulomb']
+                    else:
+                        st.error("⚠️ No hay resultados de análisis Coulomb disponibles.")
+                        st.info("Ejecuta primero el análisis completo de Coulomb.")
+                        st.stop()
                     
                     # Verificar si hay resultados de Rankine disponibles
                     resultados_rankine_pdf = None
