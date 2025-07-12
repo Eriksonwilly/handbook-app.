@@ -2037,6 +2037,40 @@ else:
                 st.session_state['datos_entrada'] = datos_entrada
                 st.session_state['diseno_fuste'] = diseno_fuste
                 
+                # Guardar datos específicos para PDF premium (Rankine)
+                st.session_state['resultados_rankine'] = {
+                    'ka': ka,
+                    'kp': kp,
+                    'hs': hs,
+                    'Bz': Bz,
+                    'hz': hz,
+                    'b': b,
+                    'r': r,
+                    't': t,
+                    'hm': hm,
+                    'h1': h1,
+                    'Df': Df,
+                    'qsc': qsc,
+                    'Ea_relleno': Ea_relleno,
+                    'Ea_sobrecarga': Ea_sobrecarga,
+                    'Ea_total': Ea_total,
+                    'Ep': Ep,
+                    'W_muro': W_muro,
+                    'W_zapata': W_zapata,
+                    'W_relleno': W_relleno,
+                    'W_total': W_total,
+                    'M_volcador': M_volcador,
+                    'M_estabilizador': M_estabilizador,
+                    'FS_volcamiento': FS_volcamiento,
+                    'FS_deslizamiento': FS_deslizamiento,
+                    'q_max_kg_cm2': q_max_kg_cm2,
+                    'q_min_kg_cm2': q_min_kg_cm2,
+                    'e': e,
+                    'tension': tension
+                }
+                
+                st.session_state['datos_entrada_rankine'] = datos_entrada
+                
                 st.success("¡Análisis completo ejecutado exitosamente!")
                 st.balloons()
                 
