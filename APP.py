@@ -342,15 +342,17 @@ Generado por: CONSORCIO DEJ
         # RESULTADOS DE ANÁLISIS - RANKINE
         elements.append(Paragraph("5. RESULTADOS DEL ANÁLISIS - TEORÍA DE RANKINE", styleH))
         elements.append(Paragraph("5.1 DATOS DE ENTRADA - TEORÍA DE RANKINE", styleH2))
+        
+        # Usar .get() para evitar KeyError
         datos_tabla = [
             ["Parámetro", "Valor", "Unidad"],
-            ["Peralte de Zapata (h1)", f"{datos_entrada['h1']:.2f}", "m"],
-            ["Densidad del relleno", f"{datos_entrada['gamma_relleno']}", "kg/m³"],
-            ["Ángulo de fricción del relleno", f"{datos_entrada['phi_relleno']}", "°"],
-            ["Profundidad de desplante (Df)", f"{datos_entrada['Df']:.2f}", "m"],
-            ["Sobrecarga (qsc)", f"{datos_entrada['qsc']}", "kg/m²"],
-            ["Resistencia del concreto (fc)", f"{datos_entrada['fc']}", "kg/cm²"],
-            ["Resistencia del acero (fy)", f"{datos_entrada['fy']}", "kg/cm²"]
+            ["Peralte de Zapata (h1)", f"{datos_entrada.get('h1', 0):.2f}", "m"],
+            ["Densidad del relleno", f"{datos_entrada.get('gamma_relleno', 0)}", "kg/m³"],
+            ["Ángulo de fricción del relleno", f"{datos_entrada.get('phi_relleno', 0)}", "°"],
+            ["Profundidad de desplante (Df)", f"{datos_entrada.get('Df', 0):.2f}", "m"],
+            ["Sobrecarga (qsc)", f"{datos_entrada.get('qsc', 0)}", "kg/m²"],
+            ["Resistencia del concreto (fc)", f"{datos_entrada.get('fc', 0)}", "kg/cm²"],
+            ["Resistencia del acero (fy)", f"{datos_entrada.get('fy', 0)}", "kg/cm²"]
         ]
         
         tabla = Table(datos_tabla, colWidths=[200, 100, 80])
@@ -366,12 +368,12 @@ Generado por: CONSORCIO DEJ
         elements.append(Paragraph("2. DIMENSIONES CALCULADAS - RANKINE", styleH))
         dim_tabla = [
             ["Dimensión", "Valor", "Unidad"],
-            ["Ancho de zapata (Bz)", f"{resultados['Bz']:.2f}", "m"],
-            ["Peralte de zapata (hz)", f"{resultados['hz']:.2f}", "m"],
-            ["Espesor del muro (b)", f"{resultados['b']:.2f}", "m"],
-            ["Longitud de puntera (r)", f"{resultados['r']:.2f}", "m"],
-            ["Longitud de talón (t)", f"{resultados['t']:.2f}", "m"],
-            ["Altura de coronación (hm)", f"{resultados['hm']:.2f}", "m"]
+            ["Ancho de zapata (Bz)", f"{resultados.get('Bz', 0):.2f}", "m"],
+            ["Peralte de zapata (hz)", f"{resultados.get('hz', 0):.2f}", "m"],
+            ["Espesor del muro (b)", f"{resultados.get('b', 0):.2f}", "m"],
+            ["Longitud de puntera (r)", f"{resultados.get('r', 0):.2f}", "m"],
+            ["Longitud de talón (t)", f"{resultados.get('t', 0):.2f}", "m"],
+            ["Altura de coronación (hm)", f"{resultados.get('hm', 0):.2f}", "m"]
         ]
         
         tabla_dim = Table(dim_tabla, colWidths=[200, 100, 80])
@@ -387,16 +389,16 @@ Generado por: CONSORCIO DEJ
         elements.append(Paragraph("3. DISEÑO Y VERIFICACIÓN DEL FUSTE", styleH))
         fuste_tabla = [
             ["Parámetro", "Valor", "Unidad"],
-            ["Coeficiente pasivo (kp)", f"{diseno_fuste['kp']:.2f}", ""],
-            ["Empuje pasivo", f"{diseno_fuste['Ep_kg_m']:.0f}", "kg/m"],
-            ["Factor de seguridad volcamiento", f"{diseno_fuste['FSv']:.2f}", ""],
-            ["Factor de seguridad deslizamiento", f"{diseno_fuste['FSd']:.2f}", ""],
-            ["Peralte efectivo requerido", f"{diseno_fuste['dreq']:.2f}", "cm"],
-            ["Peralte efectivo real", f"{diseno_fuste['dreal']:.2f}", "cm"],
-            ["Área de acero requerida", f"{diseno_fuste['As']:.2f}", "cm²"],
-            ["Área de acero mínima", f"{diseno_fuste['Asmin']:.2f}", "cm²"],
-            ["Número de barras 5/8\"", f"{diseno_fuste['num_barras']}", ""],
-            ["Separación entre barras", f"{diseno_fuste['separacion']:.1f}", "cm"]
+            ["Coeficiente pasivo (kp)", f"{diseno_fuste.get('kp', 0):.2f}", ""],
+            ["Empuje pasivo", f"{diseno_fuste.get('Ep_kg_m', 0):.0f}", "kg/m"],
+            ["Factor de seguridad volcamiento", f"{diseno_fuste.get('FSv', 0):.2f}", ""],
+            ["Factor de seguridad deslizamiento", f"{diseno_fuste.get('FSd', 0):.2f}", ""],
+            ["Peralte efectivo requerido", f"{diseno_fuste.get('dreq', 0):.2f}", "cm"],
+            ["Peralte efectivo real", f"{diseno_fuste.get('dreal', 0):.2f}", "cm"],
+            ["Área de acero requerida", f"{diseno_fuste.get('As', 0):.2f}", "cm²"],
+            ["Área de acero mínima", f"{diseno_fuste.get('Asmin', 0):.2f}", "cm²"],
+            ["Número de barras 5/8\"", f"{diseno_fuste.get('num_barras', 0)}", ""],
+            ["Separación entre barras", f"{diseno_fuste.get('separacion', 0):.1f}", "cm"]
         ]
         
         tabla_fuste = Table(fuste_tabla, colWidths=[200, 100, 80])
@@ -412,25 +414,33 @@ Generado por: CONSORCIO DEJ
         elements.append(Paragraph("4. VERIFICACIONES DE ESTABILIDAD", styleH))
         verificaciones = []
         
-        if diseno_fuste['FSv'] >= 2.0:
-            verificaciones.append(["Volcamiento", "CUMPLE", f"FS = {diseno_fuste['FSv']:.2f} ≥ 2.0"])
+        fsv = diseno_fuste.get('FSv', 0)
+        fsd = diseno_fuste.get('FSd', 0)
+        
+        if fsv >= 2.0:
+            verificaciones.append(["Volcamiento", "CUMPLE", f"FS = {fsv:.2f} ≥ 2.0"])
         else:
-            verificaciones.append(["Volcamiento", "NO CUMPLE", f"FS = {diseno_fuste['FSv']:.2f} < 2.0"])
+            verificaciones.append(["Volcamiento", "NO CUMPLE", f"FS = {fsv:.2f} < 2.0"])
             
-        if diseno_fuste['FSd'] >= 1.5:
-            verificaciones.append(["Deslizamiento", "CUMPLE", f"FS = {diseno_fuste['FSd']:.2f} ≥ 1.5"])
+        if fsd >= 1.5:
+            verificaciones.append(["Deslizamiento", "CUMPLE", f"FS = {fsd:.2f} ≥ 1.5"])
         else:
-            verificaciones.append(["Deslizamiento", "NO CUMPLE", f"FS = {diseno_fuste['FSd']:.2f} < 1.5"])
+            verificaciones.append(["Deslizamiento", "NO CUMPLE", f"FS = {fsd:.2f} < 1.5"])
             
-        if diseno_fuste['dreal'] >= diseno_fuste['dreq']:
-            verificaciones.append(["Peralte efectivo", "CUMPLE", f"dreal = {diseno_fuste['dreal']:.2f} ≥ {diseno_fuste['dreq']:.2f}"])
+        dreal = diseno_fuste.get('dreal', 0)
+        dreq = diseno_fuste.get('dreq', 0)
+        as_proporcionado = diseno_fuste.get('As_proporcionado', 0)
+        as_requerido = diseno_fuste.get('As', 0)
+        
+        if dreal >= dreq:
+            verificaciones.append(["Peralte efectivo", "CUMPLE", f"dreal = {dreal:.2f} ≥ {dreq:.2f}"])
         else:
-            verificaciones.append(["Peralte efectivo", "NO CUMPLE", f"dreal = {diseno_fuste['dreal']:.2f} < {diseno_fuste['dreq']:.2f}"])
+            verificaciones.append(["Peralte efectivo", "NO CUMPLE", f"dreal = {dreal:.2f} < {dreq:.2f}"])
             
-        if diseno_fuste['As_proporcionado'] >= diseno_fuste['As']:
-            verificaciones.append(["Área de acero", "CUMPLE", f"As = {diseno_fuste['As_proporcionado']:.2f} ≥ {diseno_fuste['As']:.2f}"])
+        if as_proporcionado >= as_requerido:
+            verificaciones.append(["Área de acero", "CUMPLE", f"As = {as_proporcionado:.2f} ≥ {as_requerido:.2f}"])
         else:
-            verificaciones.append(["Área de acero", "NO CUMPLE", f"As = {diseno_fuste['As_proporcionado']:.2f} < {diseno_fuste['As']:.2f}"])
+            verificaciones.append(["Área de acero", "NO CUMPLE", f"As = {as_proporcionado:.2f} < {as_requerido:.2f}"])
         
         verif_tabla = [["Verificación", "Estado", "Detalle"]] + verificaciones
         tabla_verif = Table(verif_tabla, colWidths=[150, 100, 150])
@@ -509,14 +519,14 @@ Generado por: CONSORCIO DEJ
             elements.append(Paragraph("6.2 RESULTADOS DEL ANÁLISIS COULOMB", styleH2))
             resultados_coulomb_tabla = [
                 ["Parámetro", "Valor", "Unidad"],
-                ["Ángulo de inclinación del muro (β)", f"{resultados_coulomb['beta']:.2f}", "°"],
-                ["Coeficiente Ka (Coulomb)", f"{resultados_coulomb['ka']:.6f}", ""],
-                ["Altura efectiva (H')", f"{resultados_coulomb['H_efectiva']:.2f}", "m"],
-                ["Empuje activo total (Pa)", f"{resultados_coulomb['Pa']:.3f}", "t/m"],
-                ["Componente horizontal (Ph)", f"{resultados_coulomb['Ph']:.3f}", "t/m"],
-                ["Componente vertical (Pv)", f"{resultados_coulomb['Pv']:.3f}", "t/m"],
-                ["Empuje por sobrecarga (PSC)", f"{resultados_coulomb['PSC']:.3f}", "t/m"],
-                ["Empuje total horizontal", f"{resultados_coulomb['P_total_horizontal']:.3f}", "t/m"]
+                ["Ángulo de inclinación del muro (β)", f"{resultados_coulomb.get('beta', 0):.2f}", "°"],
+                ["Coeficiente Ka (Coulomb)", f"{resultados_coulomb.get('ka', 0):.6f}", ""],
+                ["Altura efectiva (H')", f"{resultados_coulomb.get('H_efectiva', 0):.2f}", "m"],
+                ["Empuje activo total (Pa)", f"{resultados_coulomb.get('Pa', 0):.3f}", "t/m"],
+                ["Componente horizontal (Ph)", f"{resultados_coulomb.get('Ph', 0):.3f}", "t/m"],
+                ["Componente vertical (Pv)", f"{resultados_coulomb.get('Pv', 0):.3f}", "t/m"],
+                ["Empuje por sobrecarga (PSC)", f"{resultados_coulomb.get('PSC', 0):.3f}", "t/m"],
+                ["Empuje total horizontal", f"{resultados_coulomb.get('P_total_horizontal', 0):.3f}", "t/m"]
             ]
             
             tabla_resultados_coulomb = Table(resultados_coulomb_tabla, colWidths=[200, 100, 80])
@@ -529,12 +539,12 @@ Generado por: CONSORCIO DEJ
             elements.append(Spacer(1, 20))
             
             # Comparación de métodos (solo si hay resultados de Rankine)
-            if resultados and 'ka' in resultados and 'Ea_total' in resultados:
+            if resultados and resultados.get('ka') and resultados.get('Ea_total'):
                 elements.append(Paragraph("7. COMPARACIÓN DE MÉTODOS: RANKINE vs COULOMB", styleH))
                 comparacion_tabla = [
                     ["Parámetro", "Rankine", "Coulomb", "Diferencia"],
-                    ["Coeficiente Ka", f"{resultados.get('ka', 0):.6f}", f"{resultados_coulomb['ka']:.6f}", f"{abs(resultados.get('ka', 0) - resultados_coulomb['ka']):.6f}"],
-                    ["Empuje activo (t/m)", f"{resultados.get('Ea_total', 0):.3f}", f"{resultados_coulomb['Pa']:.3f}", f"{abs(resultados.get('Ea_total', 0) - resultados_coulomb['Pa']):.3f}"],
+                    ["Coeficiente Ka", f"{resultados.get('ka', 0):.6f}", f"{resultados_coulomb.get('ka', 0):.6f}", f"{abs(resultados.get('ka', 0) - resultados_coulomb.get('ka', 0)):.6f}"],
+                    ["Empuje activo (t/m)", f"{resultados.get('Ea_total', 0):.3f}", f"{resultados_coulomb.get('Pa', 0):.3f}", f"{abs(resultados.get('Ea_total', 0) - resultados_coulomb.get('Pa', 0)):.3f}"],
                     ["Método", "Muro vertical liso", "Considera fricción", "Más realista"],
                     ["Aplicación", "Conservador", "Más preciso", "Recomendado"]
                 ]
