@@ -3562,11 +3562,31 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                     # Generar PDF premium con diseño del fuste
                     if 'datos_entrada' in st.session_state and 'diseno_fuste' in st.session_state:
                         try:
+                            # Verificar si hay resultados de Rankine disponibles
+                            resultados_rankine_pdf = None
+                            datos_entrada_rankine_pdf = None
+                            if 'resultados_rankine' in st.session_state and 'datos_entrada_rankine' in st.session_state:
+                                resultados_rankine_pdf = st.session_state['resultados_rankine']
+                                datos_entrada_rankine_pdf = st.session_state['datos_entrada_rankine']
+                            else:
+                                # Usar datos de resultados_completos como fallback
+                                resultados_rankine_pdf = st.session_state['resultados_completos']
+                                datos_entrada_rankine_pdf = st.session_state['datos_entrada']
+                            
+                            # Verificar si hay resultados de Coulomb disponibles
+                            resultados_coulomb_pdf = None
+                            datos_entrada_coulomb_pdf = None
+                            if 'resultados_coulomb' in st.session_state and 'datos_entrada_coulomb' in st.session_state:
+                                resultados_coulomb_pdf = st.session_state['resultados_coulomb']
+                                datos_entrada_coulomb_pdf = st.session_state['datos_entrada_coulomb']
+                            
                             pdf_buffer = generar_pdf_reportlab(
-                                st.session_state['resultados_completos'], 
-                                st.session_state['datos_entrada'], 
+                                resultados_rankine_pdf, 
+                                datos_entrada_rankine_pdf, 
                                 st.session_state['diseno_fuste'], 
-                                "premium"
+                                "premium",
+                                resultados_coulomb_pdf,
+                                datos_entrada_coulomb_pdf
                             )
                             st.download_button(
                                 label="📄 Descargar PDF Premium",
