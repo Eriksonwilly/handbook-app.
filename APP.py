@@ -72,7 +72,7 @@ def calcular_empuje_coulomb(datos_entrada):
             (math.sin(math.radians(beta - delta)) * math.sin(math.radians(beta + alpha)))
         )
     ) ** 2
-        Ka = num / den
+    Ka = num / den
     # 3. Altura efectiva del muro (H')
     H_efectiva = H + (t1 + t2) * math.tan(alpha_rad)
     # 4. Empuje activo total (Pa)
@@ -192,7 +192,7 @@ def calcular_diseno_fuste(resultados, datos_entrada):
     As_retraccion = 0.002 * b * 100 * resultados['hz'] * 100
     num_barras_retraccion = math.ceil(As_retraccion / 1.27)  # Barras de 1/2"
     As_retraccion_proporcionado = num_barras_retraccion * 1.27
-
+    
     return {
         'kp': kp,
         'Ep_kg_m': Ep_kg_m,
@@ -493,7 +493,7 @@ Generado por: CONSORCIO DEJ
             elements.append(tabla_base_coulomb)
             elements.append(Spacer(1, 10))
             
-            # Datos del muro
+    # Datos del muro
             elements.append(Paragraph("C. DATOS DEL MURO", styleH2))
             datos_muro_coulomb = [
                 ["Parámetro", "Valor", "Unidad"],
@@ -1157,7 +1157,7 @@ def dibujar_muro_streamlit(dimensiones, h1, Df, qsc, metodo="rankine", datos_cou
     
     plt.tight_layout()
     return fig
-
+    
 # Configuración de la página
 st.set_page_config(
     page_title="CONSORCIO DEJ - Muros de Contención",
