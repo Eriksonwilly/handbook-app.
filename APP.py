@@ -72,7 +72,7 @@ def calcular_empuje_coulomb(datos_entrada):
             (math.sin(math.radians(beta - delta)) * math.sin(math.radians(beta + alpha)))
         )
     ) ** 2
-    Ka = num / den
+        Ka = num / den
     # 3. Altura efectiva del muro (H')
     H_efectiva = H + (t1 + t2) * math.tan(alpha_rad)
     # 4. Empuje activo total (Pa)
@@ -148,7 +148,7 @@ def calcular_diseno_fuste(resultados, datos_entrada):
     Mr_relleno = W_relleno * x_relleno
     Mr_pasivo = Ep * yt
     Mesta_total = Mr_muro + Mr_zapata + Mr_relleno + Mr_pasivo
-    
+
     # 5. Factores de seguridad
     FSv = Mesta_total / Mvol_total
     FSd = (math.tan(phi_rad) * (W_muro + W_zapata + W_relleno) + Ep) / Ea_total
@@ -192,7 +192,7 @@ def calcular_diseno_fuste(resultados, datos_entrada):
     As_retraccion = 0.002 * b * 100 * resultados['hz'] * 100
     num_barras_retraccion = math.ceil(As_retraccion / 1.27)  # Barras de 1/2"
     As_retraccion_proporcionado = num_barras_retraccion * 1.27
-    
+
     return {
         'kp': kp,
         'Ep_kg_m': Ep_kg_m,
