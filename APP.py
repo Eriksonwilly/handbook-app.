@@ -355,6 +355,363 @@ Ingeniería y Construcción
 Reporte de Muro de Contención - {plan.upper()}
 Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}
 
+import streamlit as st
+import math
+import numpy as np
+import pandas as pd
+from datetime import datetime
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle, Polygon
+import io
+import tempfile
+import os
+
+# Importar sistema de pagos simple
+try:
+    from simple_payment_system import payment_system
+    PAYMENT_SYSTEM_AVAILABLE = True
+except ImportError:
+    PAYMENT_SYSTEM_AVAILABLE = False
+    st.warning("⚠️ Sistema de pagos no disponible. Usando modo demo.")
+
+# Importaciones opcionales con manejo de errores
+try:
+    import plotly.express as px
+    import plotly.graph_objects as go
+    PLOTLY_AVAILABLE = True
+except ImportError:
+    PLOTLY_AVAILABLE = False
+    st.warning("⚠️ Plotly no está instalado. Los gráficos interactivos no estarán disponibles.")
+
+try:
+    from reportlab.lib.pagesizes import A4, letter
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak, Image
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib.units import inch
+    REPORTLAB_AVAILABLE = True
+except ImportError:
+    REPORTLAB_AVAILABLE = False
+    st.warning("⚠️ ReportLab no está instalado. La generación de PDFs no estará disponible.")
+
+# Función para calcular empuje activo según teoría de Coulomb
+def calcular_empuje_coulomb(datos_entrada):
+    """
+    Calcula el empuje activo según la teoría de Coulomb con las fórmulas exactas proporcionadas
+    """
+    H = datos_entrada['H']
+    h1 = datos_entrada['h1']  # Peralte de zapata
+    b = datos_entrada.get('b', 0.30)  # Corona superior
+    B = datos_entrada.get('B', 1.60)  # Ancho de la base
+    b1 = datos_entrada.get('b1', 0.30)  # Longitud de la puntera
+    b2 = datos_entrada.get('b2', 0.40)  # Longitud del talón
+    t1 = datos_entrada.get('t1', 0.05)  # Base del triángulo 1
+    t2 = datos_entrada.get('t2', 0.55)  # Base del triángulo 2
+    phi1 = datos_entrada['phi1']
+    delta = datos_entrada['delta']
+    alpha = datos_entrada['alpha']
+    gamma1 = datos_entrada['gamma1']
+    S_c = datos_entrada['S_c']
+    gamma_muro = datos_entrada.get('gamma_muro', 2.30)
+    
+    # 1. Coeficiente de Presión Activa de Coulomb (Ka) - Fórmula exacta proporcionada
+    # Ka = cos²(φ'₁ - θ) / [cos²θ · cos(δ + θ) · (1 + √(sin(δ + φ'₁) · sin(φ'₁ - α) / cos(δ + θ) · cos(θ - α)))²]
+    
+    # Para muro vertical: θ = 0°
+    theta = 0  # Muro vertical
+    theta_rad = math.radians(theta)
+    phi1_rad = math.radians(phi1)
+    delta_rad = math.radians(delta)
+    alpha_rad = math.radians(alpha)
+    
+    # Numerador: cos²(φ'₁ - θ)
+    num = math.cos(phi1_rad - theta_rad) ** 2
+    
+    # Denominador: cos²θ · cos(δ + θ) · [1 + √(sin(δ + φ'₁) · sin(φ'₁ - α) / cos(δ + θ) · cos(θ - α))]²
+    den1 = math.cos(theta_rad) ** 2
+    den2 = math.cos(delta_rad + theta_rad)
+    
+    # Término dentro de la raíz cuadrada
+    sqrt_term = (math.sin(delta_rad + phi1_rad) * math.sin(phi1_rad - alpha_rad)) / (math.cos(delta_rad + theta_rad) * math.cos(theta_rad - alpha_rad))
+    
+    # Denominador completo
+    den = den1 * den2 * (1 + math.sqrt(sqrt_term)) ** 2
+    
+    Ka = num / den
+    
+    # 2. Presión Activa Total (Pa) - Fórmula exacta proporcionada
+    # Pa = ½ · γ₁ · H² · Ka + S/c · H · Ka
+    
+    # Empuje por peso del suelo
+    Pa_suelo = 0.5 * gamma1 * (H ** 2) * Ka
+    
+    # Empuje por sobrecarga (convertir kg/m² a tn/m²)
+    S_c_tn = S_c / 1000  # Convertir kg/m² a tn/m²
+    Pa_sobrecarga = S_c_tn * H * Ka
+    
+    # Empuje activo total
+    Pa = Pa_suelo + Pa_sobrecarga
+    
+    # 3. Componentes de Pa (Horizontal y Vertical) - Fórmulas exactas proporcionadas
+    # Componente horizontal (Pah) = Pa · cos(δ)
+    Ph = Pa * math.cos(delta_rad)
+    
+    # Componente vertical (Pav) = Pa · sin(δ)
+    Pv = Pa * math.sin(delta_rad)
+    
+    # 4. Cálculo del peso del muro (Wmuro) - Descomponiendo en figuras geométricas
+    # Puntera (rectángulo): W₁ = b₁ · h₁ · γ_muro
+    W1 = b1 * h1 * gamma_muro
+    
+    # Talón (rectángulo): W₂ = b₂ · h₁ · γ_muro
+    W2 = b2 * h1 * gamma_muro
+    
+    # Triángulo 1 (en la base): W₃ = ½ · t₁ · (H - h₁) · γ_muro
+    W3 = 0.5 * t1 * (H - h1) * gamma_muro
+    
+    # Triángulo 2 (en la base): W₄ = ½ · t₂ · (H - h₁) · γ_muro
+    W4 = 0.5 * t2 * (H - h1) * gamma_muro
+    
+    # Corona superior (rectángulo): W₅ = b · (H - h₁) · γ_muro
+    W5 = b * (H - h1) * gamma_muro
+    
+    # Peso total del muro
+    W_muro = W1 + W2 + W3 + W4 + W5
+    
+    # 5. Verificación de Estabilidad
+    # a. Volteo (FS_volteo) = MR / MA ≥ 1.5
+    
+    # Momento actuante (MA) = Pah · H/3
+    MA = Ph * (H / 3)
+    
+    # Cálculo de momentos resistentes (MR) - Brazos de palanca desde la puntera
+    # W₁: centroide en b₁/2
+    MR1 = W1 * (b1 / 2)
+    
+    # W₂: centroide en b₁ + b₂/2
+    MR2 = W2 * (b1 + b2 / 2)
+    
+    # W₃: centroide en b₁ + t₁/3
+    MR3 = W3 * (b1 + t1 / 3)
+    
+    # W₄: centroide en B - t₂/3
+    MR4 = W4 * (B - t2 / 3)
+    
+    # W₅: centroide en b₁ + b/2
+    MR5 = W5 * (b1 + b / 2)
+    
+    # Pv: centroide en B
+    MR_Pv = Pv * B
+    
+    # Momento resistente total
+    MR = MR1 + MR2 + MR3 + MR4 + MR5 + MR_Pv
+    
+    # Factor de seguridad al volteo
+    FS_volteo = MR / MA
+    
+    # b. Deslizamiento (FS_deslizamiento) = FR / FA ≥ 1.5
+    phi2 = datos_entrada.get('phi2', 28.4)
+    cohesion2 = datos_entrada.get('cohesion2', 0.30)
+    
+    # Fuerza resistente (FR) = (W_muro + Pav) · tan(φ'₂) + c'₂ · B
+    phi2_rad = math.radians(phi2)
+    cohesion2_tn = cohesion2 * 10  # Convertir kg/cm² a tn/m²
+    FR = (W_muro + Pv) * math.tan(phi2_rad) + cohesion2_tn * B
+    
+    # Fuerza actuante (FA) = Pah
+    FA = Ph
+    
+    # Factor de seguridad al deslizamiento
+    FS_deslizamiento = FR / FA
+    
+    # c. Capacidad Portante
+    sigma_u = datos_entrada.get('sigma_u', 1.70)
+    sigma_u_tn = sigma_u * 10  # Convertir kg/cm² a tn/m²
+    
+    # Excentricidad: e = B/2 - (MR - MA) / (W_muro + Pav)
+    e = (B / 2) - (MR - MA) / (W_muro + Pv)
+    
+    # Presión máxima: σ_max = (W_muro + Pav) / B · (1 + 6e/B)
+    sigma_max = ((W_muro + Pv) / B) * (1 + 6 * e / B)
+    
+    # Factor de seguridad a capacidad portante
+    FS_capacidad = sigma_u_tn / sigma_max
+    
+    # Empuje total horizontal (para compatibilidad)
+    P_total_horizontal = Ph
+    
+    return {
+        'Ka': Ka,
+        'Pa': Pa,
+        'Pa_suelo': Pa_suelo,
+        'Pa_sobrecarga': Pa_sobrecarga,
+        'Ph': Ph,
+        'Pv': Pv,
+        'P_total_horizontal': P_total_horizontal,
+        # Peso del muro descompuesto
+        'W_muro': W_muro,
+        'W1': W1,
+        'W2': W2,
+        'W3': W3,
+        'W4': W4,
+        'W5': W5,
+        # Factores de seguridad
+        'FS_volteo': FS_volteo,
+        'FS_deslizamiento': FS_deslizamiento,
+        'FS_capacidad': FS_capacidad,
+        'MA': MA,
+        'MR': MR,
+        'FR': FR,
+        'FA': FA,
+        'e': e,
+        'sigma_max': sigma_max,
+        # Dimensiones geométricas para uso en cálculos adicionales
+        'b': b,
+        'B': B,
+        'b1': b1,
+        'b2': b2,
+        't1': t1,
+        't2': t2,
+        'h1': h1,
+        'H_efectiva': H
+    }
+
+# Función para calcular diseño del fuste del muro
+def calcular_diseno_fuste(resultados, datos_entrada):
+    """
+    Calcula el diseño y verificación del fuste del muro según PARTE 2.2.py
+    """
+    # Datos del fuste
+    h1 = datos_entrada['h1']
+    gamma_relleno = datos_entrada['gamma_relleno']
+    phi_relleno = datos_entrada['phi_relleno']
+    cohesion = datos_entrada['cohesion']
+    Df = datos_entrada['Df']
+    fc = datos_entrada['fc']
+    fy = datos_entrada['fy']
+    b = resultados['b']
+    
+    # 1. Cálculo del coeficiente pasivo
+    phi_rad = math.radians(phi_relleno)
+    kp = (1 + math.sin(phi_rad)) / (1 - math.sin(phi_rad))
+    
+    # 2. Empuje pasivo en el intradós
+    Ep = 0.5 * kp * (gamma_relleno/1000) * Df**2 + 2 * cohesion * Df * math.sqrt(kp)
+    Ep_kg_m = Ep * 1000  # Convertir a kg/m
+    
+    # 3. Altura de aplicación del empuje pasivo
+    yt = Df / 3
+    
+    # 4. Momentos volcadores y estabilizadores
+    # Empuje activo total
+    ka = resultados['ka']
+    Ea_relleno = 0.5 * ka * (gamma_relleno/1000) * h1**2
+    Ea_sobrecarga = ka * (datos_entrada['qsc']/1000) * h1
+    Ea_total = Ea_relleno + Ea_sobrecarga
+    
+    # Momentos volcadores
+    Mvol_relleno = Ea_relleno * h1 / 3
+    Mvol_sobrecarga = Ea_sobrecarga * h1 / 2
+    Mvol_total = Mvol_relleno + Mvol_sobrecarga
+    
+    # Momentos estabilizadores (simplificado)
+    W_muro = b * h1 * (datos_entrada['gamma_concreto']/1000)
+    W_zapata = resultados['Bz'] * resultados['hz'] * (datos_entrada['gamma_concreto']/1000)
+    W_relleno = resultados['t'] * h1 * (gamma_relleno/1000)
+    
+    # Brazos de momento
+    x_muro = resultados['r'] + b/2
+    x_zapata = resultados['Bz']/2
+    x_relleno = resultados['r'] + b + resultados['t']/2
+    
+    Mr_muro = W_muro * x_muro
+    Mr_zapata = W_zapata * x_zapata
+    Mr_relleno = W_relleno * x_relleno
+    Mr_pasivo = Ep * yt
+    Mesta_total = Mr_muro + Mr_zapata + Mr_relleno + Mr_pasivo
+    
+    # 5. Factores de seguridad
+    FSv = Mesta_total / Mvol_total
+    FSd = (math.tan(phi_rad) * (W_muro + W_zapata + W_relleno) + Ep) / Ea_total
+    
+    # 6. Ubicación de la resultante y excentricidad
+    W_total = W_muro + W_zapata + W_relleno
+    sum_momentos = Mr_muro + Mr_zapata + Mr_relleno
+    x_barra = sum_momentos / W_total
+    e = abs(x_barra - resultados['Bz']/2)
+    
+    # 7. Cálculo del peralte efectivo
+    # Momento de diseño
+    Mu = 1.4 * Mvol_total  # Factor de carga
+    
+    # Resistencia del concreto
+    fc_kg_cm2 = fc
+    fy_kg_cm2 = fy
+    
+    # Peralte efectivo requerido
+    dreq = math.sqrt(Mu * 100000 / (0.9 * 0.85 * fc_kg_cm2 * b * 100 * 0.59))
+    hreq = dreq + 9  # Recubrimiento + diámetro de barra
+    dreal = resultados['hz'] * 100 - 9  # Peralte real en cm
+    
+    # 8. Área de acero
+    As = Mu * 100000 / (0.9 * fy_kg_cm2 * dreal)
+    Asmin = 0.0033 * b * 100 * dreal  # Cuantía mínima
+    
+    # 9. Distribución del acero
+    # Usar barras de 5/8" (1.98 cm²)
+    area_barra = 1.98
+    num_barras = math.ceil(As / area_barra)
+    As_proporcionado = num_barras * area_barra
+    separacion = (b * 100 - 6) / (num_barras - 1)  # 3cm de recubrimiento
+    
+    # 10. Verificación de cuantías
+    rho_real = As_proporcionado / (b * 100 * dreal)
+    rho_min = 0.0033
+    rho_max = 0.0163
+    
+    # 11. Acero por retracción y temperatura
+    As_retraccion = 0.002 * b * 100 * resultados['hz'] * 100
+    num_barras_retraccion = math.ceil(As_retraccion / 1.27)  # Barras de 1/2"
+    As_retraccion_proporcionado = num_barras_retraccion * 1.27
+    
+    return {
+        'kp': kp,
+        'Ep_kg_m': Ep_kg_m,
+        'yt': yt,
+        'Mvol_total': Mvol_total,
+        'Mesta_total': Mesta_total,
+        'FSv': FSv,
+        'FSd': FSd,
+        'x_barra': x_barra,
+        'e': e,
+        'dreq': dreq,
+        'hreq': hreq,
+        'dreal': dreal,
+        'As': As,
+        'Asmin': Asmin,
+        'num_barras': num_barras,
+        'As_proporcionado': As_proporcionado,
+        'separacion': separacion,
+        'rho_real': rho_real,
+        'As_retraccion': As_retraccion,
+        'num_barras_retraccion': num_barras_retraccion,
+        'As_retraccion_proporcionado': As_retraccion_proporcionado
+    }
+
+# Función para generar PDF del reporte
+def generar_pdf_reportlab(resultados, datos_entrada, diseno_fuste, plan="premium", resultados_coulomb=None, datos_entrada_coulomb=None):
+    """
+    Genera un PDF profesional usando ReportLab
+    """
+    if not REPORTLAB_AVAILABLE:
+        # Crear un archivo de texto simple como fallback
+        pdf_buffer = io.BytesIO()
+        reporte_texto = f"""
+CONSORCIO DEJ
+Ingeniería y Construcción
+Reporte de Muro de Contención - {plan.upper()}
+Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}
+
 Este es un reporte básico. Para reportes en PDF, instale ReportLab:
 pip install reportlab
 
@@ -4023,12 +4380,12 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                     })
                     
                     if PLOTLY_AVAILABLE:
-                    fig2 = px.pie(datos_momentos, values='Valor (tn·m/m)', names='Momento',
+                        fig2 = px.pie(datos_momentos, values='Valor (tn·m/m)', names='Momento',
                                      title="Distribución de Momentos - Rankine",
-                                 color_discrete_map={'Volcador': '#FF6B6B', 'Estabilizador': '#4ECDC4'})
-                    
-                    fig2.update_traces(textposition='inside', textinfo='percent+label+value')
-                    st.plotly_chart(fig2, use_container_width=True)
+                                     color_discrete_map={'Volcador': '#FF6B6B', 'Estabilizador': '#4ECDC4'})
+                        
+                        fig2.update_traces(textposition='inside', textinfo='percent+label+value')
+                        st.plotly_chart(fig2, use_container_width=True)
                 
                 # Gráfico de dimensiones
                 st.subheader("📏 Dimensiones del Muro - Rankine")
