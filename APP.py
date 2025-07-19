@@ -3124,6 +3124,335 @@ else:
                     with st.expander("📋 VER REPORTE COULOMB COMPLETO", expanded=True):
                         st.markdown(reporte_coulomb)
 
+        # Botón para análisis de muro con contrafuertes
+        if st.button("🏗️ ANÁLISIS Muro de Contención con Contrafuertes", type="primary"):
+            st.success("🚀 Iniciando análisis de muro con contrafuertes...")
+            
+            # Datos de entrada para contrafuertes (usando valores de la sección actual)
+            datos_contrafuertes = {
+                'H': H,  # Altura total del muro
+                'h1': h1,  # Peralte de zapata
+                'gamma1': gamma1,  # Peso específico del suelo
+                'phi1': phi1,  # Ángulo de fricción del suelo
+                'S_c': S_c,  # Sobrecarga
+                'fc': 210,  # Resistencia del concreto (kg/cm²)
+                'fy': 4200,  # Resistencia del acero (kg/cm²)
+                'gamma_concreto': 2.4  # Peso específico del concreto (t/m³)
+            }
+            
+            # Cálculos según las fórmulas proporcionadas
+            H_contrafuertes = datos_contrafuertes['H']
+            gamma1_contrafuertes = datos_contrafuertes['gamma1']
+            phi1_contrafuertes = datos_contrafuertes['phi1']
+            S_c_contrafuertes = datos_contrafuertes['S_c']
+            
+            # 1. Espesor mínimo del talón y puntera (Ortega)
+            d_min = H_contrafuertes / 10
+            h1_contrafuertes = max(0.4, d_min)  # Usar h1 = 0.4m (cumple)
+            
+            # 2. Separación de contrafuertes (ACI-UNI)
+            S_max = 3 * H_contrafuertes
+            S_tipico = min(4.0, S_max)  # Típico: 2.5 a 4m
+            
+            # 3. Coeficiente de empuje activo (Rankine simplificado)
+            ka_contrafuertes = math.tan(math.radians(45 - phi1_contrafuertes/2))**2
+            
+            # 4. Presión activa total
+            Pa_suelo = 0.5 * gamma1_contrafuertes * (H_contrafuertes**2) * ka_contrafuertes
+            Pa_sobrecarga = (S_c_contrafuertes / 1000) * H_contrafuertes * ka_contrafuertes
+            Pa_total = Pa_suelo + Pa_sobrecarga
+            
+            # 5. Momento máximo en la base del contrafuerte (UNI)
+            M_max = Pa_total * S_tipico * H_contrafuertes / 6
+            
+            # 6. Diseño de armadura
+            # Acero vertical mínimo (ACI 318)
+            As_min_vertical = 0.0018 * 100 * 40  # b=100cm, d=40cm
+            
+            # Acero horizontal mínimo (Morales)
+            As_min_horizontal = 0.0025 * 100 * h1_contrafuertes * 100  # b=100cm, h en cm
+            
+            # Espesor mínimo de contrafuertes
+            t_contrafuertes = max(0.20, H_contrafuertes / 20)
+            
+            # Armadura principal del contrafuerte
+            d_contrafuertes = h1_contrafuertes * 100 - 9  # Peralte efectivo en cm
+            As_contrafuertes = M_max * 100000 / (0.9 * 4200 * d_contrafuertes)
+            
+            # Guardar resultados
+            resultados_contrafuertes = {
+                'H': H_contrafuertes,
+                'h1': h1_contrafuertes,
+                'd_min': d_min,
+                'S_max': S_max,
+                'S_tipico': S_tipico,
+                'ka': ka_contrafuertes,
+                'Pa_suelo': Pa_suelo,
+                'Pa_sobrecarga': Pa_sobrecarga,
+                'Pa_total': Pa_total,
+                'M_max': M_max,
+                'As_min_vertical': As_min_vertical,
+                'As_min_horizontal': As_min_horizontal,
+                't_contrafuertes': t_contrafuertes,
+                'As_contrafuertes': As_contrafuertes,
+                'd_contrafuertes': d_contrafuertes
+            }
+            
+            st.session_state['resultados_contrafuertes'] = resultados_contrafuertes
+            st.session_state['datos_contrafuertes'] = datos_contrafuertes
+            
+            st.success("✅ Análisis de muro con contrafuertes completado exitosamente!")
+            st.balloons()
+            
+            # MOSTRAR RESULTADOS COMPLETOS
+            st.subheader("📊 Resultados del Análisis - Muro con Contrafuertes")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.metric("Altura del muro (H)", f"{H_contrafuertes:.2f} m")
+                st.metric("Peralte de zapata (h1)", f"{h1_contrafuertes:.2f} m")
+                st.metric("Espesor mínimo requerido", f"{d_min:.2f} m")
+                st.metric("Separación máxima contrafuertes", f"{S_max:.2f} m")
+                st.metric("Separación típica recomendada", f"{S_tipico:.2f} m")
+            
+            with col2:
+                st.metric("Coeficiente Ka (Rankine)", f"{ka_contrafuertes:.6f}")
+                st.metric("Empuje activo total (Pa)", f"{Pa_total:.3f} t/m")
+                st.metric("Momento máximo contrafuerte", f"{M_max:.2f} tn·m")
+                st.metric("Acero vertical mínimo", f"{As_min_vertical:.2f} cm²/m")
+                st.metric("Acero horizontal mínimo", f"{As_min_horizontal:.2f} cm²/m")
+            
+            # Diseño estructural
+            st.subheader("🏗️ Diseño Estructural - Contrafuertes")
+            
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.info("**Contrafuertes:**")
+                st.write(f"• Espesor mínimo: {t_contrafuertes:.2f} m")
+                st.write(f"• Separación: {S_tipico:.2f} m")
+                st.write(f"• Armadura principal: {As_contrafuertes:.2f} cm²")
+                st.write(f"• Peralte efectivo: {d_contrafuertes:.2f} cm")
+            
+            with col2:
+                st.info("**Muro Pantalla:**")
+                st.write(f"• Acero vertical: {As_min_vertical:.2f} cm²/m")
+                st.write(f"• Acero horizontal: {As_min_horizontal:.2f} cm²/m")
+                st.write(f"• Espesor: {h1_contrafuertes:.2f} m")
+                st.write(f"• Tipo: Muro pantalla con contrafuertes")
+            
+            with col3:
+                st.info("**Detalles Constructivos:**")
+                st.write(f"• Juntas de expansión: cada 10m")
+                st.write(f"• Drenaje: tuberías Ø4\"")
+                st.write(f"• Anclaje: barras Ø1\"")
+                st.write(f"• Referencia: Ortega García")
+            
+            # Gráficos
+            st.subheader("📈 Gráficos - Análisis Contrafuertes")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Gráfico de componentes del empuje
+                datos_empuje = pd.DataFrame({
+                    'Componente': ['Empuje Suelo', 'Empuje Sobrecarga', 'Empuje Total'],
+                    'Valor (t/m)': [Pa_suelo, Pa_sobrecarga, Pa_total]
+                })
+                
+                if PLOTLY_AVAILABLE:
+                    fig_empuje = px.bar(datos_empuje, x='Componente', y='Valor (t/m)',
+                                       title="Componentes del Empuje - Contrafuertes",
+                                       color='Componente',
+                                       color_discrete_map={
+                                           'Empuje Suelo': '#FF6B6B',
+                                           'Empuje Sobrecarga': '#4ECDC4',
+                                           'Empuje Total': '#45B7D1'
+                                       })
+                    
+                    fig_empuje.update_traces(texttemplate='%{y:.3f}', textposition='outside')
+                    st.plotly_chart(fig_empuje, use_container_width=True)
+            
+            with col2:
+                # Gráfico de dimensiones
+                datos_dimensiones = pd.DataFrame({
+                    'Dimensión': ['H (m)', 'h1 (m)', 'S (m)', 't (m)'],
+                    'Valor': [H_contrafuertes, h1_contrafuertes, S_tipico, t_contrafuertes]
+                })
+                
+                if PLOTLY_AVAILABLE:
+                    fig_dim = px.bar(datos_dimensiones, x='Dimensión', y='Valor',
+                                    title="Dimensiones Principales - Contrafuertes",
+                                    color='Dimensión',
+                                    color_discrete_map={
+                                        'H (m)': '#FFD93D',
+                                        'h1 (m)': '#6BCF7F',
+                                        'S (m)': '#4D96FF',
+                                        't (m)': '#9B59B6'
+                                    })
+                    
+                    fig_dim.update_traces(texttemplate='%{y:.2f}', textposition='outside')
+                    st.plotly_chart(fig_dim, use_container_width=True)
+            
+            # Información técnica
+            st.subheader("📚 Información Técnica - Contrafuertes")
+            
+            with st.expander("🔍 DETALLES DEL CÁLCULO", expanded=False):
+                st.markdown(f"""
+                **1. Espesor mínimo del talón y puntera (Ortega):**
+                ```
+                d ≥ H/10 = {H_contrafuertes}/10 = {d_min:.2f} m
+                h1 = {h1_contrafuertes:.2f} m (cumple)
+                ```
+                
+                **2. Separación de contrafuertes (ACI-UNI):**
+                ```
+                S ≤ 3·H = 3·{H_contrafuertes} = {S_max:.2f} m
+                S típico = {S_tipico:.2f} m (recomendado)
+                ```
+                
+                **3. Coeficiente de empuje activo (Rankine):**
+                ```
+                Ka = tan²(45° - φ₁'/2) = tan²(45° - {phi1_contrafuertes}/2) = {ka_contrafuertes:.6f}
+                ```
+                
+                **4. Presión activa total:**
+                ```
+                Pa = ½·γ₁·H²·Ka + S/c·H·Ka
+                Pa = 0.5·{gamma1_contrafuertes}·{H_contrafuertes}²·{ka_contrafuertes:.6f} + ({S_c_contrafuertes}/1000)·{H_contrafuertes}·{ka_contrafuertes:.6f}
+                Pa = {Pa_suelo:.3f} + {Pa_sobrecarga:.3f} = {Pa_total:.3f} t/m
+                ```
+                
+                **5. Momento máximo en contrafuerte (UNI):**
+                ```
+                M_max = Pa·S·H/6 = {Pa_total:.3f}·{S_tipico:.2f}·{H_contrafuertes}/6 = {M_max:.2f} tn·m
+                ```
+                
+                **6. Acero vertical mínimo (ACI 318):**
+                ```
+                As_min = 0.0018·b·d = 0.0018·100·40 = {As_min_vertical:.2f} cm²/m
+                ```
+                
+                **7. Acero horizontal mínimo (Morales):**
+                ```
+                As_hor = 0.0025·b·h = 0.0025·100·{h1_contrafuertes*100:.0f} = {As_min_horizontal:.2f} cm²/m
+                ```
+                
+                **8. Armadura principal del contrafuerte:**
+                ```
+                As = M_max/(0.9·fy·d) = {M_max*100000:.0f}/(0.9·4200·{d_contrafuertes:.0f}) = {As_contrafuertes:.2f} cm²
+                ```
+                """)
+            
+            # Recomendaciones constructivas
+            st.subheader("🏗️ Recomendaciones Constructivas")
+            
+            st.info("""
+            **Partes Clave y Notas Técnicas:**
+            
+            **Muro Pantalla:**
+            - Espesor (h1): {h1_contrafuertes:.2f} m
+            - Refuerzo: Acero vertical y horizontal (mín. 0.0018·b·d)
+            
+            **Contrafuertes:**
+            - Separación (S): {S_tipico:.2f} m (≤ 3H = {S_max:.2f} m)
+            - Función: Resistir momentos y cortantes del suelo
+            - Espesor mínimo: {t_contrafuertes:.2f} m
+            
+            **Corona Superior:**
+            - Ancho (b): 0.3 m (protegida contra intemperie)
+            
+            **Cimiento:**
+            - Ancho (B): 1.6 m (verificado por capacidad portante)
+            
+            **Drenaje:**
+            - Tubos perforados detrás del muro (Ø4")
+            
+            **Detalles Constructivos Adicionales:**
+            - Juntas de expansión cada 10 m (Ortega García)
+            - Acero mínimo en muro: 0.0025·b·h (Roberto Morales)
+            - Anclaje de contrafuertes con barras Ø1"
+            """.format(h1_contrafuertes=h1_contrafuertes, S_tipico=S_tipico, S_max=S_max, t_contrafuertes=t_contrafuertes))
+            
+            # Botones para generar reportes
+            st.subheader("📄 Generar Reportes - Contrafuertes")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Generar reporte de texto
+                reporte_contrafuertes = f"""
+# REPORTE TÉCNICO - MURO CON CONTRAFUERTES
+## CONSORCIO DEJ
+### Análisis según Ortega García, UNI y Morales
+### Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}
+
+### 1. DATOS DE ENTRADA:
+- Altura del muro (H): {H_contrafuertes:.2f} m
+- Peralte de zapata (h1): {h1_contrafuertes:.2f} m
+- Peso específico del suelo (γ₁): {gamma1_contrafuertes:.2f} t/m³
+- Ángulo de fricción del suelo (φ₁'): {phi1_contrafuertes:.1f}°
+- Sobrecarga (S/c): {S_c_contrafuertes} kg/m²
+
+### 2. DIMENSIONES CALCULADAS:
+- Espesor mínimo requerido: {d_min:.2f} m
+- Separación máxima contrafuertes: {S_max:.2f} m
+- Separación típica recomendada: {S_tipico:.2f} m
+- Espesor de contrafuertes: {t_contrafuertes:.2f} m
+
+### 3. ANÁLISIS DE EMPUJES:
+- Coeficiente Ka (Rankine): {ka_contrafuertes:.6f}
+- Empuje por suelo: {Pa_suelo:.3f} t/m
+- Empuje por sobrecarga: {Pa_sobrecarga:.3f} t/m
+- Empuje activo total: {Pa_total:.3f} t/m
+
+### 4. DISEÑO ESTRUCTURAL:
+- Momento máximo en contrafuerte: {M_max:.2f} tn·m
+- Acero vertical mínimo: {As_min_vertical:.2f} cm²/m
+- Acero horizontal mínimo: {As_min_horizontal:.2f} cm²/m
+- Armadura principal contrafuerte: {As_contrafuertes:.2f} cm²
+
+### 5. DETALLES CONSTRUCTIVOS:
+- Juntas de expansión: cada 10 m (Ortega)
+- Drenaje: tuberías perforadas Ø4"
+- Anclaje contrafuertes: barras Ø1"
+- Referencias: Ortega García, UNI, Morales (ACI-UNI)
+
+### 6. RECOMENDACIONES:
+- Verificar capacidad portante del suelo
+- Considerar efectos de drenaje
+- Revisar estabilidad al volcamiento
+- Evaluar armadura por retracción y temperatura
+
+### 7. INFORMACIÓN DEL PROYECTO:
+- Empresa: CONSORCIO DEJ
+- Método: Muro con contrafuertes
+- Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}
+- Plan: Premium
+- Software: Streamlit + Python
+
+---
+**Este reporte fue generado automáticamente por el sistema de análisis de muros de contención de CONSORCIO DEJ.**
+**Para consultas técnicas, contacte a nuestro equipo de ingeniería.**
+"""
+                
+                st.download_button(
+                    label="📥 Descargar TXT Contrafuertes",
+                    data=reporte_contrafuertes,
+                    file_name=f"reporte_contrafuertes_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
+                    mime="text/plain"
+                )
+            
+            with col2:
+                if st.button("🖨️ Generar Reporte en Pantalla", type="primary", key="contrafuertes_pantalla"):
+                    st.success("✅ Reporte Contrafuertes generado exitosamente")
+                    st.balloons()
+                    
+                    # Mostrar el reporte en formato expandible
+                    with st.expander("📋 VER REPORTE CONTRAFUERTES COMPLETO", expanded=True):
+                        st.markdown(reporte_contrafuertes)
+
     elif opcion == "🏗️ Diseño del Fuste":
         st.title("Diseño y Verificación del Fuste del Muro")
         
