@@ -1933,6 +1933,73 @@ else:
             st.title("Análisis Completo de Muro de Contención - Teoría de Rankine")
             st.success("⭐ Plan Premium: Análisis completo con teoría de Rankine")
             
+            # Mostrar comparación visual entre Rankine y Coulomb si ambos están disponibles
+            if 'resultados_rankine' in st.session_state and 'resultados_coulomb' in st.session_state:
+                st.subheader("🔍 Comparación Visual: Rankine vs Coulomb")
+                
+                # Gráfico comparativo profesional
+                fig_comparacion = go.Figure()
+                
+                # Agregar barras para Rankine
+                fig_comparacion.add_trace(go.Bar(
+                    x=['Coeficiente Ka', 'Empuje Activo (t/m)', 'Componente Horizontal (t/m)'],
+                    y=[st.session_state['resultados_rankine']['ka'], 
+                       st.session_state['resultados_rankine']['Ea_total'],
+                       st.session_state['resultados_rankine']['Ea_total']],  # Rankine no tiene componente vertical
+                    name='Rankine',
+                    marker_color='#1f77b4',
+                    text=[f"{st.session_state['resultados_rankine']['ka']:.4f}", 
+                          f"{st.session_state['resultados_rankine']['Ea_total']:.2f}",
+                          f"{st.session_state['resultados_rankine']['Ea_total']:.2f}"],
+                    textposition='auto'
+                ))
+                
+                # Agregar barras para Coulomb
+                fig_comparacion.add_trace(go.Bar(
+                    x=['Coeficiente Ka', 'Empuje Activo (t/m)', 'Componente Horizontal (t/m)'],
+                    y=[st.session_state['resultados_coulomb']['Ka'], 
+                       st.session_state['resultados_coulomb']['Pa'],
+                       st.session_state['resultados_coulomb']['Ph']],
+                    name='Coulomb',
+                    marker_color='#ff7f0e',
+                    text=[f"{st.session_state['resultados_coulomb']['Ka']:.4f}", 
+                          f"{st.session_state['resultados_coulomb']['Pa']:.2f}",
+                          f"{st.session_state['resultados_coulomb']['Ph']:.2f}"],
+                    textposition='auto'
+                ))
+                
+                # Personalizar el gráfico
+                fig_comparacion.update_layout(
+                    title='Comparación de Resultados: Rankine vs Coulomb',
+                    xaxis_title='Parámetro',
+                    yaxis_title='Valor',
+                    barmode='group',
+                    template='plotly_white',
+                    height=500,
+                    legend=dict(
+                        orientation="h",
+                        yanchor="bottom",
+                        y=1.02,
+                        xanchor="right",
+                        x=1
+                    )
+                )
+                
+                st.plotly_chart(fig_comparacion, use_container_width=True)
+                
+                # Análisis comparativo
+                diferencia_ka = ((st.session_state['resultados_coulomb']['Ka'] - st.session_state['resultados_rankine']['ka']) / 
+                                st.session_state['resultados_rankine']['ka']) * 100
+                diferencia_empuje = ((st.session_state['resultados_coulomb']['Ph'] - st.session_state['resultados_rankine']['Ea_total']) / 
+                                   st.session_state['resultados_rankine']['Ea_total']) * 100
+                
+                st.info(f"""
+                **Análisis Comparativo:**
+                - Diferencia en Ka: {diferencia_ka:.1f}%
+                - Diferencia en empuje horizontal: {diferencia_empuje:.1f}%
+                - Rankine es más conservador cuando la diferencia es positiva
+                """)
+            
             # Mostrar fórmulas de Rankine
             st.subheader("📚 Fórmulas de la Teoría de Rankine")
             
@@ -2259,6 +2326,49 @@ else:
                 
                 st.success("¡Análisis completo ejecutado exitosamente!")
                 st.balloons()
+                
+                # Gráfico mejorado de distribución de presiones
+                st.subheader("📊 Distribución de Presiones sobre el Suelo")
+                
+                # Crear datos para el gráfico
+                presiones = {
+                    'Tipo': ['Máxima', 'Mínima', 'Admisible'],
+                    'Valor (kg/cm²)': [
+                        q_max_kg_cm2,
+                        q_min_kg_cm2,
+                        sigma_adm
+                    ],
+                    'Color': ['#d62728', '#2ca02c', '#9467bd']
+                }
+                
+                fig_presiones = px.bar(presiones, x='Tipo', y='Valor (kg/cm²)', color='Tipo',
+                                      color_discrete_map={
+                                          'Máxima': '#d62728',
+                                          'Mínima': '#2ca02c',
+                                          'Admisible': '#9467bd'
+                                      },
+                                      text='Valor (kg/cm²)')
+                
+                fig_presiones.update_traces(texttemplate='%{y:.2f}', textposition='outside')
+                fig_presiones.update_layout(
+                    title='Distribución de Presiones sobre el Suelo',
+                    showlegend=False,
+                    template='plotly_white',
+                    height=400
+                )
+                
+                st.plotly_chart(fig_presiones, use_container_width=True)
+                
+                # Anotaciones sobre las presiones
+                if q_max_kg_cm2 > sigma_adm:
+                    st.error("⚠️ La presión máxima excede la capacidad admisible del suelo")
+                else:
+                    st.success("✅ La presión máxima está dentro del límite admisible")
+                    
+                if q_min_kg_cm2 < 0:
+                    st.error("⚠️ Existen tensiones en el suelo (presión mínima negativa)")
+                else:
+                    st.success("✅ No existen tensiones en el suelo")
                 
                 # MOSTRAR RESULTADOS COMPLETOS INMEDIATAMENTE
                 st.subheader("📊 Resultados del Análisis Completo")
@@ -2756,6 +2866,143 @@ else:
     elif opcion == "🔬 Análisis Coulomb":
         st.title("Análisis de Empuje Activo según Teoría de Coulomb")
         st.success("🔬 Plan Premium: Análisis completo con teoría de Coulomb")
+        
+        # Mostrar diagrama de fuerzas si hay resultados
+        if 'resultados_coulomb' in st.session_state:
+            st.subheader("📐 Diagrama de Fuerzas - Coulomb")
+            
+            # Crear diagrama vectorial profesional
+            fig_fuerzas = go.Figure()
+            
+            # Definir puntos de referencia
+            beta_rad = math.radians(st.session_state['resultados_coulomb']['beta'])
+            escala = 0.2  # Escala para visualización
+            
+            # Empuje activo (Pa)
+            fig_fuerzas.add_annotation(
+                ax=0, ay=0,
+                axref="x", ayref="y",
+                x=st.session_state['resultados_coulomb']['Ph'] * escala * math.cos(beta_rad),
+                y=st.session_state['resultados_coulomb']['Ph'] * escala * math.sin(beta_rad),
+                xref="x", yref="y",
+                showarrow=True,
+                arrowhead=2,
+                arrowsize=1.5,
+                arrowwidth=2,
+                arrowcolor="#d62728",
+                text=f"Pa = {st.session_state['resultados_coulomb']['Pa']:.2f} t/m",
+                font=dict(size=12, color="#d62728")
+            )
+            
+            # Componente horizontal (Ph)
+            fig_fuerzas.add_annotation(
+                ax=0, ay=0,
+                axref="x", ayref="y",
+                x=st.session_state['resultados_coulomb']['Ph'] * escala,
+                y=0,
+                xref="x", yref="y",
+                showarrow=True,
+                arrowhead=2,
+                arrowsize=1.5,
+                arrowwidth=2,
+                arrowcolor="#ff7f0e",
+                text=f"Ph = {st.session_state['resultados_coulomb']['Ph']:.2f} t/m",
+                font=dict(size=12, color="#ff7f0e")
+            )
+            
+            # Componente vertical (Pv)
+            fig_fuerzas.add_annotation(
+                ax=0, ay=0,
+                axref="x", ayref="y",
+                x=0,
+                y=st.session_state['resultados_coulomb']['Pv'] * escala,
+                xref="x", yref="y",
+                showarrow=True,
+                arrowhead=2,
+                arrowsize=1.5,
+                arrowwidth=2,
+                arrowcolor="#2ca02c",
+                text=f"Pv = {st.session_state['resultados_coulomb']['Pv']:.2f} t/m",
+                font=dict(size=12, color="#2ca02c")
+            )
+            
+            # Empuje por sobrecarga (PSC)
+            fig_fuerzas.add_annotation(
+                ax=0, ay=0,
+                axref="x", ayref="y",
+                x=st.session_state['resultados_coulomb']['PSC'] * escala,
+                y=0,
+                xref="x", yref="y",
+                showarrow=True,
+                arrowhead=2,
+                arrowsize=1.5,
+                arrowwidth=2,
+                arrowcolor="#9467bd",
+                text=f"PSC = {st.session_state['resultados_coulomb']['PSC']:.2f} t/m",
+                font=dict(size=12, color="#9467bd")
+            )
+            
+            # Configurar el gráfico
+            fig_fuerzas.update_layout(
+                title="Diagrama Vectorial de Fuerzas - Coulomb",
+                xaxis=dict(range=[-1, 1], showgrid=True, zeroline=True),
+                yaxis=dict(range=[-0.5, 1.5], showgrid=True, zeroline=True),
+                showlegend=False,
+                width=600,
+                height=500,
+                margin=dict(l=20, r=20, t=40, b=20),
+                plot_bgcolor='rgba(0,0,0,0)'
+            )
+            
+            st.plotly_chart(fig_fuerzas, use_container_width=True)
+            
+            # Explicación de los resultados
+            st.markdown("""
+            **Interpretación del Diagrama:**
+            - 🔴 **Pa (Rojo):** Empuje activo total (resultante)
+            - 🟠 **Ph (Naranja):** Componente horizontal del empuje
+            - 🟢 **Pv (Verde):** Componente vertical del empuje
+            - 🟣 **PSC (Morado):** Empuje debido a la sobrecarga
+            """)
+        
+        # Gráfico de influencia de ángulos
+        if 'resultados_coulomb' in st.session_state:
+            st.subheader("📐 Influencia de los Ángulos en el Empuje")
+            
+            # Crear datos para el gráfico
+            angulos = ['β (Inclinación)', 'δ (Fricción)', 'α (Terreno)']
+            valores = [
+                st.session_state['resultados_coulomb']['beta'],
+                st.session_state['datos_entrada_coulomb']['delta'],
+                st.session_state['datos_entrada_coulomb']['alpha']
+            ]
+            
+            fig_angulos = px.bar(x=angulos, y=valores, text=valores,
+                                title="Ángulos Clave en el Análisis Coulomb",
+                                labels={'x': 'Ángulo', 'y': 'Valor (°)'},
+                                color=angulos,
+                                color_discrete_map={
+                                    'β (Inclinación)': '#1f77b4',
+                                    'δ (Fricción)': '#ff7f0e',
+                                    'α (Terreno)': '#2ca02c'
+                                })
+            
+            fig_angulos.update_traces(texttemplate='%{y:.1f}°', textposition='outside')
+            fig_angulos.update_layout(
+                showlegend=False,
+                template='plotly_white',
+                height=400
+            )
+            
+            st.plotly_chart(fig_angulos, use_container_width=True)
+            
+            # Explicación de la influencia
+            st.markdown("""
+            **Influencia de los Ángulos:**
+            - **β (Inclinación del muro):** Afecta directamente la geometría y el empuje
+            - **δ (Fricción muro-suelo):** Mayor δ reduce el empuje horizontal
+            - **α (Inclinación del terreno):** Terreno inclinado aumenta el empuje
+            """)
         
         # Mostrar fórmulas de Coulomb
         st.subheader("📚 Fórmulas de la Teoría de Coulomb")
