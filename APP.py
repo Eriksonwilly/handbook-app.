@@ -40,13 +40,16 @@ except ImportError:
 # Función para calcular empuje activo según teoría de Coulomb
 def calcular_empuje_coulomb(datos_entrada):
     """
-    Calcula el empuje activo según la teoría de Coulomb (fórmula Excel exacta de la imagen)
+    Calcula el empuje activo según la teoría de Coulomb con todas las dimensiones geométricas
     """
     H = datos_entrada['H']
-    h1 = datos_entrada['h1']  # ← aquí se usa el valor editable
-    t1 = datos_entrada.get('t1', 0)
-    t2 = datos_entrada['t2']
-    b2 = datos_entrada['b2']
+    h1 = datos_entrada['h1']  # Peralte de zapata
+    b = datos_entrada.get('b', 0.30)  # Corona superior
+    B = datos_entrada.get('B', 1.60)  # Ancho de la base
+    b1 = datos_entrada.get('b1', 0.30)  # Longitud de la puntera
+    b2 = datos_entrada['b2']  # Longitud del talón
+    t1 = datos_entrada.get('t1', 0.05)  # Base del triángulo 1
+    t2 = datos_entrada['t2']  # Base del triángulo 2
     phi1 = datos_entrada['phi1']
     delta = datos_entrada['delta']
     alpha = datos_entrada['alpha']
@@ -74,7 +77,8 @@ def calcular_empuje_coulomb(datos_entrada):
     ) ** 2
     Ka = num / den
     # 3. Altura efectiva del muro (H')
-    H_efectiva = H + (t1 + t2) * math.tan(alpha_rad)
+    # Usando todas las dimensiones geométricas según la fórmula de Coulomb
+    H_efectiva = H + (t2/2 + b2/2) * math.tan(alpha_rad)
     # 4. Empuje activo total (Pa)
     Pa = 0.5 * Ka * gamma1 * (H_efectiva) ** 2
     # 5. Componentes del empuje activo
@@ -92,7 +96,15 @@ def calcular_empuje_coulomb(datos_entrada):
         'Ph': Ph,
         'Pv': Pv,
         'PSC': PSC,
-        'P_total_horizontal': P_total_horizontal
+        'P_total_horizontal': P_total_horizontal,
+        # Dimensiones geométricas para uso en cálculos adicionales
+        'b': b,
+        'B': B,
+        'b1': b1,
+        'b2': b2,
+        't1': t1,
+        't2': t2,
+        'h1': h1
     }
 
 # Función para calcular diseño del fuste del muro
@@ -2656,9 +2668,16 @@ else:
             S_c = st.number_input("Sobrecarga (S/c) [kg/m²]", value=750, step=10, help="Sobrecarga aplicada sobre el terreno")
             H = st.number_input("Altura total del muro (H) [m]", value=4.00, step=0.01, help="Altura total del muro de contención")
             D = st.number_input("Profundidad de desplante (D) [m]", value=1.00, step=0.01, help="Profundidad de desplante del muro")
-            h1 = st.number_input("Peralte de Zapata (h1) [m]", value=3.00, step=0.01, help="Peralte de Zapata que contiene el suelo")
-            t2 = st.number_input("Base del triángulo 2 (t2) [m]", value=0.30, step=0.01, help="Base del triángulo de inclinación del muro")
-            b2 = st.number_input("Longitud del talón (b2) [m]", value=1.00, step=0.01, help="Longitud del talón del muro")
+            
+            # Dimensiones geométricas del muro
+            st.markdown("**📏 Dimensiones Geométricas:**")
+            b = st.number_input("Corona superior (b) [m]", value=0.30, step=0.01, help="Ancho de la parte superior del muro")
+            B = st.number_input("Ancho de la base (B) [m]", value=1.60, step=0.01, help="Ancho total de la zapata de cimentación")
+            h1 = st.number_input("Peralte de Zapata (h1) [m]", value=0.40, step=0.01, help="Peralte de Zapata que contiene el suelo")
+            b1 = st.number_input("Longitud de la puntera (b1) [m]", value=0.30, step=0.01, help="Longitud de la parte frontal de la zapata")
+            b2 = st.number_input("Longitud del talón (b2) [m]", value=0.40, step=0.01, help="Longitud de la parte trasera de la zapata")
+            t1 = st.number_input("Base del triángulo 1 (t1) [m]", value=0.05, step=0.01, help="Base del triángulo de refuerzo frontal")
+            t2 = st.number_input("Base del triángulo 2 (t2) [m]", value=0.55, step=0.01, help="Base del triángulo de refuerzo trasero")
             delta = st.number_input("Ángulo de fricción muro-suelo (δ) [°]", value=21.0, step=0.1, help="Ángulo de fricción entre el muro y el relleno")
         
         # Botones con dimensiones fijas del muro
@@ -2753,7 +2772,7 @@ else:
         with col4:
             if st.button("⚖️ Calcular Empuje Total", type="primary"):
                 datos_entrada = {
-                    'H': H, 'h1': h1, 't2': t2, 'b2': b2,
+                    'H': H, 'h1': h1, 'b': b, 'B': B, 'b1': b1, 'b2': b2, 't1': t1, 't2': t2,
                     'phi1': phi1, 'delta': delta, 'alpha': alpha,
                     'gamma1': gamma1, 'S_c': S_c,
                     'cohesion1': cohesion1, 'gamma2': gamma2, 'cohesion2': cohesion2,
@@ -2765,7 +2784,7 @@ else:
         # Botón para análisis completo
         if st.button("🚀 Ejecutar Análisis Completo Coulomb", type="primary"):
             datos_entrada = {
-                'H': H, 'h1': h1, 't2': t2, 'b2': b2,
+                'H': H, 'h1': h1, 'b': b, 'B': B, 'b1': b1, 'b2': b2, 't1': t1, 't2': t2,
                 'phi1': phi1, 'delta': delta, 'alpha': alpha,
                 'gamma1': gamma1, 'S_c': S_c,
                 'cohesion1': cohesion1, 'gamma2': gamma2, 'cohesion2': cohesion2,
@@ -2779,6 +2798,25 @@ else:
             
             # MOSTRAR RESULTADOS COMPLETOS
             st.subheader("📊 Resultados del Análisis Coulomb")
+            
+            # Mostrar dimensiones utilizadas en el cálculo
+            st.subheader("📏 Dimensiones Utilizadas en el Cálculo")
+            col_dim1, col_dim2, col_dim3 = st.columns(3)
+            
+            with col_dim1:
+                st.info(f"**Corona superior (b):** {b:.2f} m")
+                st.info(f"**Ancho de la base (B):** {B:.2f} m")
+                st.info(f"**Peralte de zapata (h1):** {h1:.2f} m")
+            
+            with col_dim2:
+                st.info(f"**Longitud puntera (b1):** {b1:.2f} m")
+                st.info(f"**Longitud talón (b2):** {b2:.2f} m")
+                st.info(f"**Base triángulo 1 (t1):** {t1:.2f} m")
+            
+            with col_dim3:
+                st.info(f"**Base triángulo 2 (t2):** {t2:.2f} m")
+                st.info(f"**Altura total (H):** {H:.2f} m")
+                st.info(f"**Profundidad (D):** {D:.2f} m")
             
             col1, col2 = st.columns(2)
             
