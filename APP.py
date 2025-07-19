@@ -40,359 +40,60 @@ except ImportError:
 # Función para calcular empuje activo según teoría de Coulomb
 def calcular_empuje_coulomb(datos_entrada):
     """
-    Calcula el empuje activo según la teoría de Coulomb con las fórmulas exactas proporcionadas
+    Calcula el empuje activo según la teoría de Coulomb (fórmula Excel exacta de la imagen)
     """
     H = datos_entrada['H']
-    h1 = datos_entrada['h1']  # Peralte de zapata
-    b = datos_entrada.get('b', 0.30)  # Corona superior
-    B = datos_entrada.get('B', 1.60)  # Ancho de la base
-    b1 = datos_entrada.get('b1', 0.30)  # Longitud de la puntera
-    b2 = datos_entrada.get('b2', 0.40)  # Longitud del talón
-    t1 = datos_entrada.get('t1', 0.05)  # Base del triángulo 1
-    t2 = datos_entrada.get('t2', 0.55)  # Base del triángulo 2
+    h1 = datos_entrada['h1']  # ← aquí se usa el valor editable
+    t1 = datos_entrada.get('t1', 0)
+    t2 = datos_entrada['t2']
+    b2 = datos_entrada['b2']
     phi1 = datos_entrada['phi1']
     delta = datos_entrada['delta']
     alpha = datos_entrada['alpha']
     gamma1 = datos_entrada['gamma1']
     S_c = datos_entrada['S_c']
-    gamma_muro = datos_entrada.get('gamma_muro', 2.30)
-    
-    # 1. Coeficiente de Presión Activa de Coulomb (Ka) - Fórmula exacta proporcionada
-    # Ka = cos²(φ'₁ - θ) / [cos²θ · cos(δ + θ) · (1 + √(sin(δ + φ'₁) · sin(φ'₁ - α) / cos(δ + θ) · cos(θ - α)))²]
-    
-    # Para muro vertical: θ = 0°
-    theta = 0  # Muro vertical
-    theta_rad = math.radians(theta)
+    # 1. Ángulo de inclinación del muro (β) en grados
+    # --- Cálculo profesional del ángulo β (inclinación del muro respecto a la vertical) ---
+    # β = arctan((H - h1) / t2)  (h1 = peralte de la zapata editable)
+    # Si t2 = 0, muro vertical: β = 90°
+    if t2 != 0:
+        beta = math.degrees(math.atan((H - h1) / t2))
+    else:
+        beta = 90.0
+    beta_rad = math.radians(beta)
+    # 2. Coeficiente de empuje activo (Ka) - fórmula profesional con conversión explícita a radianes
     phi1_rad = math.radians(phi1)
     delta_rad = math.radians(delta)
     alpha_rad = math.radians(alpha)
-    
-    # Numerador: cos²(φ'₁ - θ)
-    num = math.cos(phi1_rad - theta_rad) ** 2
-    
-    # Denominador: cos²θ · cos(δ + θ) · [1 + √(sin(δ + φ'₁) · sin(φ'₁ - α) / cos(δ + θ) · cos(θ - α))]²
-    den1 = math.cos(theta_rad) ** 2
-    den2 = math.cos(delta_rad + theta_rad)
-    
-    # Término dentro de la raíz cuadrada
-    sqrt_term = (math.sin(delta_rad + phi1_rad) * math.sin(phi1_rad - alpha_rad)) / (math.cos(delta_rad + theta_rad) * math.cos(theta_rad - alpha_rad))
-    
-    # Denominador completo
-    den = den1 * den2 * (1 + math.sqrt(sqrt_term)) ** 2
-    
+    num = math.sin(math.radians(beta + phi1)) ** 2
+    den = (math.sin(math.radians(beta)) ** 2) * math.sin(math.radians(beta - delta)) * (
+        1 + math.sqrt(
+            (math.sin(math.radians(phi1 + delta)) * math.sin(math.radians(phi1 - alpha))) /
+            (math.sin(math.radians(beta - delta)) * math.sin(math.radians(beta + alpha)))
+        )
+    ) ** 2
     Ka = num / den
-    
-    # 2. Presión Activa Total (Pa) - Fórmula exacta proporcionada
-    # Pa = ½ · γ₁ · H² · Ka + S/c · H · Ka
-    
-    # Empuje por peso del suelo
-    Pa_suelo = 0.5 * gamma1 * (H ** 2) * Ka
-    
-    # Empuje por sobrecarga (convertir kg/m² a tn/m²)
-    S_c_tn = S_c / 1000  # Convertir kg/m² a tn/m²
-    Pa_sobrecarga = S_c_tn * H * Ka
-    
-    # Empuje activo total
-    Pa = Pa_suelo + Pa_sobrecarga
-    
-    # 3. Componentes de Pa (Horizontal y Vertical) - Fórmulas exactas proporcionadas
-    # Componente horizontal (Pah) = Pa · cos(δ)
-    Ph = Pa * math.cos(delta_rad)
-    
-    # Componente vertical (Pav) = Pa · sin(δ)
-    Pv = Pa * math.sin(delta_rad)
-    
-    # 4. Cálculo del peso del muro (Wmuro) - Descomponiendo en figuras geométricas
-    # Puntera (rectángulo): W₁ = b₁ · h₁ · γ_muro
-    W1 = b1 * h1 * gamma_muro
-    
-    # Talón (rectángulo): W₂ = b₂ · h₁ · γ_muro
-    W2 = b2 * h1 * gamma_muro
-    
-    # Triángulo 1 (en la base): W₃ = ½ · t₁ · (H - h₁) · γ_muro
-    W3 = 0.5 * t1 * (H - h1) * gamma_muro
-    
-    # Triángulo 2 (en la base): W₄ = ½ · t₂ · (H - h₁) · γ_muro
-    W4 = 0.5 * t2 * (H - h1) * gamma_muro
-    
-    # Corona superior (rectángulo): W₅ = b · (H - h₁) · γ_muro
-    W5 = b * (H - h1) * gamma_muro
-    
-    # Peso total del muro
-    W_muro = W1 + W2 + W3 + W4 + W5
-    
-    # 5. Verificación de Estabilidad
-    # a. Volteo (FS_volteo) = MR / MA ≥ 1.5
-    
-    # Momento actuante (MA) = Pah · H/3
-    MA = Ph * (H / 3)
-    
-    # Cálculo de momentos resistentes (MR) - Brazos de palanca desde la puntera
-    # W₁: centroide en b₁/2
-    MR1 = W1 * (b1 / 2)
-    
-    # W₂: centroide en b₁ + b₂/2
-    MR2 = W2 * (b1 + b2 / 2)
-    
-    # W₃: centroide en b₁ + t₁/3
-    MR3 = W3 * (b1 + t1 / 3)
-    
-    # W₄: centroide en B - t₂/3
-    MR4 = W4 * (B - t2 / 3)
-    
-    # W₅: centroide en b₁ + b/2
-    MR5 = W5 * (b1 + b / 2)
-    
-    # Pv: centroide en B
-    MR_Pv = Pv * B
-    
-    # Momento resistente total
-    MR = MR1 + MR2 + MR3 + MR4 + MR5 + MR_Pv
-    
-    # Factor de seguridad al volteo
-    FS_volteo = MR / MA
-    
-    # b. Deslizamiento (FS_deslizamiento) = FR / FA ≥ 1.5
-    phi2 = datos_entrada.get('phi2', 28.4)
-    cohesion2 = datos_entrada.get('cohesion2', 0.30)
-    
-    # Fuerza resistente (FR) = (W_muro + Pav) · tan(φ'₂) + c'₂ · B
-    phi2_rad = math.radians(phi2)
-    cohesion2_tn = cohesion2 * 10  # Convertir kg/cm² a tn/m²
-    FR = (W_muro + Pv) * math.tan(phi2_rad) + cohesion2_tn * B
-    
-    # Fuerza actuante (FA) = Pah
-    FA = Ph
-    
-    # Factor de seguridad al deslizamiento
-    FS_deslizamiento = FR / FA
-    
-    # c. Capacidad Portante
-    sigma_u = datos_entrada.get('sigma_u', 1.70)
-    sigma_u_tn = sigma_u * 10  # Convertir kg/cm² a tn/m²
-    
-    # Excentricidad: e = B/2 - (MR - MA) / (W_muro + Pav)
-    e = (B / 2) - (MR - MA) / (W_muro + Pv)
-    
-    # Presión máxima: σ_max = (W_muro + Pav) / B · (1 + 6e/B)
-    sigma_max = ((W_muro + Pv) / B) * (1 + 6 * e / B)
-    
-    # Factor de seguridad a capacidad portante
-    FS_capacidad = sigma_u_tn / sigma_max
-    
-    # Empuje total horizontal (para compatibilidad)
-    P_total_horizontal = Ph
-    
+    # 3. Altura efectiva del muro (H')
+    H_efectiva = H + (t1 + t2) * math.tan(alpha_rad)
+    # 4. Empuje activo total (Pa)
+    Pa = 0.5 * Ka * gamma1 * (H_efectiva) ** 2
+    # 5. Componentes del empuje activo
+    Ph = Pa * math.cos(math.radians(90) - beta_rad + delta_rad)
+    Pv = Pa * math.sin(math.radians(90) - beta_rad + delta_rad)
+    # 6. Empuje por sobrecarga (PSC)
+    PSC = Ka * H * (S_c / 1000) * (math.sin(beta_rad) / math.sin(beta_rad + alpha_rad))
+    # 7. Empuje total (horizontal + sobrecarga)
+    P_total_horizontal = Ph + PSC
     return {
+        'beta': beta,
         'Ka': Ka,
+        'H_efectiva': H_efectiva,
         'Pa': Pa,
-        'Pa_suelo': Pa_suelo,
-        'Pa_sobrecarga': Pa_sobrecarga,
         'Ph': Ph,
         'Pv': Pv,
-        'P_total_horizontal': P_total_horizontal,
-        # Peso del muro descompuesto
-        'W_muro': W_muro,
-        'W1': W1,
-        'W2': W2,
-        'W3': W3,
-        'W4': W4,
-        'W5': W5,
-        # Factores de seguridad
-        'FS_volteo': FS_volteo,
-        'FS_deslizamiento': FS_deslizamiento,
-        'FS_capacidad': FS_capacidad,
-        'MA': MA,
-        'MR': MR,
-        'FR': FR,
-        'FA': FA,
-        'e': e,
-        'sigma_max': sigma_max,
-        # Dimensiones geométricas para uso en cálculos adicionales
-        'b': b,
-        'B': B,
-        'b1': b1,
-        'b2': b2,
-        't1': t1,
-        't2': t2,
-        'h1': h1,
-        'H_efectiva': H
+        'PSC': PSC,
+        'P_total_horizontal': P_total_horizontal
     }
-
-# Función para calcular diseño del fuste del muro
-def calcular_diseno_fuste(resultados, datos_entrada):
-    """
-    Calcula el diseño y verificación del fuste del muro según PARTE 2.2.py
-    """
-    # Datos del fuste
-    h1 = datos_entrada['h1']
-    gamma_relleno = datos_entrada['gamma_relleno']
-    phi_relleno = datos_entrada['phi_relleno']
-    cohesion = datos_entrada['cohesion']
-    Df = datos_entrada['Df']
-    fc = datos_entrada['fc']
-    fy = datos_entrada['fy']
-    b = resultados['b']
-    
-    # 1. Cálculo del coeficiente pasivo
-    phi_rad = math.radians(phi_relleno)
-    kp = (1 + math.sin(phi_rad)) / (1 - math.sin(phi_rad))
-    
-    # 2. Empuje pasivo en el intradós
-    Ep = 0.5 * kp * (gamma_relleno/1000) * Df**2 + 2 * cohesion * Df * math.sqrt(kp)
-    Ep_kg_m = Ep * 1000  # Convertir a kg/m
-    
-    # 3. Altura de aplicación del empuje pasivo
-    yt = Df / 3
-    
-    # 4. Momentos volcadores y estabilizadores
-    # Empuje activo total
-    ka = resultados['ka']
-    Ea_relleno = 0.5 * ka * (gamma_relleno/1000) * h1**2
-    Ea_sobrecarga = ka * (datos_entrada['qsc']/1000) * h1
-    Ea_total = Ea_relleno + Ea_sobrecarga
-    
-    # Momentos volcadores
-    Mvol_relleno = Ea_relleno * h1 / 3
-    Mvol_sobrecarga = Ea_sobrecarga * h1 / 2
-    Mvol_total = Mvol_relleno + Mvol_sobrecarga
-    
-    # Momentos estabilizadores (simplificado)
-    W_muro = b * h1 * (datos_entrada['gamma_concreto']/1000)
-    W_zapata = resultados['Bz'] * resultados['hz'] * (datos_entrada['gamma_concreto']/1000)
-    W_relleno = resultados['t'] * h1 * (gamma_relleno/1000)
-    
-    # Brazos de momento
-    x_muro = resultados['r'] + b/2
-    x_zapata = resultados['Bz']/2
-    x_relleno = resultados['r'] + b + resultados['t']/2
-    
-    Mr_muro = W_muro * x_muro
-    Mr_zapata = W_zapata * x_zapata
-    Mr_relleno = W_relleno * x_relleno
-    Mr_pasivo = Ep * yt
-    Mesta_total = Mr_muro + Mr_zapata + Mr_relleno + Mr_pasivo
-    
-    # 5. Factores de seguridad
-    FSv = Mesta_total / Mvol_total
-    FSd = (math.tan(phi_rad) * (W_muro + W_zapata + W_relleno) + Ep) / Ea_total
-    
-    # 6. Ubicación de la resultante y excentricidad
-    W_total = W_muro + W_zapata + W_relleno
-    sum_momentos = Mr_muro + Mr_zapata + Mr_relleno
-    x_barra = sum_momentos / W_total
-    e = abs(x_barra - resultados['Bz']/2)
-    
-    # 7. Cálculo del peralte efectivo
-    # Momento de diseño
-    Mu = 1.4 * Mvol_total  # Factor de carga
-    
-    # Resistencia del concreto
-    fc_kg_cm2 = fc
-    fy_kg_cm2 = fy
-    
-    # Peralte efectivo requerido
-    dreq = math.sqrt(Mu * 100000 / (0.9 * 0.85 * fc_kg_cm2 * b * 100 * 0.59))
-    hreq = dreq + 9  # Recubrimiento + diámetro de barra
-    dreal = resultados['hz'] * 100 - 9  # Peralte real en cm
-    
-    # 8. Área de acero
-    As = Mu * 100000 / (0.9 * fy_kg_cm2 * dreal)
-    Asmin = 0.0033 * b * 100 * dreal  # Cuantía mínima
-    
-    # 9. Distribución del acero
-    # Usar barras de 5/8" (1.98 cm²)
-    area_barra = 1.98
-    num_barras = math.ceil(As / area_barra)
-    As_proporcionado = num_barras * area_barra
-    separacion = (b * 100 - 6) / (num_barras - 1)  # 3cm de recubrimiento
-    
-    # 10. Verificación de cuantías
-    rho_real = As_proporcionado / (b * 100 * dreal)
-    rho_min = 0.0033
-    rho_max = 0.0163
-    
-    # 11. Acero por retracción y temperatura
-    As_retraccion = 0.002 * b * 100 * resultados['hz'] * 100
-    num_barras_retraccion = math.ceil(As_retraccion / 1.27)  # Barras de 1/2"
-    As_retraccion_proporcionado = num_barras_retraccion * 1.27
-    
-    return {
-        'kp': kp,
-        'Ep_kg_m': Ep_kg_m,
-        'yt': yt,
-        'Mvol_total': Mvol_total,
-        'Mesta_total': Mesta_total,
-        'FSv': FSv,
-        'FSd': FSd,
-        'x_barra': x_barra,
-        'e': e,
-        'dreq': dreq,
-        'hreq': hreq,
-        'dreal': dreal,
-        'As': As,
-        'Asmin': Asmin,
-        'num_barras': num_barras,
-        'As_proporcionado': As_proporcionado,
-        'separacion': separacion,
-        'rho_real': rho_real,
-        'As_retraccion': As_retraccion,
-        'num_barras_retraccion': num_barras_retraccion,
-        'As_retraccion_proporcionado': As_retraccion_proporcionado
-    }
-
-# Función para generar PDF del reporte
-def generar_pdf_reportlab(resultados, datos_entrada, diseno_fuste, plan="premium", resultados_coulomb=None, datos_entrada_coulomb=None):
-    """
-    Genera un PDF profesional usando ReportLab
-    """
-    if not REPORTLAB_AVAILABLE:
-        # Crear un archivo de texto simple como fallback
-        pdf_buffer = io.BytesIO()
-        reporte_texto = f"""
-CONSORCIO DEJ
-Ingeniería y Construcción
-Reporte de Muro de Contención - {plan.upper()}
-Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}
-
-import streamlit as st
-import math
-import numpy as np
-import pandas as pd
-from datetime import datetime
-import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle, Polygon
-import io
-import tempfile
-import os
-
-# Importar sistema de pagos simple
-try:
-    from simple_payment_system import payment_system
-    PAYMENT_SYSTEM_AVAILABLE = True
-except ImportError:
-    PAYMENT_SYSTEM_AVAILABLE = False
-    st.warning("⚠️ Sistema de pagos no disponible. Usando modo demo.")
-
-# Importaciones opcionales con manejo de errores
-try:
-    import plotly.express as px
-    import plotly.graph_objects as go
-    PLOTLY_AVAILABLE = True
-except ImportError:
-    PLOTLY_AVAILABLE = False
-    st.warning("⚠️ Plotly no está instalado. Los gráficos interactivos no estarán disponibles.")
-
-try:
-    from reportlab.lib.pagesizes import A4, letter
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak, Image
-    from reportlab.lib import colors
-    from reportlab.lib.styles import getSampleStyleSheet
-    from reportlab.lib.units import inch
-    REPORTLAB_AVAILABLE = True
-except ImportError:
-    REPORTLAB_AVAILABLE = False
-    st.warning("⚠️ ReportLab no está instalado. La generación de PDFs no estará disponible.")
 
 # Función para calcular diseño del fuste del muro
 def calcular_diseno_fuste(resultados, datos_entrada):
@@ -792,7 +493,7 @@ Generado por: CONSORCIO DEJ
             elements.append(tabla_base_coulomb)
             elements.append(Spacer(1, 10))
             
-    # Datos del muro
+            # Datos del muro
             elements.append(Paragraph("C. DATOS DEL MURO", styleH2))
             datos_muro_coulomb = [
                 ["Parámetro", "Valor", "Unidad"],
@@ -2885,125 +2586,50 @@ else:
         
         with st.expander("📖 VER FÓRMULAS COMPLETAS DE COULOMB", expanded=False):
             st.markdown("""
-            ### Fórmulas Exactas de la Teoría de Coulomb para Muros de Contención:
+            ### Resumen de las Fórmulas para el Empuje Activo según la Teoría de Coulomb en Muros de Contención:
             
-            #### 1. Coeficiente de Presión Activa de Coulomb (Ka)
-            ```
-            Ka = cos²(φ'₁ - θ) / [cos²θ · cos(δ + θ) · (1 + √(sin(δ + φ'₁) · sin(φ'₁ - α) / cos(δ + θ) · cos(θ - α)))²]
-            ```
+            #### 1. Coeficiente de Empuje Activo (Ka)
+            La fórmula general para el coeficiente de empuje activo según Coulomb es:
             
-            **Variables utilizadas:**
-            - **φ'₁ = 30°** (ángulo de fricción del suelo de relleno)
-            - **θ = 0°** (muro vertical, sin inclinación)
-            - **δ = 20°** (fricción muro-suelo, δ = 2/3 φ'₁)
-            - **α = 10°** (inclinación del terreno)
-            
-            #### 2. Presión Activa Total (Pa)
             ```
-            Pa = ½ · γ₁ · H² · Ka + S/c · H · Ka
+            Ka = sin²(β + φ₁') / [sin²(β) · sin(β - δ) · (1 + √(sin(φ₁' + δ) · sin(φ₁' - α) / sin(β - δ) · sin(β + α)))²]
             ```
             
-            **Variables utilizadas:**
-            - **γ₁ = 1.85 tn/m³** (peso específico del suelo de relleno)
-            - **H = 2.40 m** (altura total del muro)
-            - **S/c = 2627 kg/m² = 2.627 tn/m²** (sobrecarga)
+            Donde:
+            - **β**: Ángulo de inclinación del muro respecto a la vertical
+            - **φ₁'**: Ángulo de fricción interna del suelo de relleno
+            - **δ**: Ángulo de fricción entre el muro y el relleno
+            - **α**: Ángulo de inclinación del terreno
             
-            #### 3. Componentes de Pa (Horizontal y Vertical)
-            **Componente horizontal (Pah):**
+            #### 2. Altura Efectiva del Muro (H')
             ```
-            Pah = Pa · cos(δ)
-            ```
-            
-            **Componente vertical (Pav):**
-            ```
-            Pav = Pa · sin(δ)
+            H' = H + (t₂/2 + b₂/2) · tan(α)
             ```
             
-            **Variables utilizadas:**
-            - **δ = 20°** (ángulo de fricción muro-suelo)
-            
-            #### 4. Peso del Muro (Wmuro)
-            Descomponiendo el muro en figuras geométricas:
-            
-            **Puntera (rectángulo):**
+            #### 3. Empuje Activo Total (Pa)
             ```
-            W₁ = b₁ · h₁ · γ_muro = 0.3 × 0.4 × 2.30 = 0.276 tn/m
+            Pa = ½ · Ka · γ₁ · (H')²
             ```
             
-            **Talón (rectángulo):**
+            #### 4. Componentes del Empuje Activo:
+            **Componente Horizontal (Ph):**
             ```
-            W₂ = b₂ · h₁ · γ_muro = 0.4 × 0.4 × 2.30 = 0.368 tn/m
-            ```
-            
-            **Triángulo 1 (en la base):**
-            ```
-            W₃ = ½ · t₁ · (H - h₁) · γ_muro = ½ × 0.05 × 2.0 × 2.30 = 0.115 tn/m
+            Ph = Pa · cos(90° - β + δ)
             ```
             
-            **Triángulo 2 (en la base):**
+            **Componente Vertical (Pv):**
             ```
-            W₄ = ½ · t₂ · (H - h₁) · γ_muro = ½ × 0.55 × 2.0 × 2.30 = 1.265 tn/m
-            ```
-            
-            **Corona superior (rectángulo):**
-            ```
-            W₅ = b · (H - h₁) · γ_muro = 0.3 × 2.0 × 2.30 = 1.38 tn/m
+            Pv = Pa · sin(90° - β + δ)
             ```
             
-            **Peso total del muro:**
+            #### 5. Empuje por Sobrecarga (PSC)
             ```
-            W_muro = W₁ + W₂ + W₃ + W₄ + W₅ = 0.276 + 0.368 + 0.115 + 1.265 + 1.38 = 3.404 tn/m
-            ```
-            
-            #### 5. Verificación de Estabilidad
-            
-            **a. Volteo (FS_volteo):**
-            ```
-            FS_volteo = MR / MA ≥ 1.5
+            PSC = Ka · H · (S/c / 1000) · (sin(β) / sin(β + α))
             ```
             
-            **Momento actuante (MA):**
-            ```
-            MA = Pah · H/3
-            ```
-            
-            **Momento resistente (MR):**
-            ```
-            MR = Σ(Wᵢ · dᵢ) + Pav · B
-            ```
-            
-            **b. Deslizamiento (FS_deslizamiento):**
-            ```
-            FS_deslizamiento = FR / FA ≥ 1.5
-            ```
-            
-            **Fuerza resistente (FR):**
-            ```
-            FR = (W_muro + Pav) · tan(φ'₂) + c'₂ · B
-            ```
-            
-            **Fuerza actuante (FA):**
-            ```
-            FA = Pah
-            ```
-            
-            **c. Capacidad Portante:**
-            ```
-            σ_max = (W_muro + Pav) / B · (1 + 6e/B) ≤ σ_u
-            ```
-            
-            **Excentricidad:**
-            ```
-            e = B/2 - (MR - MA) / (W_muro + Pav)
-            ```
-            
-            **Variables adicionales:**
-            - **φ'₂ = 28.4°** (ángulo de fricción del suelo de cimentación)
-            - **c'₂ = 0.30 kg/cm² = 3.0 tn/m²** (cohesión del suelo de cimentación)
-            - **σ_u = 1.70 kg/cm² = 17.0 tn/m²** (capacidad de carga)
-            
-            **Ejemplo numérico:**
-            Para los valores proporcionados, Ka ≈ 0.35 (dependiendo de los valores exactos de θ y δ)
+            **Observaciones:**
+            - Los valores de δ dependen del material de relleno (ejemplo: 21° para arena gruesa)
+            - La teoría de Coulomb considera la fricción entre el muro y el suelo (δ), a diferencia de Rankine
             """)
         
         # Datos de entrada para Coulomb
@@ -3030,19 +2656,10 @@ else:
             S_c = st.number_input("Sobrecarga (S/c) [kg/m²]", value=750, step=10, help="Sobrecarga aplicada sobre el terreno")
             H = st.number_input("Altura total del muro (H) [m]", value=4.00, step=0.01, help="Altura total del muro de contención")
             D = st.number_input("Profundidad de desplante (D) [m]", value=1.00, step=0.01, help="Profundidad de desplante del muro")
-            
-            # Dimensiones geométricas del muro
-            st.markdown("**📏 Dimensiones Geométricas:**")
-            b = st.number_input("Corona superior (b) [m]", value=0.30, step=0.01, help="Ancho de la parte superior del muro")
-            B = st.number_input("Ancho de la base (B) [m]", value=1.60, step=0.01, help="Ancho total de la zapata de cimentación")
-            h1 = st.number_input("Peralte de Zapata (h1) [m]", value=0.40, step=0.01, help="Peralte de Zapata que contiene el suelo")
-            b1 = st.number_input("Longitud de la puntera (b1) [m]", value=0.30, step=0.01, help="Longitud de la parte frontal de la zapata")
-            b2 = st.number_input("Longitud del talón (b2) [m]", value=0.40, step=0.01, help="Longitud de la parte trasera de la zapata")
-            t1 = st.number_input("Base del triángulo 1 (t1) [m]", value=0.05, step=0.01, help="Base del triángulo de refuerzo frontal")
-            t2 = st.number_input("Base del triángulo 2 (t2) [m]", value=0.55, step=0.01, help="Base del triángulo de refuerzo trasero")
+            h1 = st.number_input("Peralte de Zapata (h1) [m]", value=3.00, step=0.01, help="Peralte de Zapata que contiene el suelo")
+            t2 = st.number_input("Base del triángulo 2 (t2) [m]", value=0.30, step=0.01, help="Base del triángulo de inclinación del muro")
+            b2 = st.number_input("Longitud del talón (b2) [m]", value=1.00, step=0.01, help="Longitud del talón del muro")
             delta = st.number_input("Ángulo de fricción muro-suelo (δ) [°]", value=21.0, step=0.1, help="Ángulo de fricción entre el muro y el relleno")
-        
-
         
         # Botones para diferentes cálculos
         st.subheader("🔬 Cálculos Específicos")
@@ -3080,7 +2697,7 @@ else:
         with col4:
             if st.button("⚖️ Calcular Empuje Total", type="primary"):
                 datos_entrada = {
-                    'H': H, 'h1': h1, 'b': b, 'B': B, 'b1': b1, 'b2': b2, 't1': t1, 't2': t2,
+                    'H': H, 'h1': h1, 't2': t2, 'b2': b2,
                     'phi1': phi1, 'delta': delta, 'alpha': alpha,
                     'gamma1': gamma1, 'S_c': S_c,
                     'cohesion1': cohesion1, 'gamma2': gamma2, 'cohesion2': cohesion2,
@@ -3092,7 +2709,7 @@ else:
         # Botón para análisis completo
         if st.button("🚀 Ejecutar Análisis Completo Coulomb", type="primary"):
             datos_entrada = {
-                'H': H, 'h1': h1, 'b': b, 'B': B, 'b1': b1, 'b2': b2, 't1': t1, 't2': t2,
+                'H': H, 'h1': h1, 't2': t2, 'b2': b2,
                 'phi1': phi1, 'delta': delta, 'alpha': alpha,
                 'gamma1': gamma1, 'S_c': S_c,
                 'cohesion1': cohesion1, 'gamma2': gamma2, 'cohesion2': cohesion2,
@@ -3107,64 +2724,19 @@ else:
             # MOSTRAR RESULTADOS COMPLETOS
             st.subheader("📊 Resultados del Análisis Coulomb")
             
-            # Mostrar dimensiones utilizadas en el cálculo
-            st.subheader("📏 Dimensiones Utilizadas en el Cálculo")
-            col_dim1, col_dim2, col_dim3 = st.columns(3)
-            
-            with col_dim1:
-                st.info(f"**Corona superior (b):** {b:.2f} m")
-                st.info(f"**Ancho de la base (B):** {B:.2f} m")
-                st.info(f"**Peralte de zapata (h1):** {h1:.2f} m")
-            
-            with col_dim2:
-                st.info(f"**Longitud puntera (b1):** {b1:.2f} m")
-                st.info(f"**Longitud talón (b2):** {b2:.2f} m")
-                st.info(f"**Base triángulo 1 (t1):** {t1:.2f} m")
-            
-            with col_dim3:
-                st.info(f"**Base triángulo 2 (t2):** {t2:.2f} m")
-                st.info(f"**Altura total (H):** {H:.2f} m")
-                st.info(f"**Profundidad (D):** {D:.2f} m")
-            
             col1, col2 = st.columns(2)
             
             with col1:
+                st.metric("Ángulo de inclinación (β)", f"{resultados_coulomb['beta']:.2f}°")
                 st.metric("Coeficiente Ka", f"{resultados_coulomb['Ka']:.6f}")
+                st.metric("Altura efectiva (H')", f"{resultados_coulomb['H_efectiva']:.2f} m")
                 st.metric("Empuje activo total (Pa)", f"{resultados_coulomb['Pa']:.3f} t/m")
-                st.metric("Empuje por suelo (Pa_suelo)", f"{resultados_coulomb['Pa_suelo']:.3f} t/m")
-                st.metric("Empuje por sobrecarga (Pa_sobrecarga)", f"{resultados_coulomb['Pa_sobrecarga']:.3f} t/m")
-                st.metric("Componente horizontal (Ph)", f"{resultados_coulomb['Ph']:.3f} t/m")
-                st.metric("Componente vertical (Pv)", f"{resultados_coulomb['Pv']:.3f} t/m")
             
             with col2:
-                st.metric("Peso total del muro (W_muro)", f"{resultados_coulomb['W_muro']:.3f} t/m")
-                st.metric("FS Volteo", f"{resultados_coulomb['FS_volteo']:.2f}", 
-                         "✅ CUMPLE" if resultados_coulomb['FS_volteo'] >= 1.5 else "❌ NO CUMPLE")
-                st.metric("FS Deslizamiento", f"{resultados_coulomb['FS_deslizamiento']:.2f}", 
-                         "✅ CUMPLE" if resultados_coulomb['FS_deslizamiento'] >= 1.5 else "❌ NO CUMPLE")
-                st.metric("FS Capacidad Portante", f"{resultados_coulomb['FS_capacidad']:.2f}", 
-                         "✅ CUMPLE" if resultados_coulomb['FS_capacidad'] >= 3.0 else "❌ NO CUMPLE")
-                st.metric("Presión máxima (σ_max)", f"{resultados_coulomb['sigma_max']:.2f} t/m²")
-                st.metric("Excentricidad (e)", f"{resultados_coulomb['e']:.3f} m")
-            
-            # Desglose del peso del muro
-            st.subheader("🏗️ Desglose del Peso del Muro")
-            col_peso1, col_peso2, col_peso3 = st.columns(3)
-            
-            with col_peso1:
-                st.info(f"**Puntera (W₁):** {resultados_coulomb['W1']:.3f} t/m")
-                st.info(f"**Talón (W₂):** {resultados_coulomb['W2']:.3f} t/m")
-                st.info(f"**Triángulo 1 (W₃):** {resultados_coulomb['W3']:.3f} t/m")
-            
-            with col_peso2:
-                st.info(f"**Triángulo 2 (W₄):** {resultados_coulomb['W4']:.3f} t/m")
-                st.info(f"**Corona superior (W₅):** {resultados_coulomb['W5']:.3f} t/m")
-                st.info(f"**Peso total (W_muro):** {resultados_coulomb['W_muro']:.3f} t/m")
-            
-            with col_peso3:
-                st.info(f"**Momento actuante (MA):** {resultados_coulomb['MA']:.3f} t·m/m")
-                st.info(f"**Momento resistente (MR):** {resultados_coulomb['MR']:.3f} t·m/m")
-                st.info(f"**Fuerza resistente (FR):** {resultados_coulomb['FR']:.3f} t/m")
+                st.metric("Componente horizontal (Ph)", f"{resultados_coulomb['Ph']:.3f} t/m")
+                st.metric("Componente vertical (Pv)", f"{resultados_coulomb['Pv']:.3f} t/m")
+                st.metric("Empuje por sobrecarga (PSC)", f"{resultados_coulomb['PSC']:.3f} t/m")
+                st.metric("Empuje total horizontal", f"{resultados_coulomb['P_total_horizontal']:.3f} t/m")
             
             # Comparación con Rankine
             st.subheader("🔄 Comparación: Coulomb vs Rankine")
@@ -4443,7 +4015,7 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                     # Calcular Ka de Rankine para comparación
                     if 'datos_entrada_coulomb' in st.session_state:
                         phi1_rankine = st.session_state['datos_entrada_coulomb']['phi1']
-            else:
+                    else:
                         phi1_rankine = 32  # Valor por defecto
                     
                     ka_rankine = math.tan(math.radians(45 - phi1_rankine/2))**2
