@@ -3125,10 +3125,11 @@ else:
                         st.markdown(reporte_coulomb)
 
         # Botón para análisis de muro con contrafuertes
-        if st.button("🏗️ ANÁLISIS Muro de Contención con Contrafuertes", type="primary"):
+        if st.button("🏗️ MURO CONTRAFUERTE", type="primary"):
             st.success("🚀 Iniciando análisis de muro con contrafuertes...")
             
             # Datos de entrada para contrafuertes (usando valores de la sección actual)
+            gamma_concreto = 2.4  # Peso específico del concreto (t/m³)
             datos_contrafuertes = {
                 'H': H,  # Altura total del muro
                 'h1': h1,  # Peralte de zapata
@@ -3137,7 +3138,7 @@ else:
                 'S_c': S_c,  # Sobrecarga
                 'fc': 210,  # Resistencia del concreto (kg/cm²)
                 'fy': 4200,  # Resistencia del acero (kg/cm²)
-                'gamma_concreto': 2.4  # Peso específico del concreto (t/m³)
+                'gamma_concreto': gamma_concreto  # Peso específico del concreto (t/m³)
             }
             
             # Cálculos según las fórmulas proporcionadas
@@ -3179,6 +3180,53 @@ else:
             d_contrafuertes = h1_contrafuertes * 100 - 9  # Peralte efectivo en cm
             As_contrafuertes = M_max * 100000 / (0.9 * 4200 * d_contrafuertes)
             
+            # 7. Verificación de estabilidad (como Rankine)
+            # Empuje pasivo
+            phi_cimentacion_rad = math.radians(phi2)
+            kp = math.tan(math.radians(45 + phi2/2))**2
+            Ep = 0.5 * kp * (gamma2/1000) * D**2
+            
+            # Pesos de cada elemento
+            W_muro = 0.3 * h1_contrafuertes * (gamma_concreto/1000)  # Corona superior
+            W_zapata = 1.6 * h1_contrafuertes * (gamma_concreto/1000)  # Cimiento
+            W_relleno = 1.3 * h1_contrafuertes * (gamma1_contrafuertes/1000)  # Relleno
+            W_contrafuertes = t_contrafuertes * S_tipico * h1_contrafuertes * (gamma_concreto/1000)  # Contrafuertes
+            
+            # Peso total
+            W_total = W_muro + W_zapata + W_relleno + W_contrafuertes
+            
+            # Momentos estabilizadores
+            Mr_muro = W_muro * 0.8  # Brazo de momento
+            Mr_zapata = W_zapata * 0.8
+            Mr_relleno = W_relleno * 1.45
+            Mr_pasivo = Ep * D/3
+            M_estabilizador = Mr_muro + Mr_zapata + Mr_relleno + Mr_pasivo
+            
+            # Momentos volcadores
+            Mv_relleno = Pa_suelo * h1_contrafuertes/3
+            Mv_sobrecarga = Pa_sobrecarga * h1_contrafuertes/2
+            M_volcador = Mv_relleno + Mv_sobrecarga
+            
+            # Factor de seguridad al volcamiento
+            FS_volcamiento = M_estabilizador / M_volcador if M_volcador > 0 else 0
+            
+            # Verificación al deslizamiento
+            mu = math.tan(phi_cimentacion_rad)
+            Fr_friccion = mu * W_total
+            Fr_pasivo = Ep
+            Fr_total = Fr_friccion + Fr_pasivo
+            Fd_total = Pa_total
+            FS_deslizamiento = Fr_total / Fd_total if Fd_total > 0 else 0
+            
+            # Verificación de presiones sobre el suelo
+            sum_momentos_verticales = Mr_muro + Mr_zapata + Mr_relleno
+            x_barra = sum_momentos_verticales / W_total if W_total > 0 else 0
+            e = abs(x_barra - 0.8)  # Excentricidad
+            q_max = (W_total / 1.6) * (1 + 6*e/1.6) if W_total > 0 else 0
+            q_min = (W_total / 1.6) * (1 - 6*e/1.6) if W_total > 0 else 0
+            q_max_kg_cm2 = q_max * 0.1
+            q_min_kg_cm2 = q_min * 0.1
+            
             # Guardar resultados
             resultados_contrafuertes = {
                 'H': H_contrafuertes,
@@ -3195,7 +3243,17 @@ else:
                 'As_min_horizontal': As_min_horizontal,
                 't_contrafuertes': t_contrafuertes,
                 'As_contrafuertes': As_contrafuertes,
-                'd_contrafuertes': d_contrafuertes
+                'd_contrafuertes': d_contrafuertes,
+                'kp': kp,
+                'Ep': Ep,
+                'W_total': W_total,
+                'M_volcador': M_volcador,
+                'M_estabilizador': M_estabilizador,
+                'FS_volcamiento': FS_volcamiento,
+                'FS_deslizamiento': FS_deslizamiento,
+                'q_max_kg_cm2': q_max_kg_cm2,
+                'q_min_kg_cm2': q_min_kg_cm2,
+                'e': e
             }
             
             st.session_state['resultados_contrafuertes'] = resultados_contrafuertes
@@ -3204,7 +3262,7 @@ else:
             st.success("✅ Análisis de muro con contrafuertes completado exitosamente!")
             st.balloons()
             
-            # MOSTRAR RESULTADOS COMPLETOS
+            # MOSTRAR RESULTADOS COMPLETOS (como Rankine)
             st.subheader("📊 Resultados del Análisis - Muro con Contrafuertes")
             
             col1, col2 = st.columns(2)
@@ -3212,16 +3270,16 @@ else:
             with col1:
                 st.metric("Altura del muro (H)", f"{H_contrafuertes:.2f} m")
                 st.metric("Peralte de zapata (h1)", f"{h1_contrafuertes:.2f} m")
-                st.metric("Espesor mínimo requerido", f"{d_min:.2f} m")
-                st.metric("Separación máxima contrafuertes", f"{S_max:.2f} m")
-                st.metric("Separación típica recomendada", f"{S_tipico:.2f} m")
-            
-            with col2:
                 st.metric("Coeficiente Ka (Rankine)", f"{ka_contrafuertes:.6f}")
                 st.metric("Empuje activo total (Pa)", f"{Pa_total:.3f} t/m")
                 st.metric("Momento máximo contrafuerte", f"{M_max:.2f} tn·m")
-                st.metric("Acero vertical mínimo", f"{As_min_vertical:.2f} cm²/m")
-                st.metric("Acero horizontal mínimo", f"{As_min_horizontal:.2f} cm²/m")
+            
+            with col2:
+                st.metric("Factor Seguridad Volcamiento", f"{FS_volcamiento:.2f}")
+                st.metric("Factor Seguridad Deslizamiento", f"{FS_deslizamiento:.2f}")
+                st.metric("Presión máxima suelo", f"{q_max_kg_cm2:.2f} kg/cm²")
+                st.metric("Presión mínima suelo", f"{q_min_kg_cm2:.2f} kg/cm²")
+                st.metric("Excentricidad (e)", f"{e:.3f} m")
             
             # Diseño estructural
             st.subheader("🏗️ Diseño Estructural - Contrafuertes")
@@ -3243,13 +3301,13 @@ else:
                 st.write(f"• Tipo: Muro pantalla con contrafuertes")
             
             with col3:
-                st.info("**Detalles Constructivos:**")
-                st.write(f"• Juntas de expansión: cada 10m")
-                st.write(f"• Drenaje: tuberías Ø4\"")
-                st.write(f"• Anclaje: barras Ø1\"")
-                st.write(f"• Referencia: Ortega García")
+                st.info("**Estabilidad:**")
+                st.write(f"• FS Volcamiento: {FS_volcamiento:.2f}")
+                st.write(f"• FS Deslizamiento: {FS_deslizamiento:.2f}")
+                st.write(f"• Peso total: {W_total:.2f} t/m")
+                st.write(f"• Empuje pasivo: {Ep:.2f} t/m")
             
-            # Gráficos
+            # Gráficos (como Rankine)
             st.subheader("📈 Gráficos - Análisis Contrafuertes")
             
             col1, col2 = st.columns(2)
@@ -3275,25 +3333,59 @@ else:
                     st.plotly_chart(fig_empuje, use_container_width=True)
             
             with col2:
-                # Gráfico de dimensiones
-                datos_dimensiones = pd.DataFrame({
-                    'Dimensión': ['H (m)', 'h1 (m)', 'S (m)', 't (m)'],
-                    'Valor': [H_contrafuertes, h1_contrafuertes, S_tipico, t_contrafuertes]
+                # Gráfico de factores de seguridad
+                datos_fs = pd.DataFrame({
+                    'Verificación': ['Volcamiento', 'Deslizamiento'],
+                    'Factor de Seguridad': [FS_volcamiento, FS_deslizamiento],
+                    'Límite': [2.0, 1.5]
                 })
                 
                 if PLOTLY_AVAILABLE:
-                    fig_dim = px.bar(datos_dimensiones, x='Dimensión', y='Valor',
-                                    title="Dimensiones Principales - Contrafuertes",
-                                    color='Dimensión',
-                                    color_discrete_map={
-                                        'H (m)': '#FFD93D',
-                                        'h1 (m)': '#6BCF7F',
-                                        'S (m)': '#4D96FF',
-                                        't (m)': '#9B59B6'
-                                    })
+                    fig_fs = px.bar(datos_fs, x='Verificación', y='Factor de Seguridad',
+                                   title="Factores de Seguridad - Contrafuertes",
+                                   color='Verificación',
+                                   color_discrete_map={
+                                       'Volcamiento': '#FFD93D',
+                                       'Deslizamiento': '#6BCF7F'
+                                   })
                     
-                    fig_dim.update_traces(texttemplate='%{y:.2f}', textposition='outside')
-                    st.plotly_chart(fig_dim, use_container_width=True)
+                    # Agregar línea de límite
+                    fig_fs.add_hline(y=2.0, line_dash="dash", line_color="red", annotation_text="Límite FS=2.0")
+                    fig_fs.add_hline(y=1.5, line_dash="dash", line_color="orange", annotation_text="Límite FS=1.5")
+                    
+                    fig_fs.update_traces(texttemplate='%{y:.2f}', textposition='outside')
+                    st.plotly_chart(fig_fs, use_container_width=True)
+            
+            # Gráfico del muro (como Rankine)
+            st.subheader("🏗️ Visualización del Muro de Contención - Contrafuertes")
+            
+            # Crear dimensiones para el gráfico
+            dimensiones_contrafuertes = {
+                'Bz': 1.6,  # Base total
+                'hz': h1_contrafuertes,  # Peralte de zapata
+                'b': 0.3,   # Espesor del muro
+                'r': 0.3,   # Longitud de puntera
+                't': 1.3,   # Longitud de talón
+                'hm': 0.2   # Altura de coronación
+            }
+            
+            # Generar el gráfico del muro
+            fig_muro_contrafuertes = dibujar_muro_streamlit(dimensiones_contrafuertes, h1_contrafuertes, D, S_c, "rankine")
+            
+            # Mostrar el gráfico en Streamlit
+            st.pyplot(fig_muro_contrafuertes)
+            
+            # Información adicional sobre el gráfico
+            st.markdown("""
+            **Leyenda del Gráfico - Análisis Contrafuertes:**
+            - 🔵 **Zapata (Azul claro):** Base de cimentación del muro
+            - 🔴 **Muro (Rosa):** Estructura principal de contención
+            - 🟡 **Relleno (Amarillo):** Material de relleno detrás del muro
+            - 🟤 **Suelo (Marrón):** Suelo de cimentación
+            - 🔴 **Flechas rojas:** Sobrecarga aplicada (S/c)
+            - 🔵 **Dimensiones en azul:** Medidas calculadas del muro
+            - 🏗️ **Contrafuertes:** Elementos de refuerzo (no mostrados en vista frontal)
+            """)
             
             # Información técnica
             st.subheader("📚 Información Técnica - Contrafuertes")
@@ -3343,6 +3435,12 @@ else:
                 ```
                 As = M_max/(0.9·fy·d) = {M_max*100000:.0f}/(0.9·4200·{d_contrafuertes:.0f}) = {As_contrafuertes:.2f} cm²
                 ```
+                
+                **9. Verificación de estabilidad:**
+                ```
+                FS Volcamiento = M_estabilizador/M_volcador = {M_estabilizador:.2f}/{M_volcador:.2f} = {FS_volcamiento:.2f}
+                FS Deslizamiento = Fr_total/Fd_total = {Fr_total:.2f}/{Fd_total:.2f} = {FS_deslizamiento:.2f}
+                ```
                 """)
             
             # Recomendaciones constructivas
@@ -3375,10 +3473,10 @@ else:
             - Anclaje de contrafuertes con barras Ø1"
             """.format(h1_contrafuertes=h1_contrafuertes, S_tipico=S_tipico, S_max=S_max, t_contrafuertes=t_contrafuertes))
             
-            # Botones para generar reportes
+            # Botones para generar reportes (como Rankine)
             st.subheader("📄 Generar Reportes - Contrafuertes")
             
-            col1, col2 = st.columns(2)
+            col1, col2, col3 = st.columns(3)
             
             with col1:
                 # Generar reporte de texto
@@ -3413,19 +3511,26 @@ else:
 - Acero horizontal mínimo: {As_min_horizontal:.2f} cm²/m
 - Armadura principal contrafuerte: {As_contrafuertes:.2f} cm²
 
-### 5. DETALLES CONSTRUCTIVOS:
+### 5. VERIFICACIÓN DE ESTABILIDAD:
+- Factor de seguridad al volcamiento: {FS_volcamiento:.2f}
+- Factor de seguridad al deslizamiento: {FS_deslizamiento:.2f}
+- Presión máxima sobre el suelo: {q_max_kg_cm2:.2f} kg/cm²
+- Presión mínima sobre el suelo: {q_min_kg_cm2:.2f} kg/cm²
+- Excentricidad: {e:.3f} m
+
+### 6. DETALLES CONSTRUCTIVOS:
 - Juntas de expansión: cada 10 m (Ortega)
 - Drenaje: tuberías perforadas Ø4"
 - Anclaje contrafuertes: barras Ø1"
 - Referencias: Ortega García, UNI, Morales (ACI-UNI)
 
-### 6. RECOMENDACIONES:
+### 7. RECOMENDACIONES:
 - Verificar capacidad portante del suelo
 - Considerar efectos de drenaje
 - Revisar estabilidad al volcamiento
 - Evaluar armadura por retracción y temperatura
 
-### 7. INFORMACIÓN DEL PROYECTO:
+### 8. INFORMACIÓN DEL PROYECTO:
 - Empresa: CONSORCIO DEJ
 - Método: Muro con contrafuertes
 - Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}
@@ -3445,6 +3550,58 @@ else:
                 )
             
             with col2:
+                # Generar PDF para contrafuertes
+                try:
+                    # Verificar si hay resultados de contrafuertes disponibles
+                    if 'resultados_contrafuertes' in st.session_state and 'datos_contrafuertes' in st.session_state:
+                        resultados_contrafuertes_pdf = st.session_state['resultados_contrafuertes']
+                        datos_entrada_contrafuertes = st.session_state['datos_contrafuertes']
+                    else:
+                        st.error("⚠️ No hay resultados de análisis de contrafuertes disponibles.")
+                        st.info("Ejecuta primero el análisis completo de contrafuertes.")
+                        st.stop()
+                    
+                    # Crear diseño del fuste para contrafuertes
+                    diseno_fuste_contrafuertes = {
+                        'kp': kp,
+                        'Ep_kg_m': Ep * 1000,
+                        'yt': D/3,
+                        'Mvol_total': M_volcador,
+                        'Mesta_total': M_estabilizador,
+                        'FSv': FS_volcamiento,
+                        'FSd': FS_deslizamiento,
+                        'x_barra': x_barra,
+                        'e': e,
+                        'rho_real': 0.0033,
+                        'dreq': 30,
+                        'dreal': d_contrafuertes,
+                        'As': As_contrafuertes,
+                        'Asmin': As_min_vertical,
+                        'As_proporcionado': As_contrafuertes,
+                        'num_barras': 3,
+                        'separacion': 15,
+                        'num_barras_retraccion': 2,
+                        'As_retraccion_proporcionado': As_min_horizontal
+                    }
+                    
+                    pdf_buffer_contrafuertes = generar_pdf_reportlab(
+                        resultados_contrafuertes_pdf, 
+                        datos_entrada_contrafuertes, 
+                        diseno_fuste_contrafuertes, 
+                        "contrafuertes"
+                    )
+                    
+                    st.download_button(
+                        label="📄 Descargar PDF Contrafuertes",
+                        data=pdf_buffer_contrafuertes.getvalue(),
+                        file_name=f"reporte_contrafuertes_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+                        mime="application/pdf"
+                    )
+                except Exception as e:
+                    st.error(f"⚠️ Error generando PDF: {str(e)}")
+                    st.info("Intenta ejecutar el análisis completo nuevamente")
+            
+            with col3:
                 if st.button("🖨️ Generar Reporte en Pantalla", type="primary", key="contrafuertes_pantalla"):
                     st.success("✅ Reporte Contrafuertes generado exitosamente")
                     st.balloons()
