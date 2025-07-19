@@ -1194,7 +1194,7 @@ def dibujar_muro_contrafuertes(dimensiones, resultados, datos_entrada):
     
     # Dibujar muro pantalla - Con gradiente para mejor visualización
     for i in range(15):
-        alpha = 0.6 + (i * 0.03)
+        alpha = min(0.9, 0.6 + (i * 0.02))  # Limitar alpha a máximo 0.9
         ax.add_patch(Rectangle((0.3, h1 + i*(H-h1)/15), 0.3, (H-h1)/15, 
                               facecolor=color_concreto, edgecolor='#455A64', 
                               linewidth=1, alpha=alpha))
@@ -1209,7 +1209,7 @@ def dibujar_muro_contrafuertes(dimensiones, resultados, datos_entrada):
         x_pos = 0.3 + i * (S_tipico / num_contrafuertes)
         # Contrafuerte principal con gradiente
         for j in range(10):
-            alpha = 0.7 + (j * 0.03)
+            alpha = min(0.95, 0.7 + (j * 0.025))  # Limitar alpha a máximo 0.95
             ax.add_patch(Rectangle((x_pos, h1 + j*(H-h1)/10), t_contrafuerte, (H-h1)/10, 
                                   facecolor=color_contrafuerte, edgecolor='#37474F', 
                                   linewidth=2, alpha=alpha))
