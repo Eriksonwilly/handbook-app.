@@ -2867,61 +2867,7 @@ else:
             t2 = st.number_input("Base del triángulo 2 (t2) [m]", value=0.55, step=0.01, help="Base del triángulo de refuerzo trasero")
             delta = st.number_input("Ángulo de fricción muro-suelo (δ) [°]", value=21.0, step=0.1, help="Ángulo de fricción entre el muro y el relleno")
         
-        # Botones con dimensiones fijas del muro
-        st.subheader("📏 Dimensiones Fijas del Muro de Contención")
-        
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            if st.button("🏗️ Corona superior b = 0.3 m", type="secondary"):
-                st.info("✅ **Corona superior (b):** 0.30 metros")
-                st.write("Ancho de la parte superior del muro")
-        
-        with col2:
-            if st.button("📐 Ancho de la base B = 1.60 m", type="secondary"):
-                st.info("✅ **Ancho de la base (B):** 1.60 metros")
-                st.write("Ancho total de la zapata de cimentación")
-        
-        with col3:
-            if st.button("📏 Peralte de la h1 = 0.4 m", type="secondary"):
-                st.info("✅ **Peralte de la zapata (h1):** 0.40 metros")
-                st.write("Altura de la zapata de cimentación")
-        
-        with col4:
-            if st.button("🔲 Longitud de la puntera b1 = 0.3 m", type="secondary"):
-                st.info("✅ **Longitud de la puntera (b1):** 0.30 metros")
-                st.write("Longitud de la parte frontal de la zapata")
-        
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            if st.button("🔲 Longitud del talón b2 = 0.4 m", type="secondary"):
-                st.info("✅ **Longitud del talón (b2):** 0.40 metros")
-                st.write("Longitud de la parte trasera de la zapata")
-        
-        with col2:
-            if st.button("🔺 Base del triángulo 1 t1 = 0.05 m", type="secondary"):
-                st.info("✅ **Base del triángulo 1 (t1):** 0.05 metros")
-                st.write("Base del triángulo de refuerzo frontal")
-        
-        with col3:
-            if st.button("🔺 Base del triángulo 2 t2 = 0.55 m", type="secondary"):
-                st.info("✅ **Base del triángulo 2 (t2):** 0.55 metros")
-                st.write("Base del triángulo de refuerzo trasero")
-        
-        # Resumen de dimensiones
-        st.markdown("""
-        ### 📋 Resumen de Dimensiones Fijas:
-        | Dimensión | Valor | Descripción |
-        |-----------|-------|-------------|
-        | **b** | 0.30 m | Corona superior |
-        | **B** | 1.60 m | Ancho de la base |
-        | **h1** | 0.40 m | Peralte de la zapata |
-        | **b1** | 0.30 m | Longitud de la puntera |
-        | **b2** | 0.40 m | Longitud del talón |
-        | **t1** | 0.05 m | Base del triángulo 1 |
-        | **t2** | 0.55 m | Base del triángulo 2 |
-        """)
+
         
         # Botones para diferentes cálculos
         st.subheader("🔬 Cálculos Específicos")
