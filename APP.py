@@ -74,37 +74,26 @@ D = 0.00        # Profundidad de desplante (m)
 
 def calcular_empuje_coulomb(datos_entrada):
     """
-    Calcula el empuje activo según la teoría de Coulomb (fórmula Excel exacta de la imagen)
+    Calcula el empuje activo según la teoría de Coulomb con variables adicionales para contrafuertes
     """
-    # Variables geométricas y de suelo
+    # Extraer todas las variables necesarias
     H = datos_entrada['H']
     h1 = datos_entrada['h1']
-    t1 = datos_entrada.get('t1', 0)
+    t1 = datos_entrada['t1']
     t2 = datos_entrada['t2']
+    b = datos_entrada['b']
+    B = datos_entrada['B']
+    b1 = datos_entrada['b1']
     b2 = datos_entrada['b2']
-    b = datos_entrada.get('b', 0.3)
-    B = datos_entrada.get('B', 1.60)
-    b1 = datos_entrada.get('b1', 0.3)
-    t1 = datos_entrada.get('t1', 0.05)
-    t2 = datos_entrada.get('t2', 0.55)
-    # Suelo de relleno
-    gamma1 = datos_entrada['gamma1']
     phi1 = datos_entrada['phi1']
-    cohesion1 = datos_entrada.get('cohesion1', 0.0)
+    delta = datos_entrada['delta']
     alpha = datos_entrada['alpha']
-    delta = datos_entrada.get('delta', 0.0)
-    # Suelo de la base
-    gamma2 = datos_entrada.get('gamma2', 1.86)
-    cohesion2 = datos_entrada.get('cohesion2', 0.30)
-    sigma_u = datos_entrada.get('sigma_u', 1.70)
-    phi2 = datos_entrada.get('phi2', 28.4)
-    # Muro
-    gamma_muro = datos_entrada.get('gamma_muro', 2.30)
+    gamma1 = datos_entrada['gamma1']
     S_c = datos_entrada['S_c']
-    D = datos_entrada.get('D', 0.00)
-    # 1. Ángulo de inclinación del muro (β) en grados
+    gamma_muro = datos_entrada['gamma_muro']
+    # 1. Ángulo de inclinación del muro (β) en grados - fórmula mejorada
     if t2 != 0:
-        beta = math.degrees(math.atan((H - h1) / t2))
+        beta = math.degrees(math.atan((H - h1 - t1) / t2))  # Considera t1
     else:
         beta = 90.0
     beta_rad = math.radians(beta)
@@ -120,7 +109,7 @@ def calcular_empuje_coulomb(datos_entrada):
         )
     ) ** 2
     Ka = num / den
-    # 3. Altura efectiva del muro (H')
+    # 3. Altura efectiva del muro (H') - fórmula mejorada
     H_efectiva = H + (t1 + t2) * math.tan(alpha_rad)
     # 4. Empuje activo total (Pa)
     Pa = 0.5 * Ka * gamma1 * (H_efectiva) ** 2
@@ -131,6 +120,14 @@ def calcular_empuje_coulomb(datos_entrada):
     PSC = Ka * H * (S_c / 1000) * (math.sin(beta_rad) / math.sin(beta_rad + alpha_rad))
     # 7. Empuje total (horizontal + sobrecarga)
     P_total_horizontal = Ph + PSC
+    # 8. Cálculo de pesos para estabilidad (Ortega, Concreto Armado 2)
+    area_muro = b * H + 0.5 * t1 * (H - h1) + 0.5 * t2 * (H - h1)
+    W_muro = area_muro * gamma_muro
+    area_zapata = B * h1
+    W_zapata = area_zapata * gamma_muro
+    area_relleno = b2 * (H - h1)
+    W_relleno = area_relleno * gamma1
+    W_total = W_muro + W_zapata + W_relleno
     return {
         'beta': beta,
         'Ka': Ka,
@@ -140,11 +137,13 @@ def calcular_empuje_coulomb(datos_entrada):
         'Pv': Pv,
         'PSC': PSC,
         'P_total_horizontal': P_total_horizontal,
-        # Adicionales para trazabilidad y reporte
-        'b': b, 'B': B, 'b1': b1, 'b2': b2, 't1': t1, 't2': t2,
-        'gamma1': gamma1, 'phi1': phi1, 'cohesion1': cohesion1, 'alpha': alpha, 'delta': delta,
-        'gamma2': gamma2, 'cohesion2': cohesion2, 'sigma_u': sigma_u, 'phi2': phi2,
-        'gamma_muro': gamma_muro, 'S_c': S_c, 'D': D, 'H': H, 'h1': h1
+        'W_muro': W_muro,
+        'W_zapata': W_zapata,
+        'W_relleno': W_relleno,
+        'W_total': W_total,
+        'area_muro': area_muro,
+        'area_zapata': area_zapata,
+        'area_relleno': area_relleno
     }
 
 # Función para calcular diseño del fuste del muro
@@ -2211,10 +2210,10 @@ else:
                 
                 with col2:
                     st.metric("Área de Acero Mín.", f"{diseno_fuste['Asmin']:.2f} cm²")
-                    st.metric("Número de Barras 5/8\"", f"{diseno_fuste['num_barras']}")
+                    st.write('• Número de barras 5/8:', diseno_fuste['num_barras'])
                     st.metric("Separación Barras", f"{diseno_fuste['separacion']:.1f} cm")
                     st.metric("Acero Retracción", f"{diseno_fuste['As_retraccion']:.2f} cm²")
-                    st.metric("Barras Retracción 1/2\"", f"{diseno_fuste['num_barras_retraccion']}")
+                    st.write('• Barras retracción 1/2:', diseno_fuste['num_barras_retraccion'])
                 
                 # Verificaciones del fuste
                 st.subheader("🔍 Verificaciones del Fuste")
@@ -2296,10 +2295,10 @@ else:
                     
                     with col2:
                         st.info("**Distribución del Acero:**")
-                        st.write(f"• Número de barras 5/8": {diseno_fuste['num_barras']})
+                        st.write('• Número de barras 5/8:', diseno_fuste['num_barras'])
                         st.write(f"• Separación entre barras: {diseno_fuste['separacion']:.1f} cm")
                         st.write(f"• Acero por retracción: {diseno_fuste['As_retraccion']:.2f} cm²")
-                        st.write(f"• Barras retracción 1/2": {diseno_fuste['num_barras_retraccion']})
+                        st.write('• Barras retracción 1/2:', diseno_fuste['num_barras_retraccion'])
                 
                 # Gráficos adicionales para Rankine
                 st.subheader("📈 Gráficos Adicionales - Análisis Rankine")
@@ -2376,1291 +2375,8 @@ else:
                     
                     fig_dim.update_traces(texttemplate='%{y:.2f}', textposition='outside')
                     st.plotly_chart(fig_dim, use_container_width=True)
-                
-                # Gráfico de factores de seguridad
-                st.subheader("🛡️ Factores de Seguridad - Rankine")
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    datos_fs = pd.DataFrame({
-                        'Verificación': ['Volcamiento', 'Deslizamiento'],
-                        'Factor de Seguridad': [FS_volcamiento, FS_deslizamiento],
-                        'Límite': [2.0, 1.5]
-                    })
-                    
-                    if PLOTLY_AVAILABLE:
-                        fig_fs = px.bar(datos_fs, x='Verificación', y=['Factor de Seguridad', 'Límite'],
-                                       title="Factores de Seguridad - Rankine",
-                                       barmode='group',
-                                       color_discrete_map={
-                                           'Factor de Seguridad': '#4ECDC4',
-                                           'Límite': '#FF6B6B'
-                                       })
-                        
-                        fig_fs.update_layout(
-                            xaxis_title="Verificación",
-                            yaxis_title="Factor de Seguridad",
-                            height=400
-                        )
-                        
-                        fig_fs.update_traces(texttemplate='%{y:.2f}', textposition='outside')
-                        st.plotly_chart(fig_fs, use_container_width=True)
-                
-                with col2:
-                    # Gráfico de presiones
-                    datos_presiones = pd.DataFrame({
-                        'Presión': ['Máxima', 'Mínima'],
-                        'Valor (kg/cm²)': [q_max_kg_cm2, q_min_kg_cm2]
-                    })
-                    
-                    if PLOTLY_AVAILABLE:
-                        fig_pres = px.bar(datos_presiones, x='Presión', y='Valor (kg/cm²)',
-                                         title="Presiones sobre el Suelo - Rankine",
-                                         color='Presión',
-                                         color_discrete_map={
-                                             'Máxima': '#FF6B6B',
-                                             'Mínima': '#4ECDC4'
-                                         })
-                        
-                        fig_pres.update_layout(
-                            xaxis_title="Tipo de Presión",
-                            yaxis_title="Valor (kg/cm²)",
-                            height=400
-                        )
-                        
-                        fig_pres.update_traces(texttemplate='%{y:.2f}', textposition='outside')
-                        st.plotly_chart(fig_pres, use_container_width=True)
-                
-                # Botones para generar reportes de Rankine
-                st.subheader("📄 Generar Reportes - Análisis Rankine")
-                
-                col1, col2, col3 = st.columns(3)
-                
-                with col1:
-                    # Generar reporte de texto para Rankine
-                    reporte_rankine = f"""
-# REPORTE TÉCNICO - ANÁLISIS RANKINE
-## CONSORCIO DEJ
-### Análisis según Teoría de Rankine
-### Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}
 
-### 1. DATOS DE ENTRADA:
-- Peralte de Zapata (h1): {h1:.2f} m
-- Profundidad de desplante (Df): {Df:.2f} m
-- Altura de coronación (hm): {hm:.2f} m
-- Densidad del relleno: {gamma_relleno} kg/m³
-- Ángulo de fricción del relleno: {phi_relleno}°
-- Densidad del suelo de cimentación: {gamma_cimentacion} kg/m³
-- Ángulo de fricción del suelo: {phi_cimentacion}°
-- Cohesión del suelo: {cohesion} t/m²
-- Capacidad portante del suelo: {sigma_adm} kg/cm²
-- Peso específico del concreto: {gamma_concreto} kg/m³
-- Sobrecarga (qsc): {qsc} kg/m²
-- Resistencia del concreto (fc): {fc} kg/cm²
-- Resistencia del acero (fy): {fy} kg/cm²
-
-### 2. COEFICIENTES DE PRESIÓN:
-- Coeficiente de empuje activo (Ka): {ka:.3f}
-- Coeficiente de empuje pasivo (Kp): {kp:.3f}
-- Altura equivalente por sobrecarga (hs): {hs:.3f} m
-
-### 3. DIMENSIONES CALCULADAS:
-- Ancho de zapata (Bz): {Bz:.2f} m
-- Peralte de zapata (hz): {hz:.2f} m
-- Espesor del muro (b): {b:.2f} m
-- Longitud de puntera (r): {r:.2f} m
-- Longitud de talón (t): {t:.2f} m
-
-### 4. ANÁLISIS DE EMPUJES:
-- Empuje activo por relleno: {Ea_relleno:.2f} tn/m
-- Empuje activo por sobrecarga: {Ea_sobrecarga:.2f} tn/m
-- Empuje activo total: {Ea_total:.2f} tn/m
-- Empuje pasivo: {Ep:.2f} tn/m
-
-### 5. ANÁLISIS DE PESOS:
-- Peso del muro: {W_muro:.2f} tn/m
-- Peso de la zapata: {W_zapata:.2f} tn/m
-- Peso del relleno: {W_relleno:.2f} tn/m
-- Peso total: {W_total:.2f} tn/m
-
-### 6. MOMENTOS Y FACTORES DE SEGURIDAD:
-- Momento volcador: {M_volcador:.2f} tn·m/m
-- Momento estabilizador: {M_estabilizador:.2f} tn·m/m
-- Factor de seguridad al volcamiento: {FS_volcamiento:.2f}
-- Factor de seguridad al deslizamiento: {FS_deslizamiento:.2f}
-
-### 7. VERIFICACIÓN DE PRESIONES:
-- Presión máxima: {q_max_kg_cm2:.2f} kg/cm²
-- Presión mínima: {q_min_kg_cm2:.2f} kg/cm²
-- Excentricidad: {e:.3f} m
-- Hay tensiones: {'Sí' if tension else 'No'}
-
-### 8. VERIFICACIONES DE ESTABILIDAD:
-**Verificación al Volcamiento:**
-- Factor de seguridad calculado: {FS_volcamiento:.2f}
-- Factor mínimo requerido: 2.0
-- Estado: {'✅ CUMPLE' if FS_volcamiento >= 2.0 else '⚠️ NO CUMPLE'}
-
-**Verificación al Deslizamiento:**
-- Factor de seguridad calculado: {FS_deslizamiento:.2f}
-- Factor mínimo requerido: 1.5
-- Estado: {'✅ CUMPLE' if FS_deslizamiento >= 1.5 else '⚠️ NO CUMPLE'}
-
-**Verificación de Presiones:**
-- Presión máxima: {q_max_kg_cm2:.2f} kg/cm²
-- Presión admisible: {sigma_adm} kg/cm²
-- Estado: {'✅ CUMPLE' if q_max_kg_cm2 <= sigma_adm else '⚠️ NO CUMPLE'}
-
-**Verificación de Excentricidad:**
-- Excentricidad calculada: {e:.3f} m
-- Límite (B/6): {Bz/6:.3f} m
-- Estado: {'✅ CUMPLE' if e <= Bz/6 else '⚠️ NO CUMPLE'}
-
-### 9. DISEÑO Y VERIFICACIÓN DEL FUSTE:
-**9.1 Coeficiente Pasivo y Empuje:**
-- Coeficiente pasivo (kp): {diseno_fuste['kp']:.2f}
-- Empuje pasivo: {diseno_fuste['Ep_kg_m']:.0f} kg/m
-- Altura de aplicación: {diseno_fuste['yt']:.2f} m
-
-**9.2 Diseño Estructural:**
-- Peralte efectivo requerido: {diseno_fuste['dreq']:.2f} cm
-- Peralte efectivo real: {diseno_fuste['dreal']:.2f} cm
-- Área de acero requerida: {diseno_fuste['As']:.2f} cm²
-- Área de acero mínima: {diseno_fuste['Asmin']:.2f} cm²
-- Área de acero proporcionada: {diseno_fuste['As_proporcionado']:.2f} cm²
-
-**9.3 Distribución del Acero:**
-- Número de barras 5/8": {diseno_fuste['num_barras']}
-- Separación entre barras: {diseno_fuste['separacion']:.1f} cm
-- Acero por retracción: {diseno_fuste['As_retraccion']:.2f} cm²
-- Barras retracción 1/2": {diseno_fuste['num_barras_retraccion']}
-
-### 10. OBSERVACIONES TÉCNICAS:
-- La teoría de Rankine considera muro vertical liso
-- No considera fricción entre el muro y el suelo
-- Proporciona una aproximación conservadora
-- Fórmulas más simples que Coulomb
-- Ka = tan²(45° - φ/2)
-
-### 11. RECOMENDACIONES:
-- Verificar la capacidad portante del suelo en campo
-- Revisar el diseño del refuerzo estructural según ACI 318
-- Considerar efectos sísmicos según la normativa local
-- Realizar inspecciones periódicas durante la construcción
-- Monitorear deformaciones durante el servicio
-- Verificar drenaje del relleno para evitar presiones hidrostáticas
-
-### 12. INFORMACIÓN DEL PROYECTO:
-- Empresa: CONSORCIO DEJ
-- Método de análisis: Teoría de Rankine
-- Fecha de análisis: {datetime.now().strftime('%d/%m/%Y %H:%M')}
-- Plan: Premium
-- Software: Streamlit + Python
-
----
-**Este reporte fue generado automáticamente por el sistema de análisis de muros de contención de CONSORCIO DEJ.**
-**Para consultas técnicas, contacte a nuestro equipo de ingeniería.**
-"""
-                    
-                    st.download_button(
-                        label="📥 Descargar TXT Rankine",
-                        data=reporte_rankine,
-                        file_name=f"reporte_rankine_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
-                        mime="text/plain"
-                    )
-                
-                with col2:
-                    # Generar PDF para Rankine
-                    try:
-                        # Verificar si hay resultados de Rankine disponibles
-                        if 'resultados_rankine' in st.session_state and 'datos_entrada_rankine' in st.session_state:
-                            resultados_rankine_pdf = st.session_state['resultados_rankine']
-                            datos_entrada_rankine = st.session_state['datos_entrada_rankine']
-                        else:
-                            st.error("⚠️ No hay resultados de análisis Rankine disponibles.")
-                            st.info("Ejecuta primero el análisis completo de Rankine.")
-                            st.stop()
-                        
-                        # Verificar si hay diseño del fuste disponible
-                        if 'diseno_fuste' not in st.session_state:
-                            st.error("⚠️ No hay datos de diseño del fuste disponibles.")
-                            st.info("Ejecuta primero el análisis completo de Rankine.")
-                            st.stop()
-                        
-                        diseno_fuste = st.session_state['diseno_fuste']
-                        
-                        # Verificar si hay resultados de Coulomb disponibles
-                        resultados_coulomb_pdf = None
-                        datos_entrada_coulomb_pdf = None
-                        if 'resultados_coulomb' in st.session_state and 'datos_entrada_coulomb' in st.session_state:
-                            resultados_coulomb_pdf = st.session_state['resultados_coulomb']
-                            datos_entrada_coulomb_pdf = st.session_state['datos_entrada_coulomb']
-                        
-                        pdf_buffer_rankine = generar_pdf_reportlab(
-                            resultados_rankine_pdf, 
-                            datos_entrada_rankine, 
-                            diseno_fuste, 
-                            "premium",
-                            resultados_coulomb_pdf,
-                            datos_entrada_coulomb_pdf
-                        )
-                        
-                        st.download_button(
-                            label="📄 Descargar PDF Rankine",
-                            data=pdf_buffer_rankine.getvalue(),
-                            file_name=f"reporte_rankine_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
-                            mime="application/pdf"
-                        )
-                    except Exception as e:
-                        st.error(f"⚠️ Error generando PDF: {str(e)}")
-                        st.info("Intenta ejecutar el análisis completo nuevamente")
-                
-                with col3:
-                    if st.button("🖨️ Generar Reporte en Pantalla", type="primary", key="rankine_pantalla"):
-                        st.success("✅ Reporte Rankine generado exitosamente")
-                        st.balloons()
-                        
-                        # Mostrar el reporte en formato expandible
-                        with st.expander("📋 VER REPORTE RANKINE COMPLETO", expanded=True):
-                            st.markdown(reporte_rankine)
-        
-        # Mostrar fórmulas de Coulomb
-        st.subheader("📚 Fórmulas de la Teoría de Coulomb")
-        
-        with st.expander("📖 VER FÓRMULAS COMPLETAS DE COULOMB", expanded=False):
-            st.markdown("""
-            ### Resumen de las Fórmulas para el Empuje Activo según la Teoría de Coulomb en Muros de Contención:
-            
-            #### 1. Coeficiente de Empuje Activo (Ka)
-            La fórmula general para el coeficiente de empuje activo según Coulomb es:
-            
-            ```
-            Ka = sin²(β + φ₁') / [sin²(β) · sin(β - δ) · (1 + √(sin(φ₁' + δ) · sin(φ₁' - α) / sin(β - δ) · sin(β + α)))²]
-            ```
-            
-            Donde:
-            - **β**: Ángulo de inclinación del muro respecto a la vertical
-            - **φ₁'**: Ángulo de fricción interna del suelo de relleno
-            - **δ**: Ángulo de fricción entre el muro y el relleno
-            - **α**: Ángulo de inclinación del terreno
-            
-            #### 2. Altura Efectiva del Muro (H')
-            ```
-            H' = H + (t₂/2 + b₂/2) · tan(α)
-            ```
-            
-            #### 3. Empuje Activo Total (Pa)
-            ```
-            Pa = ½ · Ka · γ₁ · (H')²
-            ```
-            
-            #### 4. Componentes del Empuje Activo:
-            **Componente Horizontal (Ph):**
-            ```
-            Ph = Pa · cos(90° - β + δ)
-            ```
-            
-            **Componente Vertical (Pv):**
-            ```
-            Pv = Pa · sin(90° - β + δ)
-            ```
-            
-            #### 5. Empuje por Sobrecarga (PSC)
-            ```
-            PSC = Ka · H · (S/c / 1000) · (sin(β) / sin(β + α))
-            ```
-            
-            **Observaciones:**
-            - Los valores de δ dependen del material de relleno (ejemplo: 21° para arena gruesa)
-            - La teoría de Coulomb considera la fricción entre el muro y el suelo (δ), a diferencia de Rankine
-            """)
-        
-        # Datos de entrada para Coulomb
-        st.subheader("📊 Datos de Entrada para Análisis Coulomb")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("Datos del Suelo de Relleno")
-            gamma1 = st.number_input("Peso específico del suelo de relleno (γ₁) [t/m³]", value=1.85, step=0.01, help="Peso específico del suelo de relleno")
-            phi1 = st.number_input("Ángulo de fricción del suelo de relleno (φ'₁) [°]", value=32.0, step=0.1, help="Ángulo de fricción interna del suelo de relleno")
-            cohesion1 = st.number_input("Cohesión del suelo de relleno (c'₁) [kg/cm²]", value=0.0, step=0.01, help="Cohesión del suelo de relleno")
-            alpha = st.number_input("Ángulo de inclinación del terreno (α) [°]", value=10.0, step=0.1, help="Ángulo de inclinación del terreno natural")
-            
-            st.subheader("Datos del Suelo de la Base")
-            gamma2 = st.number_input("Peso específico del suelo de la base (γ₂) [t/m³]", value=1.80, step=0.01, help="Peso específico del suelo de la base")
-            cohesion2 = st.number_input("Cohesión del suelo de la base (c'₂) [kg/cm²]", value=0.30, step=0.01, help="Cohesión del suelo de la base")
-            sigma_u = st.number_input("Capacidad de carga de la base (σᵤ) [kg/cm²]", value=2.50, step=0.01, help="Capacidad portante de la base")
-            phi2 = st.number_input("Ángulo de fricción del suelo de la base (φ'₂) [°]", value=24.0, step=0.1, help="Ángulo de fricción interna del suelo de la base")
-        
-        with col2:
-            st.subheader("Datos del Muro")
-            gamma_muro = st.number_input("Peso específico del muro (γ_muro) [t/m³]", value=2.40, step=0.01, help="Peso específico del concreto del muro")
-            S_c = st.number_input("Sobrecarga (S/c) [kg/m²]", value=750, step=10, help="Sobrecarga aplicada sobre el terreno")
-            H = st.number_input("Altura total del muro (H) [m]", value=4.00, step=0.01, help="Altura total del muro de contención")
-            D = st.number_input("Profundidad de desplante (D) [m]", value=1.00, step=0.01, help="Profundidad de desplante del muro")
-            h1 = st.number_input("Peralte de Zapata (h1) [m]", value=3.00, step=0.01, help="Peralte de Zapata que contiene el suelo")
-            t2 = st.number_input("Base del triángulo 2 (t2) [m]", value=0.30, step=0.01, help="Base del triángulo de inclinación del muro")
-            b2 = st.number_input("Longitud del talón (b2) [m]", value=1.00, step=0.01, help="Longitud del talón del muro")
-            delta = st.number_input("Ángulo de fricción muro-suelo (δ) [°]", value=21.0, step=0.1, help="Ángulo de fricción entre el muro y el relleno")
-        
-        # Botones para diferentes cálculos
-        st.subheader("🔬 Cálculos Específicos")
-        
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            if st.button("📐 Calcular Ángulo β", type="primary"):
-                beta = math.atan((H - h1) / t2)
-                beta_deg = math.degrees(beta)
-                st.success(f"✅ Ángulo de inclinación del muro (β) = {beta_deg:.2f}°")
-                st.info(f"β = arctan((H - h1) / t2) = arctan(({H} - {h1}) / {t2}) = {beta_deg:.2f}°")
-        with col2:
-            if st.button("📊 Calcular Coeficiente Ka", type="primary"):
-                if t2 != 0:
-                    beta = math.degrees(math.atan((H - h1) / t2))
-                else:
-                    beta = 90.0
-                num = math.sin(math.radians(beta + phi1)) ** 2
-                den = (math.sin(math.radians(beta)) ** 2) * math.sin(math.radians(beta - delta)) * (
-                    1 + math.sqrt(
-                        (math.sin(math.radians(phi1 + delta)) * math.sin(math.radians(phi1 - alpha))) /
-                        (math.sin(math.radians(beta - delta)) * math.sin(math.radians(beta + alpha)))
-                    )
-                ) ** 2
-                Ka = num / den
-                st.success(f"✅ Coeficiente de empuje activo (Ka) = {Ka:.6f}")
-                st.info("Calculado según la fórmula de Coulomb profesional (todos los ángulos en grados, conversión a radianes solo en las funciones trigonométricas)")
-        with col3:
-            if st.button("📏 Calcular Altura Efectiva", type="primary"):
-                alpha_rad = math.radians(alpha)
-                H_efectiva = H + (t2/2 + b2/2) * math.tan(alpha_rad)
-                st.success(f"✅ Altura efectiva del muro (H') = {H_efectiva:.2f} m")
-                st.info(f"H' = H + (t₂/2 + b₂/2) · tan(α) = {H} + ({t2/2:.2f} + {b2/2:.2f}) · tan({alpha}°) = {H_efectiva:.2f} m")
-        with col4:
-            if st.button("⚖️ Calcular Empuje Total", type="primary"):
-                datos_entrada = {
-                    'H': H, 'h1': h1, 't2': t2, 'b2': b2, 'b': b, 'B': B, 'b1': b1, 't1': t1,
-                    'phi1': phi1, 'delta': delta, 'alpha': alpha,
-                    'gamma1': gamma1, 'S_c': S_c,
-                    'cohesion1': cohesion1, 'gamma2': gamma2, 'cohesion2': cohesion2,
-                    'sigma_u': sigma_u, 'phi2': phi2, 'gamma_muro': gamma_muro, 'D': D
-                }
-                resultados_coulomb = calcular_empuje_coulomb(datos_entrada)
-                st.success("✅ Empuje activo calculado según Coulomb")
-                st.info(f"Empuje total horizontal = {resultados_coulomb['P_total_horizontal']:.3f} t/m")
-        # Botón para análisis completo
-        if st.button("🚀 Ejecutar Análisis Completo Coulomb", type="primary"):
-            datos_entrada = {
-                'H': H, 'h1': h1, 't2': t2, 'b2': b2, 'b': b, 'B': B, 'b1': b1, 't1': t1,
-                'phi1': phi1, 'delta': delta, 'alpha': alpha,
-                'gamma1': gamma1, 'cohesion1': cohesion1, 'gamma2': gamma2, 'cohesion2': cohesion2,
-                'sigma_u': sigma_u, 'phi2': phi2, 'gamma_muro': gamma_muro, 'D': D
-            }
-            resultados_coulomb = calcular_empuje_coulomb(datos_entrada)
-            st.session_state['resultados_coulomb'] = resultados_coulomb
-            st.session_state['datos_entrada_coulomb'] = datos_entrada
-            st.success("¡Análisis Coulomb completado exitosamente!")
-            st.balloons()
-            
-            # MOSTRAR RESULTADOS COMPLETOS
-            st.subheader("📊 Resultados del Análisis Coulomb")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.metric("Ángulo de inclinación (β)", f"{resultados_coulomb['beta']:.2f}°")
-                st.metric("Coeficiente Ka", f"{resultados_coulomb['Ka']:.6f}")
-                st.metric("Altura efectiva (H')", f"{resultados_coulomb['H_efectiva']:.2f} m")
-                st.metric("Empuje activo total (Pa)", f"{resultados_coulomb['Pa']:.3f} t/m")
-            
-            with col2:
-                st.metric("Componente horizontal (Ph)", f"{resultados_coulomb['Ph']:.3f} t/m")
-                st.metric("Componente vertical (Pv)", f"{resultados_coulomb['Pv']:.3f} t/m")
-                st.metric("Empuje por sobrecarga (PSC)", f"{resultados_coulomb['PSC']:.3f} t/m")
-                st.metric("Empuje total horizontal", f"{resultados_coulomb['P_total_horizontal']:.3f} t/m")
-            
-            # Comparación con Rankine
-            st.subheader("🔄 Comparación: Coulomb vs Rankine")
-            
-            # Calcular Ka de Rankine para comparación
-            phi1_rad = math.radians(phi1)
-            ka_rankine = math.tan(math.radians(45 - phi1/2))**2
-            
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                st.info("**Teoría de Coulomb:**")
-                st.write(f"• Ka = {resultados_coulomb['Ka']:.6f}")
-                st.write(f"• Considera fricción muro-suelo")
-                st.write(f"• Más realista para muros rugosos")
-            
-            with col2:
-                st.info("**Teoría de Rankine:**")
-                st.write(f"• Ka = {ka_rankine:.6f}")
-                st.write(f"• Muro vertical liso")
-                st.write(f"• Aproximación conservadora")
-            
-            with col3:
-                st.info("**Diferencia:**")
-                diferencia = ((ka_rankine - resultados_coulomb['Ka']) / ka_rankine) * 100
-                st.write(f"• Diferencia: {diferencia:.1f}%")
-                if diferencia > 0:
-                    st.success("Coulomb es menos conservador")
-                else:
-                    st.warning("Coulomb es más conservador")
-            
-            # Gráfico comparativo
-            st.subheader("📈 Gráfico Comparativo")
-            
-            datos_comparacion = pd.DataFrame({
-                'Teoría': ['Coulomb', 'Rankine'],
-                'Coeficiente Ka': [resultados_coulomb['Ka'], ka_rankine],
-                'Empuje Horizontal (t/m)': [resultados_coulomb['Ph'], resultados_coulomb['Pa'] * math.cos(math.radians(90 - resultados_coulomb['beta'] + delta))]
-            })
-            
-            if PLOTLY_AVAILABLE:
-                fig = px.bar(datos_comparacion, x='Teoría', y='Coeficiente Ka',
-                            title="Comparación de Coeficientes Ka: Coulomb vs Rankine",
-                            color='Teoría',
-                            color_discrete_map={'Coulomb': '#FF6B6B', 'Rankine': '#4ECDC4'})
-                
-                fig.update_layout(
-                    xaxis_title="Teoría",
-                    yaxis_title="Coeficiente Ka",
-                    height=400
-                )
-                
-                fig.update_traces(texttemplate='%{y:.6f}', textposition='outside')
-                st.plotly_chart(fig, use_container_width=True)
-            
-            # Información técnica adicional
-            st.subheader("📚 Información Técnica")
-            
-            with st.expander("🔍 DETALLES DEL CÁLCULO", expanded=False):
-                st.markdown(f"""
-                **Cálculo del ángulo β:**
-                ```
-                β = arctan((H - h1) / t2) = arctan(({H} - {h1}) / {t2}) = {resultados_coulomb['beta']:.2f}°
-                ```
-                
-                **Cálculo del coeficiente Ka (Coulomb):**
-                ```
-                Ka = sin²(β + φ₁') / [sin²(β) · sin(β - δ) · (1 + √(sin(φ₁' + δ) · sin(φ₁' - α) / sin(β - δ) · sin(β + α)))²]
-                Ka = {resultados_coulomb['Ka']:.6f}
-                ```
-                
-                **Cálculo de la altura efectiva:**
-                ```
-                H' = H + (t₂/2 + b₂/2) · tan(α) = {H} + ({t2/2:.2f} + {b2/2:.2f}) · tan({alpha}°) = {resultados_coulomb['H_efectiva']:.2f} m
-                ```
-                
-                **Cálculo del empuje activo total:**
-                ```
-                Pa = ½ · Ka · γ₁ · (H')² = 0.5 · {resultados_coulomb['Ka']:.6f} · {gamma1} · ({resultados_coulomb['H_efectiva']:.2f})² = {resultados_coulomb['Pa']:.3f} t/m
-                ```
-                
-                **Componentes del empuje:**
-                ```
-                Ph = Pa · cos(90° - β + δ) = {resultados_coulomb['Pa']:.3f} · cos(90° - {resultados_coulomb['beta']:.2f}° + {delta}°) = {resultados_coulomb['Ph']:.3f} t/m
-                Pv = Pa · sin(90° - β + δ) = {resultados_coulomb['Pa']:.3f} · sin(90° - {resultados_coulomb['beta']:.2f}° + {delta}°) = {resultados_coulomb['Pv']:.3f} t/m
-                ```
-                
-                **Empuje por sobrecarga:**
-                ```
-                PSC = Ka · H · (S/c / 1000) · (sin(β) / sin(β + α)) = {resultados_coulomb['Ka']:.6f} · {H} · ({S_c}/1000) · (sin({resultados_coulomb['beta']:.2f}°) / sin({resultados_coulomb['beta']:.2f}° + {alpha}°)) = {resultados_coulomb['PSC']:.3f} t/m
-                ```
-                """)
-            
-            # Gráficos adicionales para Coulomb
-            st.subheader("📈 Gráficos Adicionales - Análisis Coulomb")
-            # Gráfico de componentes del empuje
-            col1, col2 = st.columns(2)
-            with col1:
-                datos_componentes = pd.DataFrame({
-                    'Componente': ['Empuje Total (Pa)', 'Componente Horizontal (Ph)', 'Componente Vertical (Pv)', 'Empuje Sobrecarga (PSC)'],
-                    'Valor (t/m)': [resultados_coulomb['Pa'], resultados_coulomb['Ph'], resultados_coulomb['Pv'], resultados_coulomb['PSC']],
-                    'γ₁ (t/m³)': [gamma1]*4,
-                    "φ'₁ (°)": [phi1]*4,
-                    "c'₁ (kg/cm²)": [cohesion1]*4,
-                    "α (°)": [alpha]*4,
-                    'γ₂ (t/m³)': [gamma2]*4,
-                    "c'₂ (kg/cm²)": [cohesion2]*4,
-                    'σᵤ (kg/cm²)': [sigma_u]*4,
-                    "φ'₂ (°)": [phi2]*4,
-                    'γ_muro (t/m³)': [gamma_muro]*4,
-                    'S/c (kg/m²)': [S_c]*4,
-                    'H (m)': [H]*4,
-                    'D (m)': [D]*4,
-                    'h1 (m)': [h1]*4,
-                    't2 (m)': [t2]*4,
-                    'b2 (m)': [b2]*4,
-                    'δ (°)': [delta]*4
-                })
-                if PLOTLY_AVAILABLE:
-                    fig_comp = px.bar(
-                        datos_componentes, x='Componente', y='Valor (t/m)',
-                        title="Componentes del Empuje Activo - Coulomb",
-                        color='Componente',
-                        color_discrete_map={
-                            'Empuje Total (Pa)': '#FF6B6B',
-                            'Componente Horizontal (Ph)': '#4ECDC4',
-                            'Componente Vertical (Pv)': '#45B7D1',
-                            'Empuje Sobrecarga (PSC)': '#96CEB4'
-                        },
-                        custom_data=[
-                            'γ₁ (t/m³)', "φ'₁ (°)", "c'₁ (kg/cm²)", "α (°)",
-                            'γ₂ (t/m³)', "c'₂ (kg/cm²)", 'σᵤ (kg/cm²)', "φ'₂ (°)",
-                            'γ_muro (t/m³)', 'S/c (kg/m²)', 'H (m)', 'D (m)', 'h1 (m)', 't2 (m)', 'b2 (m)', 'δ (°)'
-                        ]
-                    )
-                    fig_comp.update_traces(
-                        texttemplate='%{y:.3f}', textposition='outside',
-                        hovertemplate="<b>%{x}</b><br>Valor: %{y:.3f} t/m" +
-                        "<br>γ₁: %{customdata[0]} t/m³" +
-                        "<br>φ'₁: %{customdata[1]}°" +
-                        "<br>c'₁: %{customdata[2]} kg/cm²" +
-                        "<br>α: %{customdata[3]}°" +
-                        "<br>γ₂: %{customdata[4]} t/m³" +
-                        "<br>c'₂: %{customdata[5]} kg/cm²" +
-                        "<br>σᵤ: %{customdata[6]} kg/cm²" +
-                        "<br>φ'₂: %{customdata[7]}°" +
-                        "<br>γ_muro: %{customdata[8]} t/m³" +
-                        "<br>S/c: %{customdata[9]} kg/m²" +
-                        "<br>H: %{customdata[10]} m" +
-                        "<br>D: %{customdata[11]} m" +
-                        "<br>h1: %{customdata[12]} m" +
-                        "<br>t2: %{customdata[13]} m" +
-                        "<br>b2: %{customdata[14]} m" +
-                        "<br>δ: %{customdata[15]}°<extra></extra>"
-                    )
-                    st.plotly_chart(fig_comp, use_container_width=True)
-                # Leyenda textual de parámetros
-                st.markdown(f"""
-                **Parámetros de Entrada:**
-                - γ₁ (relleno): {gamma1} t/m³, φ'₁: {phi1}°, c'₁: {cohesion1} kg/cm², α: {alpha}°
-                - γ₂ (base): {gamma2} t/m³, φ'₂: {phi2}°, c'₂: {cohesion2} kg/cm², σᵤ: {sigma_u} kg/cm²
-                - γ_muro: {gamma_muro} t/m³, S/c: {S_c} kg/m², H: {H} m, D: {D} m, h1: {h1} m, t2: {t2} m, b2: {b2} m, δ: {delta}°
-                """)
-            with col2:
-                # Gráfico de parámetros geométricos
-                datos_geometricos = pd.DataFrame({
-                    'Parámetro': ['Altura Total (H)', 'Altura Efectiva (H\')', 'Ángulo β', 'Ángulo α', 'Ángulo δ'],
-                    'Valor': [H, resultados_coulomb['H_efectiva'], resultados_coulomb['beta'], alpha, delta],
-                    'Unidad': ['m', 'm', '°', '°', '°'],
-                    'γ₁ (t/m³)': [gamma1]*5,
-                    "φ'₁ (°)": [phi1]*5,
-                    "c'₁ (kg/cm²)": [cohesion1]*5,
-                    "α (°)": [alpha]*5,
-                    'γ₂ (t/m³)': [gamma2]*5,
-                    "c'₂ (kg/cm²)": [cohesion2]*5,
-                    'σᵤ (kg/cm²)': [sigma_u]*5,
-                    "φ'₂ (°)": [phi2]*5,
-                    'γ_muro (t/m³)': [gamma_muro]*5,
-                    'S/c (kg/m²)': [S_c]*5,
-                    'D (m)': [D]*5,
-                    'h1 (m)': [h1]*5,
-                    't2 (m)': [t2]*5,
-                    'b2 (m)': [b2]*5
-                })
-                if PLOTLY_AVAILABLE:
-                    fig_geo = px.bar(
-                        datos_geometricos, x='Parámetro', y='Valor',
-                        title="Parámetros Geométricos - Coulomb",
-                        color='Parámetro',
-                        color_discrete_map={
-                            'Altura Total (H)': '#FFD93D',
-                            'Altura Efectiva (H\')': '#6BCF7F',
-                            'Ángulo β': '#4D96FF',
-                            'Ángulo α': '#FF6B6B',
-                            'Ángulo δ': '#9B59B6'
-                        },
-                        custom_data=[
-                            'Unidad', 'γ₁ (t/m³)', "φ'₁ (°)", "c'₁ (kg/cm²)", "α (°)",
-                            'γ₂ (t/m³)', "c'₂ (kg/cm²)", 'σᵤ (kg/cm²)', "φ'₂ (°)",
-                            'γ_muro (t/m³)', 'S/c (kg/m²)', 'D (m)', 'h1 (m)', 't2 (m)', 'b2 (m)'
-                        ]
-                    )
-                    fig_geo.update_traces(
-                        texttemplate='%{y:.2f}', textposition='outside',
-                        hovertemplate="<b>%{x}</b><br>Valor: %{y:.2f} %{customdata[0]}" +
-                        "<br>γ₁: %{customdata[1]} t/m³" +
-                        "<br>φ'₁: %{customdata[2]}°" +
-                        "<br>c'₁: %{customdata[3]} kg/cm²" +
-                        "<br>α: %{customdata[4]}°" +
-                        "<br>γ₂: %{customdata[5]} t/m³" +
-                        "<br>c'₂: %{customdata[6]} kg/cm²" +
-                        "<br>σᵤ: %{customdata[7]} kg/cm²" +
-                        "<br>φ'₂: %{customdata[8]}°" +
-                        "<br>γ_muro: %{customdata[9]} t/m³" +
-                        "<br>S/c: %{customdata[10]} kg/m²" +
-                        "<br>D: %{customdata[11]} m" +
-                        "<br>h1: %{customdata[12]} m" +
-                        "<br>t2: %{customdata[13]} m" +
-                        "<br>b2: %{customdata[14]} m<extra></extra>"
-                    )
-                    st.plotly_chart(fig_geo, use_container_width=True)
-                st.markdown(f"""
-                **Parámetros de Entrada Geométricos:**
-                - H: {H} m, H': {resultados_coulomb['H_efectiva']:.2f} m, β: {resultados_coulomb['beta']:.2f}°, α: {alpha}°, δ: {delta}°
-                """)
-            # Gráfico del muro de contención para Coulomb
-            st.subheader("🏗️ Visualización del Muro de Contención - Coulomb")
-            st.info("Representación gráfica del muro con análisis Coulomb")
-            
-            # Crear dimensiones para el gráfico (usando valores típicos para Coulomb)
-            dimensiones_coulomb = {
-                'Bz': t2 + b2 + 0.5,  # Base total estimada
-                'hz': 0.4,  # Peralte de zapata típico
-                'b': 0.3,   # Espesor del muro
-                'r': t2,    # Longitud de puntera
-                't': b2,    # Longitud de talón
-                'hm': 0.2   # Altura de coronación
-            }
-            
-            # Generar el gráfico del muro para Coulomb
-            datos_coulomb_grafico = {
-                'beta': resultados_coulomb['beta'],
-                'alpha': alpha,
-                'delta': delta,
-                'Ka': resultados_coulomb['Ka'],
-                'H_efectiva': resultados_coulomb['H_efectiva']
-            }
-            fig_muro_coulomb = dibujar_muro_streamlit(dimensiones_coulomb, h1, 0.5, S_c, "coulomb", datos_coulomb_grafico)
-            
-            # Mostrar el gráfico en Streamlit
-            st.pyplot(fig_muro_coulomb)
-            
-            # Información adicional sobre el gráfico
-            st.markdown("""
-            **Leyenda del Gráfico - Análisis Coulomb:**
-            - 🔵 **Zapata (Azul claro):** Base de cimentación del muro
-            - 🔴 **Muro (Rosa):** Estructura principal de contención (inclinada según β)
-            - 🟡 **Relleno (Amarillo):** Material de relleno detrás del muro
-            - 🟤 **Suelo (Marrón):** Suelo de cimentación
-            - 🔴 **Flechas rojas:** Sobrecarga aplicada (S/c)
-            - 🔵 **Dimensiones en azul:** Medidas calculadas del muro
-            - 📐 **Ángulo β:** Inclinación del muro respecto a la vertical
-            - 📐 **Ángulo α:** Inclinación del terreno natural
-            - 📐 **Ángulo δ:** Fricción entre muro y relleno
-            """)
-            
-            # Botones para generar reportes
-            st.subheader("📄 Generar Reportes - Análisis Coulomb")
-            
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                # Generar reporte de texto
-                reporte_coulomb = f"""
-# REPORTE TÉCNICO - ANÁLISIS COULOMB
-## CONSORCIO DEJ
-### Análisis según Teoría de Coulomb
-### Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}
-
-### 1. DATOS DE ENTRADA:
-- Altura total del muro (H): {H:.2f} m
-- Peralte de Zapata (h1): {h1:.2f} m
-- Base del triángulo 2 (t2): {t2:.2f} m
-- Longitud del talón (b2): {b2:.2f} m
-- Ángulo de fricción del suelo (φ₁'): {phi1:.1f}°
-- Ángulo de fricción muro-suelo (δ): {delta:.1f}°
-- Ángulo de inclinación del terreno (α): {alpha:.1f}°
-- Peso específico del suelo (γ₁): {gamma1:.2f} t/m³
-- Sobrecarga (S/c): {S_c} kg/m²
-
-### 2. CÁLCULOS GEOMÉTRICOS:
-- Ángulo de inclinación del muro (β): {resultados_coulomb['beta']:.2f}°
-- Altura efectiva del muro (H'): {resultados_coulomb['H_efectiva']:.2f} m
-
-### 3. COEFICIENTE DE EMPUJE ACTIVO:
-- Coeficiente Ka (Coulomb): {resultados_coulomb['Ka']:.6f}
-
-### 4. ANÁLISIS DE EMPUJES:
-- Empuje activo total (Pa): {resultados_coulomb['Pa']:.3f} t/m
-- Componente horizontal (Ph): {resultados_coulomb['Ph']:.3f} t/m
-- Componente vertical (Pv): {resultados_coulomb['Pv']:.3f} t/m
-- Empuje por sobrecarga (PSC): {resultados_coulomb['PSC']:.3f} t/m
-- Empuje total horizontal: {resultados_coulomb['P_total_horizontal']:.3f} t/m
-
-### 5. COMPARACIÓN CON RANKINE:
-- Coeficiente Ka (Rankine): {ka_rankine:.6f}
-- Diferencia porcentual: {diferencia:.1f}%
-- {'Coulomb es menos conservador' if diferencia > 0 else 'Coulomb es más conservador'}
-
-### 6. OBSERVACIONES TÉCNICAS:
-- La teoría de Coulomb considera la fricción entre el muro y el suelo
-- El ángulo de fricción muro-suelo (δ) afecta significativamente el empuje
-- Para muros rugosos, Coulomb proporciona resultados más realistas
-- La inclinación del terreno (α) modifica la altura efectiva del muro
-
-### 7. RECOMENDACIONES:
-- Verificar la rugosidad del muro para determinar δ apropiado
-- Considerar efectos de drenaje en el relleno
-- Revisar la estabilidad al volcamiento y deslizamiento
-- Evaluar la capacidad portante del suelo de cimentación
-
-### 8. INFORMACIÓN DEL PROYECTO:
-- Empresa: CONSORCIO DEJ
-- Método de análisis: Teoría de Coulomb
-- Fecha de análisis: {datetime.now().strftime('%d/%m/%Y %H:%M')}
-- Plan: Premium
-- Software: Streamlit + Python
-
----
-**Este reporte fue generado automáticamente por el sistema de análisis de muros de contención de CONSORCIO DEJ.**
-**Para consultas técnicas, contacte a nuestro equipo de ingeniería.**
-"""
-                
-                st.download_button(
-                    label="📥 Descargar TXT Coulomb",
-                    data=reporte_coulomb,
-                    file_name=f"reporte_coulomb_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
-                    mime="text/plain"
-                )
-            
-            with col2:
-                # Generar PDF para Coulomb
-                try:
-                    # Verificar si hay resultados de Coulomb disponibles
-                    if 'resultados_coulomb' in st.session_state and 'datos_entrada_coulomb' in st.session_state:
-                        resultados_coulomb_pdf = st.session_state['resultados_coulomb']
-                        datos_entrada_coulomb = st.session_state['datos_entrada_coulomb']
-                    else:
-                        st.error("⚠️ No hay resultados de análisis Coulomb disponibles.")
-                        st.info("Ejecuta primero el análisis completo de Coulomb.")
-                        st.stop()
-                    
-                    # Verificar si hay resultados de Rankine disponibles
-                    resultados_rankine_pdf = None
-                    datos_entrada_rankine_pdf = None
-                    if 'resultados_rankine' in st.session_state and 'datos_entrada_rankine' in st.session_state:
-                        resultados_rankine_pdf = st.session_state['resultados_rankine']
-                        datos_entrada_rankine_pdf = st.session_state['datos_entrada_rankine']
-                    
-                    pdf_buffer_coulomb = generar_pdf_reportlab(
-                        resultados_coulomb_pdf, 
-                        datos_entrada_coulomb, 
-                        {}, 
-                        "premium",
-                        resultados_rankine_pdf,
-                        datos_entrada_rankine_pdf
-                    )
-                    
-                    st.download_button(
-                        label="📄 Descargar PDF Coulomb",
-                        data=pdf_buffer_coulomb.getvalue(),
-                        file_name=f"reporte_coulomb_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
-                        mime="application/pdf"
-                    )
-                except Exception as e:
-                    st.error(f"⚠️ Error generando PDF: {str(e)}")
-                    st.info("Intenta ejecutar el análisis completo nuevamente")
-            
-            with col3:
-                if st.button("🖨️ Generar Reporte en Pantalla", type="primary", key="coulomb_pantalla"):
-                    st.success("✅ Reporte Coulomb generado exitosamente")
-                    st.balloons()
-                    
-                    # Mostrar el reporte en formato expandible
-                    with st.expander("📋 VER REPORTE COULOMB COMPLETO", expanded=True):
-                        st.markdown(reporte_coulomb)
-
-        # Botón para análisis de muro con contrafuertes
-        if st.button("🏗️ MURO CONTRAFUERTE", type="primary"):
-            st.success("🚀 Iniciando análisis de muro con contrafuertes...")
-            
-            # Datos de entrada para contrafuertes (usando valores de la sección actual)
-            gamma_concreto = 2.4  # Peso específico del concreto (t/m³)
-            datos_contrafuertes = {
-                'H': H,  # Altura total del muro
-                'h1': h1,  # Peralte de zapata
-                'gamma1': gamma1,  # Peso específico del suelo
-                'phi1': phi1,  # Ángulo de fricción del suelo
-                'S_c': S_c,  # Sobrecarga
-                'fc': 210,  # Resistencia del concreto (kg/cm²)
-                'fy': 4200,  # Resistencia del acero (kg/cm²)
-                'gamma_concreto': gamma_concreto  # Peso específico del concreto (t/m³)
-            }
-            
-            # Cálculos según las fórmulas proporcionadas
-            H_contrafuertes = datos_contrafuertes['H']
-            gamma1_contrafuertes = datos_contrafuertes['gamma1']
-            phi1_contrafuertes = datos_contrafuertes['phi1']
-            S_c_contrafuertes = datos_contrafuertes['S_c']
-            
-            # 1. Espesor mínimo del talón y puntera (Ortega)
-            d_min = H_contrafuertes / 10
-            h1_contrafuertes = max(0.4, d_min)  # Usar h1 = 0.4m (cumple)
-            
-            # 2. Separación de contrafuertes (ACI-UNI)
-            S_max = 3 * H_contrafuertes
-            S_tipico = min(4.0, S_max)  # Típico: 2.5 a 4m
-            
-            # 3. Coeficiente de empuje activo (Rankine simplificado)
-            ka_contrafuertes = math.tan(math.radians(45 - phi1_contrafuertes/2))**2
-            
-            # 4. Presión activa total
-            Pa_suelo = 0.5 * gamma1_contrafuertes * (H_contrafuertes**2) * ka_contrafuertes
-            # S_c está en kg/m², convertir a tn/m² dividiendo por 1000
-            Pa_sobrecarga = (S_c_contrafuertes / 1000) * H_contrafuertes * ka_contrafuertes
-            Pa_total = Pa_suelo + Pa_sobrecarga
-            
-            # 5. Momento máximo en la base del contrafuerte (UNI)
-            M_max = Pa_total * S_tipico * H_contrafuertes / 6
-            
-            # 6. Diseño de armadura
-            # Acero vertical mínimo (ACI 318)
-            As_min_vertical = 0.0018 * 100 * 40  # b=100cm, d=40cm
-            
-            # Acero horizontal mínimo (Morales)
-            As_min_horizontal = 0.0025 * 100 * h1_contrafuertes * 100  # b=100cm, h en cm
-            
-            # Espesor mínimo de contrafuertes
-            t_contrafuertes = max(0.20, H_contrafuertes / 20)
-            
-            # Armadura principal del contrafuerte
-            d_contrafuertes = h1_contrafuertes * 100 - 9  # Peralte efectivo en cm
-            As_contrafuertes = M_max * 100000 / (0.9 * 4200 * d_contrafuertes)
-            
-            # 7. Verificación de estabilidad (como Rankine)
-            # Empuje pasivo
-            phi_cimentacion_rad = math.radians(phi2)
-            kp = math.tan(math.radians(45 + phi2/2))**2
-            Ep = 0.5 * kp * (gamma2/1000) * D**2
-            
-            # Pesos de cada elemento
-            W_muro = 0.3 * h1_contrafuertes * (gamma_concreto/1000)  # Corona superior
-            W_zapata = 1.6 * h1_contrafuertes * (gamma_concreto/1000)  # Cimiento
-            W_relleno = 1.3 * h1_contrafuertes * (gamma1_contrafuertes/1000)  # Relleno
-            W_contrafuertes = t_contrafuertes * S_tipico * h1_contrafuertes * (gamma_concreto/1000)  # Contrafuertes
-            
-            # Peso total
-            W_total = W_muro + W_zapata + W_relleno + W_contrafuertes
-            
-            # Momentos estabilizadores
-            Mr_muro = W_muro * 0.8  # Brazo de momento
-            Mr_zapata = W_zapata * 0.8
-            Mr_relleno = W_relleno * 1.45
-            Mr_pasivo = Ep * D/3
-            M_estabilizador = Mr_muro + Mr_zapata + Mr_relleno + Mr_pasivo
-            
-            # Momentos volcadores
-            Mv_relleno = Pa_suelo * h1_contrafuertes/3
-            Mv_sobrecarga = Pa_sobrecarga * h1_contrafuertes/2
-            M_volcador = Mv_relleno + Mv_sobrecarga
-            
-            # Factor de seguridad al volcamiento
-            FS_volcamiento = M_estabilizador / M_volcador if M_volcador > 0 else 0
-            
-            # Verificación al deslizamiento
-            mu = math.tan(phi_cimentacion_rad)
-            Fr_friccion = mu * W_total
-            Fr_pasivo = Ep
-            Fr_total = Fr_friccion + Fr_pasivo
-            Fd_total = Pa_total
-            FS_deslizamiento = Fr_total / Fd_total if Fd_total > 0 else 0
-            
-            # Verificación de presiones sobre el suelo
-            sum_momentos_verticales = Mr_muro + Mr_zapata + Mr_relleno
-            x_barra = sum_momentos_verticales / W_total if W_total > 0 else 0
-            e = abs(x_barra - 0.8)  # Excentricidad
-            q_max = (W_total / 1.6) * (1 + 6*e/1.6) if W_total > 0 else 0
-            q_min = (W_total / 1.6) * (1 - 6*e/1.6) if W_total > 0 else 0
-            q_max_kg_cm2 = q_max * 0.1
-            q_min_kg_cm2 = q_min * 0.1
-            
-            # Guardar resultados
-            resultados_contrafuertes = {
-                'H': H_contrafuertes,
-                'h1': h1_contrafuertes,
-                'd_min': d_min,
-                'S_max': S_max,
-                'S_tipico': S_tipico,
-                'ka': ka_contrafuertes,
-                'Pa_suelo': Pa_suelo,
-                'Pa_sobrecarga': Pa_sobrecarga,
-                'Pa_total': Pa_total,
-                'M_max': M_max,
-                'As_min_vertical': As_min_vertical,
-                'As_min_horizontal': As_min_horizontal,
-                't_contrafuertes': t_contrafuertes,
-                'As_contrafuertes': As_contrafuertes,
-                'd_contrafuertes': d_contrafuertes,
-                'kp': kp,
-                'Ep': Ep,
-                'W_total': W_total,
-                'M_volcador': M_volcador,
-                'M_estabilizador': M_estabilizador,
-                'FS_volcamiento': FS_volcamiento,
-                'FS_deslizamiento': FS_deslizamiento,
-                'q_max_kg_cm2': q_max_kg_cm2,
-                'q_min_kg_cm2': q_min_kg_cm2,
-                'e': e
-            }
-            
-            st.session_state['resultados_contrafuertes'] = resultados_contrafuertes
-            st.session_state['datos_contrafuertes'] = datos_contrafuertes
-            
-            st.success("✅ Análisis de muro con contrafuertes completado exitosamente!")
-            st.balloons()
-            
-            # MOSTRAR RESULTADOS COMPLETOS (como Rankine)
-            st.subheader("📊 Resultados del Análisis - Muro con Contrafuertes")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.metric("Altura del muro (H)", f"{H_contrafuertes:.2f} m")
-                st.metric("Peralte de zapata (h1)", f"{h1_contrafuertes:.2f} m")
-                st.metric("Coeficiente Ka (Rankine)", f"{ka_contrafuertes:.6f}")
-                st.metric("Empuje activo total (Pa)", f"{Pa_total:.3f} t/m")
-                st.metric("Momento máximo contrafuerte", f"{M_max:.2f} tn·m")
-            
-            with col2:
-                st.metric("Factor Seguridad Volcamiento", f"{FS_volcamiento:.2f}")
-                st.metric("Factor Seguridad Deslizamiento", f"{FS_deslizamiento:.2f}")
-                st.metric("Presión máxima suelo", f"{q_max_kg_cm2:.2f} kg/cm²")
-                st.metric("Presión mínima suelo", f"{q_min_kg_cm2:.2f} kg/cm²")
-                st.metric("Excentricidad (e)", f"{e:.3f} m")
-            
-            # Diseño estructural
-            st.subheader("🏗️ Diseño Estructural - Contrafuertes")
-            
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                st.info("**Contrafuertes:**")
-                st.write(f"• Espesor mínimo: {t_contrafuertes:.2f} m")
-                st.write(f"• Separación: {S_tipico:.2f} m")
-                st.write(f"• Armadura principal: {As_contrafuertes:.2f} cm²")
-                st.write(f"• Peralte efectivo: {d_contrafuertes:.2f} cm")
-            
-            with col2:
-                st.info("**Muro Pantalla:**")
-                st.write(f"• Acero vertical: {As_min_vertical:.2f} cm²/m")
-                st.write(f"• Acero horizontal: {As_min_horizontal:.2f} cm²/m")
-                st.write(f"• Espesor: {h1_contrafuertes:.2f} m")
-                st.write(f"• Tipo: Muro pantalla con contrafuertes")
-            
-            with col3:
-                st.info("**Estabilidad:**")
-                st.write(f"• FS Volcamiento: {FS_volcamiento:.2f}")
-                st.write(f"• FS Deslizamiento: {FS_deslizamiento:.2f}")
-                st.write(f"• Peso total: {W_total:.2f} t/m")
-                st.write(f"• Empuje pasivo: {Ep:.2f} t/m")
-            
-            # Gráficos (como Rankine)
-            st.subheader("📈 Gráficos - Análisis Contrafuertes")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                # Gráfico de componentes del empuje
-                datos_empuje = pd.DataFrame({
-                    'Componente': ['Empuje Suelo', 'Empuje Sobrecarga', 'Empuje Total'],
-                    'Valor (t/m)': [Pa_suelo, Pa_sobrecarga, Pa_total]
-                })
-                
-                if PLOTLY_AVAILABLE:
-                    fig_empuje = px.bar(datos_empuje, x='Componente', y='Valor (t/m)',
-                                       title="Componentes del Empuje - Contrafuertes",
-                                       color='Componente',
-                                       color_discrete_map={
-                                           'Empuje Suelo': '#FF6B6B',
-                                           'Empuje Sobrecarga': '#4ECDC4',
-                                           'Empuje Total': '#45B7D1'
-                                       })
-                    
-                    fig_empuje.update_traces(texttemplate='%{y:.3f}', textposition='outside')
-                    st.plotly_chart(fig_empuje, use_container_width=True)
-            
-            with col2:
-                # Gráfico de factores de seguridad
-                datos_fs = pd.DataFrame({
-                    'Verificación': ['Volcamiento', 'Deslizamiento'],
-                    'Factor de Seguridad': [FS_volcamiento, FS_deslizamiento],
-                    'Límite': [2.0, 1.5]
-                })
-                
-                if PLOTLY_AVAILABLE:
-                    fig_fs = px.bar(datos_fs, x='Verificación', y='Factor de Seguridad',
-                                   title="Factores de Seguridad - Contrafuertes",
-                                   color='Verificación',
-                                   color_discrete_map={
-                                       'Volcamiento': '#FFD93D',
-                                       'Deslizamiento': '#6BCF7F'
-                                   })
-                    
-                    # Agregar línea de límite
-                    fig_fs.add_hline(y=2.0, line_dash="dash", line_color="red", annotation_text="Límite FS=2.0")
-                    fig_fs.add_hline(y=1.5, line_dash="dash", line_color="orange", annotation_text="Límite FS=1.5")
-                    
-                    fig_fs.update_traces(texttemplate='%{y:.2f}', textposition='outside')
-                    st.plotly_chart(fig_fs, use_container_width=True)
-            
-            # Gráfico profesional del muro con contrafuertes
-            st.subheader("📐 Visualización del Muro con Contrafuertes")
-            
-            dimensiones_contrafuertes = {
-                'h1': h1_contrafuertes,
-                'S_tipico': S_tipico,
-                't_contrafuertes': t_contrafuertes
-            }
-            
-            fig_contrafuertes = dibujar_muro_contrafuertes(
-                dimensiones_contrafuertes,
-                resultados_contrafuertes,
-                datos_contrafuertes
-            )
-            
-            st.pyplot(fig_contrafuertes)
-            
-            # Explicación del gráfico
-            st.markdown("""
-            **Leyenda del Gráfico - Muro con Contrafuertes:**
-            
-            - 🏗️ **Muro Pantalla (Gris claro):** Estructura principal de hormigón armado
-            - 🏋️ **Contrafuertes (Gris oscuro):** Elementos estructurales que rigidizan el muro
-            - 🏜️ **Relleno (Amarillo):** Material granular compactado detrás del muro
-            - 🌱 **Suelo (Marrón):** Terreno natural de cimentación
-            - 🔩 **Líneas grises oscuras:** Armadura de acero (representación esquemática)
-            - 🔴 **Flechas rojas:** Sobrecarga aplicada sobre el terreno
-            - 🔵 **Dimensiones en azul:** Medidas principales del diseño
-            
-            **Detalles Constructivos:**
-            - Separación típica entre contrafuertes: 2.5-4.0 m
-            - Espesor mínimo de contrafuertes: 20-30 cm
-            - Armadura principal calculada para resistir momentos flectores
-            - Juntas de construcción cada 10-15 m
-            """)
-            
-            # Información técnica
-            st.subheader("📚 Información Técnica - Contrafuertes")
-            
-            with st.expander("🔍 DETALLES DEL CÁLCULO", expanded=False):
-                st.markdown(f"""
-                **1. Espesor mínimo del talón y puntera (Ortega):**
-                ```
-                d ≥ H/10 = {H_contrafuertes}/10 = {d_min:.2f} m
-                h1 = {h1_contrafuertes:.2f} m (cumple)
-                ```
-                
-                **2. Separación de contrafuertes (ACI-UNI):**
-                ```
-                S ≤ 3·H = 3·{H_contrafuertes} = {S_max:.2f} m
-                S típico = {S_tipico:.2f} m (recomendado)
-                ```
-                
-                **3. Coeficiente de empuje activo (Rankine):**
-                ```
-                Ka = tan²(45° - φ₁'/2) = tan²(45° - {phi1_contrafuertes}/2) = {ka_contrafuertes:.6f}
-                ```
-                
-                **4. Presión activa total:**
-                ```
-                Pa = ½·γ₁·H²·Ka + S/c·H·Ka
-                Pa = 0.5·{gamma1_contrafuertes}·{H_contrafuertes}²·{ka_contrafuertes:.6f} + ({S_c_contrafuertes}/1000)·{H_contrafuertes}·{ka_contrafuertes:.6f}
-                Pa = {Pa_suelo:.3f} + {Pa_sobrecarga:.3f} = {Pa_total:.3f} t/m
-                ```
-                
-                **5. Momento máximo en contrafuerte (UNI):**
-                ```
-                M_max = Pa·S·H/6 = {Pa_total:.3f}·{S_tipico:.2f}·{H_contrafuertes}/6 = {M_max:.2f} tn·m
-                ```
-                
-                **6. Acero vertical mínimo (ACI 318):**
-                ```
-                As_min = 0.0018·b·d = 0.0018·100·40 = {As_min_vertical:.2f} cm²/m
-                ```
-                
-                **7. Acero horizontal mínimo (Morales):**
-                ```
-                As_hor = 0.0025·b·h = 0.0025·100·{h1_contrafuertes*100:.0f} = {As_min_horizontal:.2f} cm²/m
-                ```
-                
-                **8. Armadura principal del contrafuerte:**
-                ```
-                As = M_max/(0.9·fy·d) = {M_max*100000:.0f}/(0.9·4200·{d_contrafuertes:.0f}) = {As_contrafuertes:.2f} cm²
-                ```
-                
-                **9. Verificación de estabilidad:**
-                ```
-                FS Volcamiento = M_estabilizador/M_volcador = {M_estabilizador:.2f}/{M_volcador:.2f} = {FS_volcamiento:.2f}
-                FS Deslizamiento = Fr_total/Fd_total = {Fr_total:.2f}/{Fd_total:.2f} = {FS_deslizamiento:.2f}
-                ```
-                """)
-            
-            # Recomendaciones constructivas
-            st.subheader("🏗️ Recomendaciones Constructivas")
-            
-            st.info("""
-            **Partes Clave y Notas Técnicas:**
-            
-            **Muro Pantalla:**
-            - Espesor (h1): {h1_contrafuertes:.2f} m
-            - Refuerzo: Acero vertical y horizontal (mín. 0.0018·b·d)
-            
-            **Contrafuertes:**
-            - Separación (S): {S_tipico:.2f} m (≤ 3H = {S_max:.2f} m)
-            - Función: Resistir momentos y cortantes del suelo
-            - Espesor mínimo: {t_contrafuertes:.2f} m
-            
-            **Corona Superior:**
-            - Ancho (b): 0.3 m (protegida contra intemperie)
-            
-            **Cimiento:**
-            - Ancho (B): 1.6 m (verificado por capacidad portante)
-            
-            **Drenaje:**
-            - Tubos perforados detrás del muro (Ø4")
-            
-            **Detalles Constructivos Adicionales:**
-            - Juntas de expansión cada 10 m (Ortega García)
-            - Acero mínimo en muro: 0.0025·b·h (Roberto Morales)
-            - Anclaje de contrafuertes con barras Ø1"
-            """.format(h1_contrafuertes=h1_contrafuertes, S_tipico=S_tipico, S_max=S_max, t_contrafuertes=t_contrafuertes))
-            
-            # Botones para generar reportes (como Rankine)
-            st.subheader("📄 Generar Reportes - Contrafuertes")
-            
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                # Generar reporte de texto
-                reporte_contrafuertes = f"""
-# REPORTE TÉCNICO - MURO CON CONTRAFUERTES
-## CONSORCIO DEJ
-### Análisis según Ortega García, UNI y Morales
-### Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}
-
-### 1. DATOS DE ENTRADA:
-- Altura del muro (H): {H_contrafuertes:.2f} m
-- Peralte de zapata (h1): {h1_contrafuertes:.2f} m
-- Peso específico del suelo (γ₁): {gamma1_contrafuertes:.2f} t/m³
-- Ángulo de fricción del suelo (φ₁'): {phi1_contrafuertes:.1f}°
-- Sobrecarga (S/c): {S_c_contrafuertes} kg/m²
-
-### 2. DIMENSIONES CALCULADAS:
-- Espesor mínimo requerido: {d_min:.2f} m
-- Separación máxima contrafuertes: {S_max:.2f} m
-- Separación típica recomendada: {S_tipico:.2f} m
-- Espesor de contrafuertes: {t_contrafuertes:.2f} m
-
-### 3. ANÁLISIS DE EMPUJES:
-- Coeficiente Ka (Rankine): {ka_contrafuertes:.6f}
-- Empuje por suelo: {Pa_suelo:.3f} t/m
-- Empuje por sobrecarga: {Pa_sobrecarga:.3f} t/m
-- Empuje activo total: {Pa_total:.3f} t/m
-
-### 4. DISEÑO ESTRUCTURAL:
-- Momento máximo en contrafuerte: {M_max:.2f} tn·m
-- Acero vertical mínimo: {As_min_vertical:.2f} cm²/m
-- Acero horizontal mínimo: {As_min_horizontal:.2f} cm²/m
-- Armadura principal contrafuerte: {As_contrafuertes:.2f} cm²
-
-### 5. VERIFICACIÓN DE ESTABILIDAD:
-- Factor de seguridad al volcamiento: {FS_volcamiento:.2f}
-- Factor de seguridad al deslizamiento: {FS_deslizamiento:.2f}
-- Presión máxima sobre el suelo: {q_max_kg_cm2:.2f} kg/cm²
-- Presión mínima sobre el suelo: {q_min_kg_cm2:.2f} kg/cm²
-- Excentricidad: {e:.3f} m
-
-### 6. DETALLES CONSTRUCTIVOS:
-- Juntas de expansión: cada 10 m (Ortega)
-- Drenaje: tuberías perforadas Ø4"
-- Anclaje contrafuertes: barras Ø1"
-- Referencias: Ortega García, UNI, Morales (ACI-UNI)
-
-### 7. RECOMENDACIONES:
-- Verificar capacidad portante del suelo
-- Considerar efectos de drenaje
-- Revisar estabilidad al volcamiento
-- Evaluar armadura por retracción y temperatura
-
-### 8. INFORMACIÓN DEL PROYECTO:
-- Empresa: CONSORCIO DEJ
-- Método: Muro con contrafuertes
-- Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}
-- Plan: Premium
-- Software: Streamlit + Python
-
----
-**Este reporte fue generado automáticamente por el sistema de análisis de muros de contención de CONSORCIO DEJ.**
-**Para consultas técnicas, contacte a nuestro equipo de ingeniería.**
-"""
-                
-                st.download_button(
-                    label="📥 Descargar TXT Contrafuertes",
-                    data=reporte_contrafuertes,
-                    file_name=f"reporte_contrafuertes_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
-                    mime="text/plain"
-                )
-            
-            with col2:
-                # Generar PDF para contrafuertes
-                try:
-                    # Verificar si hay resultados de contrafuertes disponibles
-                    if 'resultados_contrafuertes' in st.session_state and 'datos_contrafuertes' in st.session_state:
-                        resultados_contrafuertes_pdf = st.session_state['resultados_contrafuertes']
-                        datos_entrada_contrafuertes = st.session_state['datos_contrafuertes']
-                    else:
-                        st.error("⚠️ No hay resultados de análisis de contrafuertes disponibles.")
-                        st.info("Ejecuta primero el análisis completo de contrafuertes.")
-                        st.stop()
-                    
-                    # Crear diseño del fuste para contrafuertes
-                    diseno_fuste_contrafuertes = {
-                        'kp': kp,
-                        'Ep_kg_m': Ep * 1000,
-                        'yt': D/3,
-                        'Mvol_total': M_volcador,
-                        'Mesta_total': M_estabilizador,
-                        'FSv': FS_volcamiento,
-                        'FSd': FS_deslizamiento,
-                        'x_barra': x_barra,
-                        'e': e,
-                        'rho_real': 0.0033,
-                        'dreq': 30,
-                        'dreal': d_contrafuertes,
-                        'As': As_contrafuertes,
-                        'Asmin': As_min_vertical,
-                        'As_proporcionado': As_contrafuertes,
-                        'num_barras': 3,
-                        'separacion': 15,
-                        'num_barras_retraccion': 2,
-                        'As_retraccion_proporcionado': As_min_horizontal
-                    }
-                    
-                    pdf_buffer_contrafuertes = generar_pdf_reportlab(
-                        resultados_contrafuertes_pdf, 
-                        datos_entrada_contrafuertes, 
-                        diseno_fuste_contrafuertes, 
-                        "contrafuertes"
-                    )
-                    
-                    st.download_button(
-                        label="📄 Descargar PDF Contrafuertes",
-                        data=pdf_buffer_contrafuertes.getvalue(),
-                        file_name=f"reporte_contrafuertes_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
-                        mime="application/pdf"
-                    )
-                except Exception as e:
-                    st.error(f"⚠️ Error generando PDF: {str(e)}")
-                    st.info("Intenta ejecutar el análisis completo nuevamente")
-            
-            with col3:
-                if st.button("🖨️ Generar Reporte en Pantalla", type="primary", key="contrafuertes_pantalla"):
-                    st.success("✅ Reporte Contrafuertes generado exitosamente")
-                    st.balloons()
-                    
-                    # Mostrar el reporte en formato expandible
-                    with st.expander("📋 VER REPORTE CONTRAFUERTES COMPLETO", expanded=True):
-                        st.markdown(reporte_contrafuertes)
-
-    elif opcion == "🏗️ Diseño del Fuste":
-        st.title("Diseño y Verificación del Fuste del Muro")
-        
+    elif opcion == "🔬 Análisis Coulomb":
         # Verificar acceso basado en plan del usuario
         user_plan = st.session_state.get('plan', 'gratuito')
         user_email = st.session_state.get('user', '')
@@ -3685,17 +2401,57 @@ else:
                 pass
         
         if user_plan == "gratuito" and not is_admin:
-            st.warning("⚠️ Esta función requiere plan premium. Actualiza tu cuenta para acceder al diseño estructural.")
+            st.warning("⚠️ Esta función requiere plan premium. Actualiza tu cuenta para acceder a análisis completos.")
             st.info("Plan gratuito incluye: Cálculos básicos, resultados simples")
-            st.info("Plan premium incluye: Diseño del fuste, cálculo de refuerzo, reportes detallados")
+            st.info("Plan premium incluye: Análisis completo, reportes detallados, gráficos avanzados")
             
             # Mostrar botón para actualizar plan
             col1, col2, col3 = st.columns([1, 2, 1])
             with col2:
-                if st.button("⭐ Actualizar a Premium", type="primary", key="upgrade_diseno"):
+                if st.button("⭐ Actualizar a Premium", type="primary"):
                     st.session_state['show_pricing'] = True
                     st.rerun()
         else:
+            st.title("Análisis Completo de Muro de Contención - Teoría de Coulomb")
+            st.success("⭐ Plan Premium: Análisis completo con teoría de Coulomb")
+            
+            # Mostrar comparación visual entre Rankine y Coulomb si ambos están disponibles
+            if 'resultados_rankine' in st.session_state and 'resultados_coulomb' in st.session_state:
+                st.subheader("🔍 Comparación Visual: Rankine vs Coulomb")
+                
+                # Gráfico comparativo profesional
+                fig_comparacion = go.Figure()
+                
+                # Agregar barras para Rankine
+                fig_comparacion.add_trace(go.Bar(
+                    x=['Coeficiente Ka', 'Empuje Activo (t/m)', 'Componente Horizontal (t/m)'],
+                    y=[st.session_state['resultados_rankine']['ka'], 
+                       st.session_state['resultados_rankine']['Ea_total'],
+                       st.session_state['resultados_rankine']['Ea_total']],  # Rankine no tiene componente vertical
+                    name='Rankine',
+                    marker_color='#1f77b4',
+                    text=[f"{st.session_state['resultados_rankine']['ka']:.4f}", 
+                          f"{st.session_state['resultados_rankine']['Ea_total']:.2f}",
+                          f"{st.session_state['resultados_rankine']['Ea_total']:.2f}"],
+                    textposition='auto'
+                ))
+                
+                # Agregar barras para Coulomb
+                fig_comparacion.add_trace(go.Bar(
+                    x=['Coeficiente Ka', 'Empuje Activo (t/m)', 'Componente Horizontal (t/m)'],
+                    y=[st.session_state['resultados_coulomb']['Ka'], 
+                       st.session_state['resultados_coulomb']['Pa'],
+                       st.session_state['resultados_coulomb']['Ph']],
+                    name='Coulomb',
+                    marker_color='#ff7f0e',
+                    text=[f"{st.session_state['resultados_coulomb']['Ka']:.4f}", 
+                          f"{st.session_state['resultados_coulomb']['Pa']:.2f}",
+                          f"{st.session_state['resultados_coulomb']['Ph']:.2f}"],
+                    textposition='auto'
+                ))
+                
+                # Personalizar el gráfico
+                fig_comparacion.update_layout(
             st.success("⭐ Plan Premium: Diseño estructural completo del fuste")
             
             if 'diseno_fuste' in st.session_state and 'datos_entrada' in st.session_state:
@@ -3774,7 +2530,7 @@ else:
                 # Verificación al volcamiento
                 if diseno_fuste['FSv'] >= 2.0:
                     verificaciones.append(["Volcamiento", "✅ CUMPLE", f"FS = {diseno_fuste['FSv']:.2f} ≥ 2.0"])
-                else:
+                    else:
                     verificaciones.append(["Volcamiento", "⚠️ NO CUMPLE", f"FS = {diseno_fuste['FSv']:.2f} < 2.0"])
                 
                 # Verificación al deslizamiento
@@ -4093,16 +2849,16 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                 
                 # Botones para el reporte premium
                 col1, col2, col3 = st.columns(3)
-                
-                with col1:
+                    
+                    with col1:
                     st.download_button(
                         label="📥 Descargar TXT",
                         data=reporte_premium,
                         file_name=f"reporte_premium_muro_contencion_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
                         mime="text/plain"
                     )
-                
-                with col2:
+                    
+                    with col2:
                     # Generar PDF premium con diseño del fuste
                     if 'datos_entrada' in st.session_state and 'diseno_fuste' in st.session_state:
                         try:
@@ -4182,12 +2938,12 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                     if PLOTLY_AVAILABLE:
                         fig1 = px.bar(
                             datos_fuerzas, x='Fuerza', y='Valor (tn/m)',
-                            title="Análisis de Fuerzas - Rankine",
-                                 color='Fuerza',
-                                 color_discrete_map={
-                                     'Empuje Activo': '#DC143C',
-                                     'Empuje Pasivo': '#2E8B57',
-                                     'Peso Total': '#4169E1'
+                                            title="Análisis de Fuerzas - Rankine",
+                                            color='Fuerza',
+                                            color_discrete_map={
+                                                'Empuje Activo': '#DC143C',
+                                                'Empuje Pasivo': '#2E8B57',
+                                                'Peso Total': '#4169E1'
                             },
                             custom_data=[
                                 'h1 (m)', 'Df (m)', 'hm (m)', 'γ_relleno (kg/m³)', 'φ_relleno (°)',
@@ -4265,14 +3021,14 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                 if PLOTLY_AVAILABLE:
                     fig3 = px.bar(
                         pd.DataFrame(dimensiones), x='Dimensión', y='Valor (m)',
-                        title="Dimensiones Calculadas del Muro - Rankine",
-                             color='Dimensión',
-                             color_discrete_map={
-                                 'Bz': '#FF1493',
-                                 'hz': '#00CED1',
-                                 'b': '#32CD32',
-                                 'r': '#FFD700',
-                                 't': '#FF6347'
+                                    title="Dimensiones Calculadas del Muro - Rankine",
+                                    color='Dimensión',
+                                    color_discrete_map={
+                                        'Bz': '#FF1493',
+                                        'hz': '#00CED1',
+                                        'b': '#32CD32',
+                                        'r': '#FFD700',
+                                        't': '#FF6347'
                         },
                         custom_data=[
                             'h1 (m)', 'Df (m)', 'hm (m)', 'γ_relleno (kg/m³)', 'φ_relleno (°)',
@@ -4309,9 +3065,9 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                 
                 # Gráfico de factores de seguridad
                 st.subheader("🛡️ Factores de Seguridad - Rankine")
-                col1, col2 = st.columns(2)
+            col1, col2 = st.columns(2)
                 
-                with col1:
+            with col1:
                     datos_fs = pd.DataFrame({
                         'Verificación': ['Volcamiento', 'Deslizamiento'],
                         'Factor de Seguridad': [resultados.get('FS_volcamiento', 0), resultados.get('FS_deslizamiento', 0)],
@@ -4373,7 +3129,7 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                     - Deslizamiento: {resultados.get('FS_deslizamiento', 0):.2f} (Límite: 1.5)
                     """)
                 
-                with col2:
+            with col2:
                     # Gráfico de presiones
                     datos_presiones = pd.DataFrame({
                         'Presión': ['Máxima', 'Mínima'],
@@ -4473,13 +3229,13 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                 resultados_coulomb = st.session_state['resultados_coulomb']
                 
                 # Gráfico comparativo Rankine vs Coulomb
-                col1, col2 = st.columns(2)
-                
-                with col1:
+            col1, col2 = st.columns(2)
+            
+            with col1:
                     # Calcular Ka de Rankine para comparación
                     if 'datos_entrada_coulomb' in st.session_state:
                         phi1_rankine = st.session_state['datos_entrada_coulomb']['phi1']
-                    else:
+        else:
                         phi1_rankine = 32  # Valor por defecto
                     
                     ka_rankine = math.tan(math.radians(45 - phi1_rankine/2))**2
@@ -4498,9 +3254,9 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                         fig_comp.update_layout(
                             xaxis_title="Teoría",
                             yaxis_title="Coeficiente Ka",
-                            height=400
-                        )
-                        
+                        height=400
+                    )
+                    
                         fig_comp.update_traces(texttemplate='%{y:.6f}', textposition='outside')
                         st.plotly_chart(fig_comp, use_container_width=True)
                 
@@ -4511,11 +3267,11 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                         'Valor (t/m)': [resultados_coulomb['Pa'], resultados_coulomb['Ph'], resultados_coulomb['Pv'], resultados_coulomb['PSC']]
                     })
                     
-                    if PLOTLY_AVAILABLE:
+            if PLOTLY_AVAILABLE:
                         fig_comp2 = px.bar(datos_componentes, x='Componente', y='Valor (t/m)',
                                           title="Componentes del Empuje - Coulomb",
                                           color='Componente',
-                                          color_discrete_map={
+                                      color_discrete_map={
                                               'Empuje Total (Pa)': '#FF6B6B',
                                               'Componente Horizontal (Ph)': '#4ECDC4',
                                               'Componente Vertical (Pv)': '#45B7D1',
@@ -4525,9 +3281,9 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                         fig_comp2.update_layout(
                             xaxis_title="Componente",
                             yaxis_title="Valor (t/m)",
-                            height=400
-                        )
-                        
+                    height=400
+                )
+                
                         fig_comp2.update_traces(texttemplate='%{y:.3f}', textposition='outside')
                         st.plotly_chart(fig_comp2, use_container_width=True)
                 
@@ -4542,13 +3298,13 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                         'Valor': [datos_entrada_coulomb['H'], resultados_coulomb['H_efectiva'], 
                                  resultados_coulomb['beta'], datos_entrada_coulomb['alpha'], datos_entrada_coulomb['delta']],
                         'Unidad': ['m', 'm', '°', '°', '°']
-                    })
-                    
-                    if PLOTLY_AVAILABLE:
+            })
+            
+            if PLOTLY_AVAILABLE:
                         fig_geo = px.bar(datos_geometricos, x='Parámetro', y='Valor',
                                         title="Parámetros Geométricos - Análisis Coulomb",
                                         color='Parámetro',
-                                        color_discrete_map={
+                                      color_discrete_map={
                                             'Altura Total (H)': '#FFD93D',
                                             'Altura Efectiva (H\')': '#6BCF7F',
                                             'Ángulo β': '#4D96FF',
@@ -4559,9 +3315,9 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                         fig_geo.update_layout(
                             xaxis_title="Parámetro",
                             yaxis_title="Valor",
-                            height=400
-                        )
-                        
+                    height=400
+                )
+                
                         fig_geo.update_traces(texttemplate='%{y:.2f}', textposition='outside')
                         st.plotly_chart(fig_geo, use_container_width=True)
                 
@@ -4617,7 +3373,7 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                     - **α:** Ángulo de inclinación del terreno natural
                     - **δ:** Ángulo de fricción entre el muro y el relleno
                     """)
-            else:
+                else:
                 st.warning("⚠️ No hay resultados disponibles para el método seleccionado.")
 
     elif opcion == "ℹ️ Acerca de":
@@ -4700,7 +3456,7 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
         st.sidebar.write("**Usuario:** premium")
         st.sidebar.write("**Contraseña:** premium")
         st.sidebar.info("Cierra sesión y vuelve a iniciar con las credenciales premium")
-    else:
+                    else:
         st.sidebar.success("⭐ Plan Premium - Acceso completo")
         
         # Información para administradores
