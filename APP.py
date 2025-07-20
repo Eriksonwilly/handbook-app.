@@ -2060,7 +2060,7 @@ else:
                 
                 #### 4. Empuje Activo Total
                 ```
-                Ea_total = Ea_relleno + Ea_sobrecarga
+    Ea_total = Ea_relleno + Ea_sobrecarga
                 ```
                 
                 **Características de Rankine:**
@@ -2179,7 +2179,7 @@ else:
                 
                 # 2. Empuje pasivo (si aplica)
                 phi_cimentacion_rad = math.radians(phi_cimentacion)
-                kp = math.tan(math.radians(45 + phi_cimentacion/2))**2
+    kp = math.tan(math.radians(45 + phi_cimentacion/2))**2
                 Ep = 0.5 * kp * (gamma_cimentacion/1000) * Df**2
                 
                 # 3. Pesos de cada elemento
@@ -2255,7 +2255,7 @@ else:
                 
                 # Calcular diseño del fuste
                 resultados_completos = {
-                    'ka': ka,
+        'ka': ka,
                     'kp': kp,
                     'hs': hs,
                     'Bz': Bz,
@@ -2269,7 +2269,7 @@ else:
                     'qsc': qsc,
                     'Ea_relleno': Ea_relleno,
                     'Ea_sobrecarga': Ea_sobrecarga,
-                    'Ea_total': Ea_total,
+        'Ea_total': Ea_total,
                     'Ep': Ep,
                     'W_muro': W_muro,
                     'W_zapata': W_zapata,
@@ -2298,17 +2298,17 @@ else:
                     'r': r,
                     't': t,
                     'hm': hm,
-                    'h1': h1,
+        'h1': h1,
                     'Df': Df,
                     'qsc': qsc,
                     'Ea_relleno': Ea_relleno,
                     'Ea_sobrecarga': Ea_sobrecarga,
                     'Ea_total': Ea_total,
                     'Ep': Ep,
-                    'W_muro': W_muro,
-                    'W_zapata': W_zapata,
-                    'W_relleno': W_relleno,
-                    'W_total': W_total,
+        'W_muro': W_muro,
+        'W_zapata': W_zapata,
+        'W_relleno': W_relleno,
+        'W_total': W_total,
                     'M_volcador': M_volcador,
                     'M_estabilizador': M_estabilizador,
                     'FS_volcamiento': FS_volcamiento,
@@ -2326,7 +2326,7 @@ else:
                 # Guardar datos específicos para PDF premium (Rankine)
                 st.session_state['resultados_rankine'] = {
                     'ka': ka,
-                    'kp': kp,
+        'kp': kp,
                     'hs': hs,
                     'Bz': Bz,
                     'hz': hz,
@@ -2340,18 +2340,18 @@ else:
                     'Ea_relleno': Ea_relleno,
                     'Ea_sobrecarga': Ea_sobrecarga,
                     'Ea_total': Ea_total,
-                    'Ep': Ep,
+        'Ep': Ep,
                     'W_muro': W_muro,
                     'W_zapata': W_zapata,
                     'W_relleno': W_relleno,
                     'W_total': W_total,
                     'M_volcador': M_volcador,
                     'M_estabilizador': M_estabilizador,
-                    'FS_volcamiento': FS_volcamiento,
-                    'FS_deslizamiento': FS_deslizamiento,
+        'FS_volcamiento': FS_volcamiento,
+        'FS_deslizamiento': FS_deslizamiento,
                     'q_max_kg_cm2': q_max_kg_cm2,
                     'q_min_kg_cm2': q_min_kg_cm2,
-                    'e': e,
+        'e': e,
                     'tension': tension
                 }
                 
@@ -2407,9 +2407,9 @@ else:
                 st.subheader("📊 Resultados del Análisis Completo")
                 
                 # Mostrar resultados en columnas
-                col1, col2 = st.columns(2)
+    col1, col2 = st.columns(2)
                 
-                with col1:
+    with col1:
                     st.metric("Coeficiente Ka", f"{ka:.3f}")
                     st.metric("Ancho de Zapata (Bz)", f"{Bz:.2f} m")
                     st.metric("Peralte de Zapata (hz)", f"{hz:.2f} m")
@@ -2417,7 +2417,7 @@ else:
                     st.metric("Longitud de Puntera (r)", f"{r:.2f} m")
                     st.metric("Longitud de Talón (t)", f"{t:.2f} m")
                 
-                with col2:
+    with col2:
                     st.metric("Empuje Activo Total", f"{Ea_total:.2f} tn/m")
                     st.metric("Empuje Pasivo", f"{Ep:.2f} tn/m")
                     st.metric("Peso Total", f"{W_total:.2f} tn/m")
@@ -2433,13 +2433,13 @@ else:
                 with col1:
                     if FS_volcamiento >= 2.0:
                         st.success(f"✅ **Volcamiento:** CUMPLE (FS = {FS_volcamiento:.2f} ≥ 2.0)")
-                    else:
+    else:
                         st.error(f"⚠️ **Volcamiento:** NO CUMPLE (FS = {FS_volcamiento:.2f} < 2.0)")
                 
                 with col2:
                     if FS_deslizamiento >= 1.5:
                         st.success(f"✅ **Deslizamiento:** CUMPLE (FS = {FS_deslizamiento:.2f} ≥ 1.5)")
-                    else:
+    else:
                         st.error(f"⚠️ **Deslizamiento:** NO CUMPLE (FS = {FS_deslizamiento:.2f} < 1.5)")
                 
                 # Verificación de presiones
@@ -2450,14 +2450,14 @@ else:
                     st.metric("Presión Máxima", f"{q_max_kg_cm2:.2f} kg/cm²")
                     if q_max_kg_cm2 <= sigma_adm:
                         st.success(f"✅ ≤ {sigma_adm} kg/cm²")
-                    else:
+    else:
                         st.error(f"⚠️ > {sigma_adm} kg/cm²")
                 
                 with col2:
                     st.metric("Presión Mínima", f"{q_min_kg_cm2:.2f} kg/cm²")
                     if not tension:
                         st.success("✅ Sin tensiones")
-                    else:
+    else:
                         st.error("⚠️ Hay tensiones")
                 
                 with col3:
@@ -2465,7 +2465,7 @@ else:
                     e_limite = Bz / 6
                     if e <= e_limite:
                         st.success(f"✅ ≤ B/6 ({e_limite:.3f} m)")
-                    else:
+    else:
                         st.error(f"⚠️ > B/6 ({e_limite:.3f} m)")
                 
                 # Diseño del fuste
@@ -2495,7 +2495,7 @@ else:
                 with col1:
                     if diseno_fuste['dreal'] >= diseno_fuste['dreq']:
                         st.success(f"✅ **Peralte:** CUMPLE (dreal = {diseno_fuste['dreal']:.2f} ≥ {diseno_fuste['dreq']:.2f} cm)")
-                    else:
+    else:
                         st.error(f"⚠️ **Peralte:** NO CUMPLE (dreal = {diseno_fuste['dreal']:.2f} < {diseno_fuste['dreq']:.2f} cm)")
                 
                 with col2:
@@ -3619,7 +3619,7 @@ else:
             # S_c está en kg/m², convertir a tn/m² dividiendo por 1000
             Pa_sobrecarga = (S_c_contrafuertes / 1000) * H_contrafuertes * ka_contrafuertes
             Pa_total = Pa_suelo + Pa_sobrecarga
-            
+
             # 5. Momento máximo en la base del contrafuerte (UNI)
             M_max = Pa_total * S_tipico * H_contrafuertes / 6
             
@@ -3737,8 +3737,8 @@ else:
                 st.metric("Presión máxima suelo", f"{q_max_kg_cm2:.2f} kg/cm²")
                 st.metric("Presión mínima suelo", f"{q_min_kg_cm2:.2f} kg/cm²")
                 st.metric("Excentricidad (e)", f"{e:.3f} m")
-            
-            # Diseño estructural
+
+    # Diseño estructural
             st.subheader("🏗️ Diseño Estructural - Contrafuertes")
             
             col1, col2, col3 = st.columns(3)
@@ -4727,7 +4727,7 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                 
                 # Gráfico de dimensiones
                 st.subheader("📏 Dimensiones del Muro - Rankine")
-                dimensiones = {
+        dimensiones = {
                     'Dimensión': ['Bz', 'hz', 'b', 'r', 't'],
                     'Valor (m)': [resultados.get('Bz', 0), resultados.get('hz', 0), resultados.get('b', 0), 
                                  resultados.get('r', 0), resultados.get('t', 0)],
