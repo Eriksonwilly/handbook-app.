@@ -3465,3 +3465,62 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
         st.sidebar.write("**Usuario actual:** " + st.session_state['user'])
         st.sidebar.write("**Plan:** Premium")
         st.sidebar.success("Acceso completo a todas las funciones")
+
+# --- NUEVO: Cálculo de contrafuertes según Ortega, UNI y ACI ---
+def calcular_contrafuertes(datos_entrada, resultados_coulomb):
+    """
+    Calcula el diseño de contrafuertes según Ortega, UNI y ACI
+    """
+    H = datos_entrada['H']
+    L = datos_entrada.get('L', 4.0)
+    fc = datos_entrada.get('fc', 210)
+    fy = datos_entrada.get('fy', 4200)
+    Pa_total = resultados_coulomb['P_total_horizontal']
+    ec = max(0.20, H / 12)
+    S = min(0.67 * H, 3.0)
+    Mu = 1.4 * Pa_total * S * (H / 2)
+    d = math.sqrt(Mu * 100000 / (0.9 * 0.85 * fc * ec * 100 * 0.59))
+    As = (Mu * 100000) / (0.9 * fy * d)
+    As_min = max(0.0033 * ec * 100 * d, (0.8 * math.sqrt(fc) / fy) * ec * 100 * d)
+    As_temp = 0.002 * ec * 100 * H * 100
+    return {
+        'espesor_contrafuerte': ec,
+        'separacion_contrafuertes': S,
+        'momento_ultimo': Mu,
+        'peralte_efectivo': d,
+        'acero_principal': As,
+        'acero_minimo': As_min,
+        'acero_temperatura': As_temp
+    }
+
+# --- NUEVO: Verificación de estabilidad para muros con contrafuertes ---
+def verificar_estabilidad_contrafuertes(datos_entrada, resultados_coulomb, resultados_contrafuerte):
+    H = datos_entrada['H']
+    B = datos_entrada['B']
+    phi2 = datos_entrada['phi2']
+    cohesion2 = datos_entrada['cohesion2']
+    sigma_u = datos_entrada['sigma_u']
+    W_total = resultados_coulomb['W_total']
+    P_total_horizontal = resultados_coulomb['P_total_horizontal']
+    # 1. Volcamiento
+    momento_volcador = P_total_horizontal * H / 3
+    momento_estabilizador = W_total * B / 2
+    FS_volcamiento = momento_estabilizador / momento_volcador if momento_volcador != 0 else 0
+    # 2. Deslizamiento
+    fuerza_resistente = (W_total * math.tan(math.radians(phi2))) + (cohesion2 * B * 100)
+    fuerza_deslizante = P_total_horizontal
+    FS_deslizamiento = fuerza_resistente / fuerza_deslizante if fuerza_deslizante != 0 else 0
+    # 3. Presiones
+    excentricidad = B/2 - (momento_estabilizador - momento_volcador) / W_total if W_total != 0 else 0
+    q_max = (W_total / B) * (1 + 6*excentricidad/B) if B != 0 else 0
+    q_min = (W_total / B) * (1 - 6*excentricidad/B) if B != 0 else 0
+    return {
+        'FS_volcamiento': FS_volcamiento,
+        'FS_deslizamiento': FS_deslizamiento,
+        'excentricidad': excentricidad,
+        'q_max': q_max,
+        'q_min': q_min,
+        'cumple_volcamiento': FS_volcamiento >= 2.0,
+        'cumple_deslizamiento': FS_deslizamiento >= 1.5,
+        'cumple_presiones': q_max <= sigma_u and q_min >= 0
+    }
