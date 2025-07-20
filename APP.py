@@ -2117,7 +2117,7 @@ else:
                 
                 # 2. Empuje pasivo (si aplica)
                 phi_cimentacion_rad = math.radians(phi_cimentacion)
-    kp = math.tan(math.radians(45 + phi_cimentacion/2))**2
+                kp = math.tan(math.radians(45 + phi_cimentacion/2))**2
                 Ep = 0.5 * kp * (gamma_cimentacion/1000) * Df**2
                 
                 # 3. Pesos de cada elemento
