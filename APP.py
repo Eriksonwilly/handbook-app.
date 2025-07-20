@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle, Polygon
+from matplotlib.patches import Rectangle, Polygon, Circle
 import io
 import tempfile
 import os
@@ -1161,10 +1161,15 @@ def dibujar_muro_streamlit(dimensiones, h1, Df, qsc, metodo="rankine", datos_cou
 # Función para dibujar muro con contrafuertes
 def dibujar_muro_contrafuertes(dimensiones, resultados, datos_entrada):
     """
-    Dibuja el muro de contención con contrafuertes de manera profesional
+    Dibuja el muro de contención con contrafuertes de manera profesional mejorada
     """
     plt.style.use('default')
     fig, ax = plt.subplots(figsize=(16, 12))
+    
+    # Configuración de estilo profesional
+    plt.rcParams['font.family'] = 'Arial'
+    plt.rcParams['font.size'] = 10
+    plt.rcParams['font.weight'] = 'bold'
     
     # Extraer dimensiones
     H = datos_entrada['H']
@@ -1173,140 +1178,136 @@ def dibujar_muro_contrafuertes(dimensiones, resultados, datos_entrada):
     t_contrafuerte = dimensiones['t_contrafuertes']
     B_total = 1.6  # Ancho total estimado
     
-    # Colores profesionales
-    color_concreto = '#78909C'  # Gris concreto
-    color_contrafuerte = '#546E7A'  # Gris más oscuro
-    color_relleno = '#FFE082'  # Amarillo arena
-    color_suelo = '#8D6E63'  # Marrón tierra
+    # Colores profesionales mejorados
+    color_concreto = '#78909C'  # Gris concreto con textura
+    color_contrafuerte = '#546E7A'  # Gris más oscuro para contrafuertes
+    color_relleno = '#FFE082'  # Amarillo arena con patrón
+    color_suelo = '#8D6E63'  # Marrón tierra con gradiente
     color_acero = '#37474F'  # Gris acero oscuro
-    color_agua = '#80CBC4'  # Verde agua
+    color_agua = '#80CBC4'  # Verde agua para drenaje
     
-    # Dibujar suelo de cimentación con gradiente
+    # --- Dibujo mejorado del muro ---
+    
+    # 1. Suelo de cimentación con gradiente y textura
     suelo_gradient = np.linspace(0.3, 0.8, 50)
     for i, alpha in enumerate(suelo_gradient):
         y_pos = -0.5 + (i * 0.5 / 50)
-        ax.add_patch(Rectangle((-1, y_pos), B_total+2, 0.5/50, 
-                              facecolor=color_suelo, edgecolor='none', alpha=alpha))
+        rect = Rectangle((-1, y_pos), B_total+2, 0.5/50, 
+                        facecolor=color_suelo, edgecolor='none', alpha=alpha)
+        ax.add_patch(rect)
+        
+        # Añadir textura de suelo (puntos aleatorios)
+        if i % 5 == 0:
+            x_points = np.random.uniform(-1, B_total+1, 10)
+            y_points = np.random.uniform(y_pos, y_pos+0.5/50, 10)
+            ax.scatter(x_points, y_points, color='#5D4037', s=2, alpha=0.5)
     
-    # Dibujar zapata
-    ax.add_patch(Rectangle((0, 0), B_total, h1, 
-                          facecolor=color_concreto, edgecolor='#455A64', linewidth=2))
+    # 2. Zapata con efecto 3D
+    zapata = Rectangle((0, 0), B_total, h1, 
+                      facecolor=color_concreto, edgecolor='#455A64', 
+                      linewidth=2, hatch='...')
+    ax.add_patch(zapata)
     
-    # Dibujar muro pantalla
-    ax.add_patch(Rectangle((0.3, h1), 0.3, H-h1, 
-                          facecolor=color_concreto, edgecolor='#455A64', linewidth=2))
+    # 3. Muro pantalla con textura de concreto
+    muro = Rectangle((0.3, h1), 0.3, H-h1,
+                    facecolor=color_concreto, edgecolor='#455A64',
+                    linewidth=2, hatch='////', alpha=0.9)
+    ax.add_patch(muro)
     
-    # Dibujar contrafuertes (3 contrafuertes para mejor visualización)
+    # 4. Contrafuertes con detalles mejorados (3 contrafuertes)
     num_contrafuertes = 3
     for i in range(num_contrafuertes):
         x_pos = 0.3 + i * (S_tipico / num_contrafuertes)
-        ax.add_patch(Rectangle((x_pos, h1), t_contrafuerte, H-h1, 
-                              facecolor=color_contrafuerte, edgecolor='#37474F', linewidth=1.5))
+        contrafuerte = Rectangle((x_pos, h1), t_contrafuerte, H-h1,
+                                facecolor=color_contrafuerte, 
+                                edgecolor='#37474F', linewidth=1.5,
+                                hatch='xxx', alpha=0.8)
+        ax.add_patch(contrafuerte)
+        
+        # Líneas de construcción en contrafuertes
+        ax.plot([x_pos, x_pos+t_contrafuerte], [h1+(H-h1)/2, h1+(H-h1)/2],
+                color='white', linewidth=1, linestyle='--', alpha=0.7)
     
-    # Dibujar relleno con patrón
+    # 5. Relleno con patrón profesional
     relleno_pts = [(0.6, h1), (B_total, h1), (B_total, H), (0.6, H)]
-    ax.add_patch(Polygon(relleno_pts, facecolor=color_relleno, 
-                        edgecolor='#F57F17', linewidth=1, alpha=0.8))
+    relleno = Polygon(relleno_pts, facecolor=color_relleno, 
+                     edgecolor='#F57F17', linewidth=1, alpha=0.8,
+                     hatch='ooo')
+    ax.add_patch(relleno)
     
-    # Agregar patrón de relleno (líneas diagonales)
-    for i in range(20):
-        x1 = 0.6 + i * (B_total-0.6) / 20
-        y1 = h1 + i * (H-h1) / 20
-        ax.plot([x1, x1+0.2], [y1, y1+0.2], color='#F57F17', linewidth=0.5, alpha=0.3)
+    # 6. Sistema de drenaje (tubos y filtro)
+    for i in range(2):
+        y_dren = h1 + (i+1)*(H-h1)/3
+        ax.plot([0.6, 0.6-0.1], [y_dren, y_dren], color=color_agua, linewidth=3)
+        ax.add_patch(Circle((0.6-0.15, y_dren), radius=0.03, 
+                    facecolor=color_agua, edgecolor='#00695C'))
+        # Filtro de grava
+        ax.add_patch(Rectangle((0.6-0.2, y_dren-0.05), 0.1, 0.1,
+                    facecolor='#A1887F', edgecolor='#5D4037', alpha=0.6,
+                    hatch='...'))
     
-    # Dibujar sobrecarga con flechas
+    # 7. Sobrecarga con flechas mejoradas
     flechas_x = np.linspace(0.6+0.1, B_total-0.1, 8)
-    for x in flechas_x:
+    for i, x in enumerate(flechas_x):
+        color_flecha = '#D32F2F' if i % 2 == 0 else '#E53935'
         ax.arrow(x, H+0.5, 0, -0.3, head_width=0.08, head_length=0.1, 
-                fc='#D32F2F', ec='#D32F2F', linewidth=2)
+                fc=color_flecha, ec=color_flecha, linewidth=2.5)
     
-    # Texto de sobrecarga
-    ax.text(B_total/2, H+0.6, f'SOBRECARGA: {datos_entrada["S_c"]} kg/m²', 
-            ha='center', fontsize=10, fontweight='bold', 
-            bbox=dict(boxstyle="round,pad=0.3", facecolor='#FFEBEE', 
-                     edgecolor='#D32F2F', linewidth=2, alpha=0.9))
-    
-    # Dibujar armadura (representación esquemática)
-    # Armadura vertical
+    # 8. Armadura (representación esquemática mejorada)
+    # Armadura vertical principal
     for i in range(5):
-        y = h1 + i * (H-h1)/5
-        ax.plot([0.35, 0.35], [y, y+0.1], color=color_acero, linewidth=2)
+        y = h1 + i * (H-h1)/5 + 0.05
+        ax.plot([0.35, 0.35], [y, y+0.1], color=color_acero, 
+               linewidth=3, solid_capstyle='round')
+        # Estribos
+        if i % 2 == 0:
+            ax.plot([0.32, 0.38], [y+0.05, y+0.05], color=color_acero,
+                   linewidth=1.5, linestyle='-')
     
     # Armadura horizontal
     for i in range(5):
         x = 0.3 + i * 0.3/5
-        ax.plot([x, x+0.05], [h1+(H-h1)/2, h1+(H-h1)/2], color=color_acero, linewidth=2)
+        ax.plot([x, x+0.05], [h1+(H-h1)/2, h1+(H-h1)/2], 
+               color=color_acero, linewidth=2.5, solid_capstyle='round')
     
-    # Armadura contrafuertes
+    # Armadura contrafuertes (doble línea para mejor visualización)
     for i in range(num_contrafuertes):
         x_pos = 0.3 + i * (S_tipico / num_contrafuertes)
         for j in range(3):
             y = h1 + j * (H-h1)/3
-            ax.plot([x_pos+0.02, x_pos+t_contrafuerte-0.02], [y, y], color=color_acero, linewidth=2)
+            ax.plot([x_pos+0.02, x_pos+t_contrafuerte-0.02], [y, y], 
+                   color=color_acero, linewidth=2)
+            ax.plot([x_pos+0.02, x_pos+t_contrafuerte-0.02], [y+0.02, y+0.02],
+                   color=color_acero, linewidth=2, alpha=0.7)
     
-    # Dimensiones con estilo profesional
+    # --- Dimensiones y anotaciones mejoradas ---
     dim_style = dict(arrowstyle='<->', color='#1565C0', linewidth=1.5)
     text_style = dict(fontsize=9, fontweight='bold', color='#1565C0',
                      bbox=dict(boxstyle="round,pad=0.2", facecolor='white', 
-                              edgecolor='#1565C0', alpha=0.8))
+                              edgecolor='#1565C0', alpha=0.9))
     
-    # Dimensiones principales
+    # Dimensiones principales con mejor disposición
     ax.annotate('', xy=(0, -0.2), xytext=(B_total, -0.2), arrowprops=dim_style)
     ax.text(B_total/2, -0.3, f'B={B_total}m', ha='center', **text_style)
     
     ax.annotate('', xy=(-0.2, 0), xytext=(-0.2, H), arrowprops=dim_style)
-    ax.text(-0.3, H/2, f'H={H}m', va='center', rotation=90, **text_style)
+    ax.text(-0.35, H/2, f'H={H}m', va='center', rotation=90, **text_style)
     
-    ax.annotate('', xy=(0.3, H+0.2), xytext=(0.3+S_tipico, H+0.2), arrowprops=dim_style)
+    ax.annotate('', xy=(0.3, H+0.2), xytext=(0.3+S_tipico, H+0.2), 
+               arrowprops=dim_style)
     ax.text(0.3+S_tipico/2, H+0.25, f'S={S_tipico:.2f}m', ha='center', **text_style)
     
     ax.annotate('', xy=(0.45, h1), xytext=(0.45, H), arrowprops=dim_style)
     ax.text(0.5, (h1+H)/2, f'e={0.3}m', va='center', **text_style)
     
-    # Detalles constructivos
-    ax.text(0.15, h1/2, 'ZAPATA', ha='center', va='center', 
-           fontsize=10, fontweight='bold', color='white',
-           bbox=dict(boxstyle="round,pad=0.3", facecolor='#455A64', alpha=0.9))
+    # Texto de sobrecarga mejorado
+    ax.text(B_total/2, H+0.6, f'SOBRECARGA: {datos_entrada["S_c"]} kg/m²', 
+           ha='center', fontsize=10, fontweight='bold', 
+           bbox=dict(boxstyle="round,pad=0.3", facecolor='#FFEBEE', 
+                    edgecolor='#D32F2F', linewidth=2, alpha=0.9))
     
-    ax.text(0.45, h1+(H-h1)/2, 'MURO PANTALLA', ha='center', va='center', 
-           fontsize=10, fontweight='bold', color='white',
-           bbox=dict(boxstyle="round,pad=0.3", facecolor='#455A64', alpha=0.9))
-    
-    for i in range(num_contrafuertes):
-        x_pos = 0.3 + i * (S_tipico / num_contrafuertes)
-        ax.text(x_pos+t_contrafuerte/2, h1+(H-h1)/2, 'CONTRAFUERTE', ha='center', va='center', 
-               fontsize=8, fontweight='bold', color='white', rotation=90,
-               bbox=dict(boxstyle="round,pad=0.2", facecolor='#37474F', alpha=0.9))
-    
-    # Configuración del gráfico
-    ax.set_xlim(-0.5, B_total+0.5)
-    ax.set_ylim(-0.5, H+1.0)
-    ax.set_aspect('equal')
-    
-    # Título profesional
-    titulo = f"DISEÑO DE MURO CON CONTRAFUERTES\nCONSORCIO DEJ - Ingeniería y Construcción"
-    subtitulo = f"Altura: {H:.2f}m | Separación contrafuertes: {S_tipico:.2f}m | Espesor: {t_contrafuerte:.2f}m"
-    
-    ax.set_title(f'{titulo}\n{subtitulo}', 
-                fontsize=14, fontweight='bold', pad=20, color='#1565C0')
-    ax.set_xlabel('Distancia (metros)', fontsize=10, fontweight='bold', color='#424242')
-    ax.set_ylabel('Altura (metros)', fontsize=10, fontweight='bold', color='#424242')
-    
-    # Leyenda profesional
-    from matplotlib.patches import Patch
-    legend_elements = [
-        Patch(facecolor=color_concreto, edgecolor='#455A64', label='MURO PANTALLA'),
-        Patch(facecolor=color_contrafuerte, edgecolor='#37474F', label='CONTRAFUERTE'),
-        Patch(facecolor=color_relleno, edgecolor='#F57F17', label='RELLENO'),
-        Patch(facecolor=color_suelo, edgecolor='#5D4037', label='SUELO'),
-        Patch(facecolor=color_acero, edgecolor='#37474F', label='ARMADURA')
-    ]
-    
-    ax.legend(handles=legend_elements, loc='upper right', fontsize=8, 
-             frameon=True, fancybox=True, shadow=True, 
-             title='ELEMENTOS', title_fontsize=9)
-    
-    # Información técnica
+    # --- Información técnica reorganizada ---
+    # Mover información técnica a un cuadro en esquina superior derecha
     info_text = f"""
     DATOS TÉCNICOS:
     • Altura (H): {H:.2f} m
@@ -1319,13 +1320,45 @@ def dibujar_muro_contrafuertes(dimensiones, resultados, datos_entrada):
     • FS Deslizamiento: {resultados['FS_deslizamiento']:.2f}
     """
     
-    ax.text(B_total+0.1, H/2, info_text, fontsize=8, fontweight='bold',
+    ax.text(B_total+0.5, H*0.8, info_text, fontsize=8, fontweight='bold',
            bbox=dict(boxstyle="round,pad=0.3", facecolor='#E8F5E8', 
                     edgecolor='#4CAF50', linewidth=1, alpha=0.9),
-           verticalalignment='center')
+           verticalalignment='top')
     
-    # Agregar grid sutil
-    ax.grid(True, alpha=0.2, linestyle='--', linewidth=0.5)
+    # --- Leyenda profesional reposicionada ---
+    from matplotlib.patches import Patch
+    legend_elements = [
+        Patch(facecolor=color_concreto, edgecolor='#455A64', label='MURO PANTALLA', hatch='////'),
+        Patch(facecolor=color_contrafuerte, edgecolor='#37474F', label='CONTRAFUERTE', hatch='xxx'),
+        Patch(facecolor=color_relleno, edgecolor='#F57F17', label='RELLENO', hatch='ooo'),
+        Patch(facecolor=color_suelo, edgecolor='#5D4037', label='SUELO', hatch='...'),
+        Patch(facecolor=color_acero, edgecolor='#37474F', label='ARMADURA'),
+        Patch(facecolor=color_agua, edgecolor='#00695C', label='DRENAJE')
+    ]
+    
+    # Posicionar leyenda en esquina inferior derecha sin obstruir
+    ax.legend(handles=legend_elements, loc='lower right', fontsize=8, 
+             frameon=True, fancybox=True, shadow=True, 
+             title='ELEMENTOS', title_fontsize=9,
+             bbox_to_anchor=(1.0, 0.0))
+    
+    # --- Configuración final del gráfico ---
+    ax.set_xlim(-0.5, B_total+1.0)  # Más espacio para leyenda
+    ax.set_ylim(-0.5, H+1.0)
+    ax.set_aspect('equal')
+    
+    # Título profesional con subtítulo
+    titulo = "DISEÑO DE MURO CON CONTRAFUERTES - CONSORCIO DEJ"
+    subtitulo = f"Altura: {H:.2f}m | Separación contrafuertes: {S_tipico:.2f}m | Espesor: {t_contrafuerte:.2f}m"
+    
+    ax.set_title(f'{titulo}\n{subtitulo}', 
+                fontsize=14, fontweight='bold', pad=20, color='#1565C0')
+    ax.set_xlabel('Distancia (metros)', fontsize=10, fontweight='bold', color='#424242')
+    ax.set_ylabel('Altura (metros)', fontsize=10, fontweight='bold', color='#424242')
+    
+    # Grid sutil solo en áreas importantes
+    ax.grid(True, alpha=0.1, linestyle='--', linewidth=0.5, which='both',
+           axis='both', color='gray')
     
     # Configurar fondo
     ax.set_facecolor('#FAFAFA')
