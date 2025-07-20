@@ -37,31 +37,78 @@ except ImportError:
     REPORTLAB_AVAILABLE = False
     st.warning("⚠️ ReportLab no está instalado. La generación de PDFs no estará disponible.")
 
+# =============================
+# VARIABLES GEOMÉTRICAS Y DE SUELO PARA COULOMB
+# =============================
+# Variables geométricas adicionales para muros con contrafuertes
+b = 0.3   # Corona superior (m)
+B = 1.60  # Ancho total de la base (m)
+h1 = 0.4  # Peralte de la zapata (m)
+b1 = 0.3  # Longitud de la puntera (m)
+b2 = 0.4  # Longitud del talón (m)
+t1 = 0.05 # Base del triángulo 1 (m)
+t2 = 0.55 # Base del triángulo 2 (m)
+
+# Datos del suelo de relleno
+gamma1 = 1.85   # Peso específico (t/m³)
+phi1 = 30.0     # Ángulo de fricción (°)
+cohesion1 = 0.0 # Cohesión (kg/cm²)
+alpha = 10.0    # Ángulo de inclinación del terreno (°)
+
+delta = 0.0     # Ángulo de fricción muro-suelo (°) (puede ser editable)
+
+# Datos del suelo de la base
+gamma2 = 1.86   # Peso específico (t/m³)
+cohesion2 = 0.30 # Cohesión (kg/cm²)
+sigma_u = 1.70  # Capacidad de carga (kg/cm²)
+phi2 = 28.4     # Ángulo de fricción (°)
+
+# Datos del muro
+gamma_muro = 2.30 # Peso específico del muro (t/m³)
+S_c = 2627      # Sobrecarga (kg/m²)
+H = 2.40        # Altura total (m)
+D = 0.00        # Profundidad de desplante (m)
+
 # Función para calcular empuje activo según teoría de Coulomb
+# Mejorada para aceptar todas las variables necesarias
+
 def calcular_empuje_coulomb(datos_entrada):
     """
     Calcula el empuje activo según la teoría de Coulomb (fórmula Excel exacta de la imagen)
     """
+    # Variables geométricas y de suelo
     H = datos_entrada['H']
-    h1 = datos_entrada['h1']  # ← aquí se usa el valor editable
+    h1 = datos_entrada['h1']
     t1 = datos_entrada.get('t1', 0)
     t2 = datos_entrada['t2']
     b2 = datos_entrada['b2']
-    phi1 = datos_entrada['phi1']
-    delta = datos_entrada['delta']
-    alpha = datos_entrada['alpha']
+    b = datos_entrada.get('b', 0.3)
+    B = datos_entrada.get('B', 1.60)
+    b1 = datos_entrada.get('b1', 0.3)
+    t1 = datos_entrada.get('t1', 0.05)
+    t2 = datos_entrada.get('t2', 0.55)
+    # Suelo de relleno
     gamma1 = datos_entrada['gamma1']
+    phi1 = datos_entrada['phi1']
+    cohesion1 = datos_entrada.get('cohesion1', 0.0)
+    alpha = datos_entrada['alpha']
+    delta = datos_entrada.get('delta', 0.0)
+    # Suelo de la base
+    gamma2 = datos_entrada.get('gamma2', 1.86)
+    cohesion2 = datos_entrada.get('cohesion2', 0.30)
+    sigma_u = datos_entrada.get('sigma_u', 1.70)
+    phi2 = datos_entrada.get('phi2', 28.4)
+    # Muro
+    gamma_muro = datos_entrada.get('gamma_muro', 2.30)
     S_c = datos_entrada['S_c']
+    D = datos_entrada.get('D', 0.00)
     # 1. Ángulo de inclinación del muro (β) en grados
-    # --- Cálculo profesional del ángulo β (inclinación del muro respecto a la vertical) ---
-    # β = arctan((H - h1) / t2)  (h1 = peralte de la zapata editable)
-    # Si t2 = 0, muro vertical: β = 90°
     if t2 != 0:
         beta = math.degrees(math.atan((H - h1) / t2))
     else:
         beta = 90.0
     beta_rad = math.radians(beta)
-    # 2. Coeficiente de empuje activo (Ka) - fórmula profesional con conversión explícita a radianes
+    # 2. Coeficiente de empuje activo (Ka)
     phi1_rad = math.radians(phi1)
     delta_rad = math.radians(delta)
     alpha_rad = math.radians(alpha)
@@ -92,7 +139,12 @@ def calcular_empuje_coulomb(datos_entrada):
         'Ph': Ph,
         'Pv': Pv,
         'PSC': PSC,
-        'P_total_horizontal': P_total_horizontal
+        'P_total_horizontal': P_total_horizontal,
+        # Adicionales para trazabilidad y reporte
+        'b': b, 'B': B, 'b1': b1, 'b2': b2, 't1': t1, 't2': t2,
+        'gamma1': gamma1, 'phi1': phi1, 'cohesion1': cohesion1, 'alpha': alpha, 'delta': delta,
+        'gamma2': gamma2, 'cohesion2': cohesion2, 'sigma_u': sigma_u, 'phi2': phi2,
+        'gamma_muro': gamma_muro, 'S_c': S_c, 'D': D, 'H': H, 'h1': h1
     }
 
 # Función para calcular diseño del fuste del muro
@@ -690,6 +742,23 @@ Generado por: CONSORCIO DEJ
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ]))
         elements.append(tabla_formulas)
+        elements.append(Spacer(1, 20))
+        
+        # Observaciones técnicas
+        elements.append(Paragraph("4. OBSERVACIONES TÉCNICAS", styleH))
+        elements.append(Paragraph("• La teoría de Coulomb considera fricción muro-suelo", styleN))
+        elements.append(Paragraph("• Apropiada para muros rugosos o inclinados", styleN))
+        elements.append(Paragraph("• Fórmulas más complejas que Rankine", styleN))
+        elements.append(Paragraph("• Considera el ángulo de inclinación del terreno", styleN))
+        elements.append(Paragraph("• Proporciona componentes horizontal y vertical", styleN))
+        elements.append(Spacer(1, 20))
+        
+        # Recomendaciones
+        elements.append(Paragraph("5. RECOMENDACIONES", styleH))
+        elements.append(Paragraph("• Usar para muros con superficies rugosas", styleN))
+        elements.append(Paragraph("• Apropiado para muros inclinados", styleN))
+        elements.append(Paragraph("• Verificar con Rankine para comparación", styleN))
+        elements.append(Paragraph("• Considerar efectos de fricción muro-suelo", styleN))
         
     elif plan == "rankine":
         # Reporte Rankine específico
@@ -2032,347 +2101,6 @@ else:
                 - Diferencia en empuje horizontal: {diferencia_empuje:.1f}%
                 - Rankine es más conservador cuando la diferencia es positiva
                 """)
-            
-            # Mostrar fórmulas de Rankine
-            st.subheader("📚 Fórmulas de la Teoría de Rankine")
-            
-            with st.expander("📖 VER FÓRMULAS DE RANKINE", expanded=False):
-                st.markdown("""
-                ### Fórmulas de la Teoría de Rankine para Muros de Contención:
-                
-                #### 1. Coeficiente de Empuje Activo (Ka)
-                ```
-                Ka = tan²(45° - φ/2)
-                ```
-                
-                Donde:
-                - **φ**: Ángulo de fricción interna del suelo
-                
-                #### 2. Empuje Activo por Relleno
-                ```
-                Ea_relleno = ½ · Ka · γ · h₁²
-                ```
-                
-                #### 3. Empuje Activo por Sobrecarga
-                ```
-                Ea_sobrecarga = Ka · qsc · h₁
-                ```
-                
-                #### 4. Empuje Activo Total
-                ```
-                Ea_total = Ea_relleno + Ea_sobrecarga
-                ```
-                
-                **Características de Rankine:**
-                - Muro vertical liso
-                - No considera fricción muro-suelo
-                - Aproximación conservadora
-                - Fórmulas más simples
-                """)
-            
-            # Datos de entrada completos
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.subheader("Dimensiones")
-                h1 = st.number_input("Peralte de Zapata (m)", value=2.8, step=0.1)
-                Df = st.number_input("Profundidad de desplante (m)", value=1.2, step=0.1)
-                hm = st.number_input("Altura de coronación (m)", value=1.2, step=0.1, help="Según TAREA_DE_PROGRAMACION2.py, altura recomendada para mejor estabilidad")
-                
-                st.subheader("Materiales")
-                gamma_relleno = st.number_input("Densidad del relleno (kg/m³)", value=1800, step=50)
-                phi_relleno = st.number_input("Ángulo de fricción del relleno (°)", value=30, step=1)
-                gamma_concreto = st.number_input("Peso específico del concreto (kg/m³)", value=2400, step=50)
-                
-            with col2:
-                st.subheader("Propiedades del Suelo")
-                gamma_cimentacion = st.number_input("Densidad del suelo de cimentación (kg/m³)", value=1700, step=50)
-                phi_cimentacion = st.number_input("Ángulo de fricción del suelo (°)", value=25, step=1)
-                cohesion = st.number_input("Cohesión del suelo (t/m²)", value=1.0, step=0.1)
-                sigma_adm = st.number_input("Capacidad portante del suelo (kg/cm²)", value=2.5, step=0.1)
-                
-                st.subheader("Cargas")
-                qsc = st.number_input("Sobrecarga (kg/m²)", value=1000, step=100)
-                fc = st.number_input("Resistencia del concreto (kg/cm²)", value=210, step=10)
-                fy = st.number_input("Resistencia del acero (kg/cm²)", value=4200, step=100)
-            
-            # Botones para diferentes cálculos de Rankine
-            st.subheader("🔬 Cálculos Específicos - Rankine")
-            
-            col1, col2, col3, col4 = st.columns(4)
-            
-            with col1:
-                if st.button("📊 Calcular Coeficiente Ka", type="primary", key="rankine_ka"):
-                    # Calcular coeficiente de empuje activo de Rankine
-                    phi_relleno_rad = math.radians(phi_relleno)
-                    ka = math.tan(math.radians(45 - phi_relleno/2))**2
-                    
-                    st.success(f"✅ Coeficiente de empuje activo (Ka) = {ka:.6f}")
-                    st.info(f"Ka = tan²(45° - φ/2) = tan²(45° - {phi_relleno}/2) = {ka:.6f}")
-            
-            with col2:
-                if st.button("📏 Calcular Altura Equivalente", type="primary", key="rankine_hs"):
-                    # Calcular altura equivalente por sobrecarga
-                    hs = qsc / gamma_relleno
-                    
-                    st.success(f"✅ Altura equivalente por sobrecarga (hs) = {hs:.3f} m")
-                    st.info(f"hs = qsc / γ = {qsc} / {gamma_relleno} = {hs:.3f} m")
-            
-            with col3:
-                if st.button("⚖️ Calcular Empuje Relleno", type="primary", key="rankine_ea_relleno"):
-                    # Calcular empuje activo por relleno
-                    phi_relleno_rad = math.radians(phi_relleno)
-                    ka = math.tan(math.radians(45 - phi_relleno/2))**2
-                    Ea_relleno = 0.5 * ka * (gamma_relleno/1000) * h1**2
-                    
-                    st.success(f"✅ Empuje activo por relleno = {Ea_relleno:.3f} tn/m")
-                    st.info(f"Ea_relleno = ½ · Ka · γ · h₁² = 0.5 · {ka:.6f} · {gamma_relleno/1000:.3f} · {h1}² = {Ea_relleno:.3f} tn/m")
-            
-            with col4:
-                if st.button("📋 Calcular Empuje Sobrecarga", type="primary", key="rankine_ea_sobrecarga"):
-                    # Calcular empuje activo por sobrecarga
-                    phi_relleno_rad = math.radians(phi_relleno)
-                    ka = math.tan(math.radians(45 - phi_relleno/2))**2
-                    Ea_sobrecarga = ka * (qsc/1000) * h1
-                    
-                    st.success(f"✅ Empuje activo por sobrecarga = {Ea_sobrecarga:.3f} tn/m")
-                    st.info(f"Ea_sobrecarga = Ka · qsc · h₁ = {ka:.6f} · {qsc/1000:.3f} · {h1} = {Ea_sobrecarga:.3f} tn/m")
-            
-            if st.button("🚀 Ejecutar Análisis Completo Rankine", type="primary"):
-                # Cálculos completos basados en TAREA_DE_PROGRAMACION2.py
-                
-                # Coeficiente de empuje activo (fórmula correcta de Rankine)
-                phi_relleno_rad = math.radians(phi_relleno)
-                ka = math.tan(math.radians(45 - phi_relleno/2))**2
-                
-                # Altura equivalente por sobrecarga
-                hs = qsc / gamma_relleno
-                
-                # Factor kc para concreto
-                kc = 14.28  # Para fc = 210 kg/cm²
-                
-                # Dimensiones calculadas
-                Bz = (h1 + Df) * (1 + hs/(h1 + Df)) * math.sqrt(ka)
-                Bz = round(Bz, 2)
-                
-                hz = math.sqrt(((h1 + Df)**2 * (1 + hs/(h1 + Df))) / (9 * kc))
-                hz = round(hz * 100) / 100
-                hz = max(0.4, hz)
-                
-                b = math.sqrt(((h1 + hm)**2 * (1 + hs/(h1 + hm))) / (10 * kc))
-                b = round(b * 100) / 100
-                b = max(0.35, b)
-                
-                r = (2 * Bz - 3 * b) / 6
-                r = round(r * 100) / 100
-                r = max(0.7, r)
-                
-                t = Bz - r - b
-                t = round(t * 100) / 100
-                
-                # Cálculos de estabilidad completos (basados en AVANCE2.PY)
-                
-                # 1. Empujes activos
-                Ea_relleno = 0.5 * ka * (gamma_relleno/1000) * h1**2
-                Ea_sobrecarga = ka * (qsc/1000) * h1  # Convertir kg/m² a tn/m²
-                Ea_total = Ea_relleno + Ea_sobrecarga
-                
-                # 2. Empuje pasivo (si aplica)
-                phi_cimentacion_rad = math.radians(phi_cimentacion)
-                kp = math.tan(math.radians(45 + phi_cimentacion/2))**2
-                Ep = 0.5 * kp * (gamma_cimentacion/1000) * Df**2
-                
-                # 3. Pesos de cada elemento
-                W_muro = b * h1 * (gamma_concreto/1000)
-                W_zapata = Bz * hz * (gamma_concreto/1000)
-                W_relleno = t * h1 * (gamma_relleno/1000)
-                
-                # 4. Posiciones de los pesos (brazos de momento)
-                x_muro = r + b/2
-                x_zapata = Bz/2
-                x_relleno = r + b + t/2
-                
-                # 5. Momentos estabilizadores
-                Mr_muro = W_muro * x_muro
-                Mr_zapata = W_zapata * x_zapata
-                Mr_relleno = W_relleno * x_relleno
-                Mr_pasivo = Ep * Df/3
-                M_estabilizador = Mr_muro + Mr_zapata + Mr_relleno + Mr_pasivo
-                
-                # 6. Momentos volcadores
-                Mv_relleno = Ea_relleno * h1/3
-                Mv_sobrecarga = Ea_sobrecarga * h1/2
-                M_volcador = Mv_relleno + Mv_sobrecarga
-                
-                # 7. Factor de seguridad al volcamiento
-                FS_volcamiento = M_estabilizador / M_volcador
-                
-                # 8. Verificación al deslizamiento
-                mu = math.tan(phi_cimentacion_rad)  # Coeficiente de fricción
-                Fr_friccion = mu * (W_muro + W_zapata + W_relleno)
-                Fr_pasivo = Ep
-                Fr_total = Fr_friccion + Fr_pasivo
-                Fd_total = Ea_total
-                FS_deslizamiento = Fr_total / Fd_total
-                
-                # 9. Verificación de presiones sobre el suelo
-                W_total = W_muro + W_zapata + W_relleno
-                
-                # Posición de la resultante vertical
-                sum_momentos_verticales = Mr_muro + Mr_zapata + Mr_relleno
-                x_barra = sum_momentos_verticales / W_total
-                
-                # Excentricidad
-                e = abs(x_barra - Bz/2)
-                
-                # Presiones máxima y mínima
-                q_max = (W_total / Bz) * (1 + 6*e/Bz)
-                q_min = (W_total / Bz) * (1 - 6*e/Bz)
-                
-                # Verificar si hay tensiones
-                tension = q_min < 0
-                
-                # Convertir a kg/cm²
-                q_max_kg_cm2 = q_max * 0.1  # tn/m² a kg/cm²
-                q_min_kg_cm2 = q_min * 0.1
-                
-                # Crear diccionario con datos de entrada para el diseño del fuste
-                datos_entrada = {
-                    'h1': h1,
-                    'gamma_relleno': gamma_relleno,
-                    'phi_relleno': phi_relleno,
-                    'gamma_cimentacion': gamma_cimentacion,
-                    'phi_cimentacion': phi_cimentacion,
-                    'cohesion': cohesion,
-                    'Df': Df,
-                    'sigma_adm': sigma_adm,
-                    'gamma_concreto': gamma_concreto,
-                    'fc': fc,
-                    'fy': fy,
-                    'qsc': qsc,
-                    'hm': hm
-                }
-                
-                # Calcular diseño del fuste
-                resultados_completos = {
-                    'ka': ka,
-                    'kp': kp,
-                    'hs': hs,
-                    'Bz': Bz,
-                    'hz': hz,
-                    'b': b,
-                    'r': r,
-                    't': t,
-                    'hm': hm,
-                    'h1': h1,
-                    'Df': Df,
-                    'qsc': qsc,
-                    'Ea_relleno': Ea_relleno,
-                    'Ea_sobrecarga': Ea_sobrecarga,
-                    'Ea_total': Ea_total,
-                    'Ep': Ep,
-                    'W_muro': W_muro,
-                    'W_zapata': W_zapata,
-                    'W_relleno': W_relleno,
-                    'W_total': W_total,
-                    'M_volcador': M_volcador,
-                    'M_estabilizador': M_estabilizador,
-                    'FS_volcamiento': FS_volcamiento,
-                    'FS_deslizamiento': FS_deslizamiento,
-                    'q_max_kg_cm2': q_max_kg_cm2,
-                    'q_min_kg_cm2': q_min_kg_cm2,
-                    'e': e,
-                    'tension': tension
-                }
-                
-                diseno_fuste = calcular_diseno_fuste(resultados_completos, datos_entrada)
-                
-                # Guardar resultados completos
-                st.session_state['resultados_completos'] = {
-                    'ka': ka,
-                    'kp': kp,
-                    'hs': hs,
-                    'Bz': Bz,
-                    'hz': hz,
-                    'b': b,
-                    'r': r,
-                    't': t,
-                    'hm': hm,
-                    'h1': h1,
-                    'Df': Df,
-                    'qsc': qsc,
-                    'Ea_relleno': Ea_relleno,
-                    'Ea_sobrecarga': Ea_sobrecarga,
-                    'Ea_total': Ea_total,
-                    'Ep': Ep,
-                    'W_muro': W_muro,
-                    'W_zapata': W_zapata,
-                    'W_relleno': W_relleno,
-                    'W_total': W_total,
-                    'M_volcador': M_volcador,
-                    'M_estabilizador': M_estabilizador,
-                    'FS_volcamiento': FS_volcamiento,
-                    'FS_deslizamiento': FS_deslizamiento,
-                    'q_max_kg_cm2': q_max_kg_cm2,
-                    'q_min_kg_cm2': q_min_kg_cm2,
-                    'e': e,
-                    'tension': tension
-                }
-                
-                # Guardar datos de entrada y diseño del fuste
-                st.session_state['datos_entrada'] = datos_entrada
-                st.session_state['diseno_fuste'] = diseno_fuste
-                
-                # Guardar datos específicos para PDF premium (Rankine)
-                st.session_state['resultados_rankine'] = {
-                    'ka': ka,
-                    'kp': kp,
-                    'hs': hs,
-                    'Bz': Bz,
-                    'hz': hz,
-                    'b': b,
-                    'r': r,
-                    't': t,
-                    'hm': hm,
-                    'h1': h1,
-                    'Df': Df,
-                    'qsc': qsc,
-                    'Ea_relleno': Ea_relleno,
-                    'Ea_sobrecarga': Ea_sobrecarga,
-                    'Ea_total': Ea_total,
-                    'Ep': Ep,
-                    'W_muro': W_muro,
-                    'W_zapata': W_zapata,
-                    'W_relleno': W_relleno,
-                    'W_total': W_total,
-                    'M_volcador': M_volcador,
-                    'M_estabilizador': M_estabilizador,
-                    'FS_volcamiento': FS_volcamiento,
-                    'FS_deslizamiento': FS_deslizamiento,
-                    'q_max_kg_cm2': q_max_kg_cm2,
-                    'q_min_kg_cm2': q_min_kg_cm2,
-                    'e': e,
-                    'tension': tension
-                }
-                
-                st.session_state['datos_entrada_rankine'] = datos_entrada
-                
-                st.success("¡Análisis completo ejecutado exitosamente!")
-                st.balloons()
-                
-                # Gráfico mejorado de distribución de presiones
-                st.subheader("📊 Distribución de Presiones sobre el Suelo")
-                
-                # Crear datos para el gráfico
-                presiones = {
-                    'Tipo': ['Máxima', 'Mínima', 'Admisible'],
-                    'Valor (kg/cm²)': [
-                        q_max_kg_cm2,
-                        q_min_kg_cm2,
-                        sigma_adm
-                    ],
-                    'Color': ['#d62728', '#2ca02c', '#9467bd']
-                }
                 
                 fig_presiones = px.bar(presiones, x='Tipo', y='Valor (kg/cm²)', color='Tipo',
                                       color_discrete_map={
@@ -2568,10 +2296,10 @@ else:
                     
                     with col2:
                         st.info("**Distribución del Acero:**")
-                        st.write(f"• Número de barras 5/8\": {diseno_fuste['num_barras']}")
+                        st.write(f"• Número de barras 5/8": {diseno_fuste['num_barras']})
                         st.write(f"• Separación entre barras: {diseno_fuste['separacion']:.1f} cm")
                         st.write(f"• Acero por retracción: {diseno_fuste['As_retraccion']:.2f} cm²")
-                        st.write(f"• Barras retracción 1/2\": {diseno_fuste['num_barras_retraccion']}")
+                        st.write(f"• Barras retracción 1/2": {diseno_fuste['num_barras_retraccion']})
                 
                 # Gráficos adicionales para Rankine
                 st.subheader("📈 Gráficos Adicionales - Análisis Rankine")
@@ -2802,10 +2530,10 @@ else:
 - Área de acero proporcionada: {diseno_fuste['As_proporcionado']:.2f} cm²
 
 **9.3 Distribución del Acero:**
-- Número de barras 5/8\": {diseno_fuste['num_barras']}
+- Número de barras 5/8": {diseno_fuste['num_barras']}
 - Separación entre barras: {diseno_fuste['separacion']:.1f} cm
 - Acero por retracción: {diseno_fuste['As_retraccion']:.2f} cm²
-- Barras retracción 1/2\": {diseno_fuste['num_barras_retraccion']}
+- Barras retracción 1/2": {diseno_fuste['num_barras_retraccion']}
 
 ### 10. OBSERVACIONES TÉCNICAS:
 - La teoría de Rankine considera muro vertical liso
@@ -2895,147 +2623,6 @@ else:
                         # Mostrar el reporte en formato expandible
                         with st.expander("📋 VER REPORTE RANKINE COMPLETO", expanded=True):
                             st.markdown(reporte_rankine)
-
-    elif opcion == "🔬 Análisis Coulomb":
-        st.title("Análisis de Empuje Activo según Teoría de Coulomb")
-        st.success("🔬 Plan Premium: Análisis completo con teoría de Coulomb")
-        
-        # Mostrar diagrama de fuerzas si hay resultados
-        if 'resultados_coulomb' in st.session_state:
-            st.subheader("📐 Diagrama de Fuerzas - Coulomb")
-            
-            # Crear diagrama vectorial profesional
-            fig_fuerzas = go.Figure()
-            
-            # Definir puntos de referencia
-            beta_rad = math.radians(st.session_state['resultados_coulomb']['beta'])
-            escala = 0.2  # Escala para visualización
-            
-            # Empuje activo (Pa)
-            fig_fuerzas.add_annotation(
-                ax=0, ay=0,
-                axref="x", ayref="y",
-                x=st.session_state['resultados_coulomb']['Ph'] * escala * math.cos(beta_rad),
-                y=st.session_state['resultados_coulomb']['Ph'] * escala * math.sin(beta_rad),
-                xref="x", yref="y",
-                showarrow=True,
-                arrowhead=2,
-                arrowsize=1.5,
-                arrowwidth=2,
-                arrowcolor="#d62728",
-                text=f"Pa = {st.session_state['resultados_coulomb']['Pa']:.2f} t/m",
-                font=dict(size=12, color="#d62728")
-            )
-            
-            # Componente horizontal (Ph)
-            fig_fuerzas.add_annotation(
-                ax=0, ay=0,
-                axref="x", ayref="y",
-                x=st.session_state['resultados_coulomb']['Ph'] * escala,
-                y=0,
-                xref="x", yref="y",
-                showarrow=True,
-                arrowhead=2,
-                arrowsize=1.5,
-                arrowwidth=2,
-                arrowcolor="#ff7f0e",
-                text=f"Ph = {st.session_state['resultados_coulomb']['Ph']:.2f} t/m",
-                font=dict(size=12, color="#ff7f0e")
-            )
-            
-            # Componente vertical (Pv)
-            fig_fuerzas.add_annotation(
-                ax=0, ay=0,
-                axref="x", ayref="y",
-                x=0,
-                y=st.session_state['resultados_coulomb']['Pv'] * escala,
-                xref="x", yref="y",
-                showarrow=True,
-                arrowhead=2,
-                arrowsize=1.5,
-                arrowwidth=2,
-                arrowcolor="#2ca02c",
-                text=f"Pv = {st.session_state['resultados_coulomb']['Pv']:.2f} t/m",
-                font=dict(size=12, color="#2ca02c")
-            )
-            
-            # Empuje por sobrecarga (PSC)
-            fig_fuerzas.add_annotation(
-                ax=0, ay=0,
-                axref="x", ayref="y",
-                x=st.session_state['resultados_coulomb']['PSC'] * escala,
-                y=0,
-                xref="x", yref="y",
-                showarrow=True,
-                arrowhead=2,
-                arrowsize=1.5,
-                arrowwidth=2,
-                arrowcolor="#9467bd",
-                text=f"PSC = {st.session_state['resultados_coulomb']['PSC']:.2f} t/m",
-                font=dict(size=12, color="#9467bd")
-            )
-            
-            # Configurar el gráfico
-            fig_fuerzas.update_layout(
-                title="Diagrama Vectorial de Fuerzas - Coulomb",
-                xaxis=dict(range=[-1, 1], showgrid=True, zeroline=True),
-                yaxis=dict(range=[-0.5, 1.5], showgrid=True, zeroline=True),
-                showlegend=False,
-                width=600,
-                height=500,
-                margin=dict(l=20, r=20, t=40, b=20),
-                plot_bgcolor='rgba(0,0,0,0)'
-            )
-            
-            st.plotly_chart(fig_fuerzas, use_container_width=True)
-            
-            # Explicación de los resultados
-            st.markdown("""
-            **Interpretación del Diagrama:**
-            - 🔴 **Pa (Rojo):** Empuje activo total (resultante)
-            - 🟠 **Ph (Naranja):** Componente horizontal del empuje
-            - 🟢 **Pv (Verde):** Componente vertical del empuje
-            - 🟣 **PSC (Morado):** Empuje debido a la sobrecarga
-            """)
-        
-        # Gráfico de influencia de ángulos
-        if 'resultados_coulomb' in st.session_state:
-            st.subheader("📐 Influencia de los Ángulos en el Empuje")
-            
-            # Crear datos para el gráfico
-            angulos = ['β (Inclinación)', 'δ (Fricción)', 'α (Terreno)']
-            valores = [
-                st.session_state['resultados_coulomb']['beta'],
-                st.session_state['datos_entrada_coulomb']['delta'],
-                st.session_state['datos_entrada_coulomb']['alpha']
-            ]
-            
-            fig_angulos = px.bar(x=angulos, y=valores, text=valores,
-                                title="Ángulos Clave en el Análisis Coulomb",
-                                labels={'x': 'Ángulo', 'y': 'Valor (°)'},
-                                color=angulos,
-                                color_discrete_map={
-                                    'β (Inclinación)': '#1f77b4',
-                                    'δ (Fricción)': '#ff7f0e',
-                                    'α (Terreno)': '#2ca02c'
-                                })
-            
-            fig_angulos.update_traces(texttemplate='%{y:.1f}°', textposition='outside')
-            fig_angulos.update_layout(
-                showlegend=False,
-                template='plotly_white',
-                height=400
-            )
-            
-            st.plotly_chart(fig_angulos, use_container_width=True)
-            
-            # Explicación de la influencia
-            st.markdown("""
-            **Influencia de los Ángulos:**
-            - **β (Inclinación del muro):** Afecta directamente la geometría y el empuje
-            - **δ (Fricción muro-suelo):** Mayor δ reduce el empuje horizontal
-            - **α (Inclinación del terreno):** Terreno inclinado aumenta el empuje
-            """)
         
         # Mostrar fórmulas de Coulomb
         st.subheader("📚 Fórmulas de la Teoría de Coulomb")
@@ -3153,7 +2740,7 @@ else:
         with col4:
             if st.button("⚖️ Calcular Empuje Total", type="primary"):
                 datos_entrada = {
-                    'H': H, 'h1': h1, 't2': t2, 'b2': b2,
+                    'H': H, 'h1': h1, 't2': t2, 'b2': b2, 'b': b, 'B': B, 'b1': b1, 't1': t1,
                     'phi1': phi1, 'delta': delta, 'alpha': alpha,
                     'gamma1': gamma1, 'S_c': S_c,
                     'cohesion1': cohesion1, 'gamma2': gamma2, 'cohesion2': cohesion2,
@@ -3165,10 +2752,9 @@ else:
         # Botón para análisis completo
         if st.button("🚀 Ejecutar Análisis Completo Coulomb", type="primary"):
             datos_entrada = {
-                'H': H, 'h1': h1, 't2': t2, 'b2': b2,
+                'H': H, 'h1': h1, 't2': t2, 'b2': b2, 'b': b, 'B': B, 'b1': b1, 't1': t1,
                 'phi1': phi1, 'delta': delta, 'alpha': alpha,
-                'gamma1': gamma1, 'S_c': S_c,
-                'cohesion1': cohesion1, 'gamma2': gamma2, 'cohesion2': cohesion2,
+                'gamma1': gamma1, 'cohesion1': cohesion1, 'gamma2': gamma2, 'cohesion2': cohesion2,
                 'sigma_u': sigma_u, 'phi2': phi2, 'gamma_muro': gamma_muro, 'D': D
             }
             resultados_coulomb = calcular_empuje_coulomb(datos_entrada)
@@ -4161,7 +3747,7 @@ else:
                 
                 with col3:
                     st.info("**Distribución:**")
-                    st.write(f"• Barras 5/8\": {diseno_fuste['num_barras']}")
+                    st.write(f"• Barras 5/8": {diseno_fuste['num_barras']})
                     st.write(f"• Separación: {diseno_fuste['separacion']:.1f} cm")
                     st.write(f"• Barras retracción: {diseno_fuste['num_barras_retraccion']}")
                     st.write(f"• Acero retracción: {diseno_fuste['As_retraccion_proporcionado']:.2f} cm²")
@@ -4448,10 +4034,10 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
 - Área de acero proporcionada: {diseno_fuste['As_proporcionado']:.2f} cm²
 
 **9.4 Distribución del Acero:**
-- Número de barras 5/8\": {diseno_fuste['num_barras']}
+- Número de barras 5/8": {diseno_fuste['num_barras']}
 - Separación entre barras: {diseno_fuste['separacion']:.1f} cm
 - Acero por retracción y temperatura: {diseno_fuste['As_retraccion']:.2f} cm²
-- Barras de retracción 1/2\": {diseno_fuste['num_barras_retraccion']}
+- Barras de retracción 1/2": {diseno_fuste['num_barras_retraccion']}
 
 **9.5 Verificaciones del Fuste:**
 - Peralte efectivo: {'✅ CUMPLE' if diseno_fuste['dreal'] >= diseno_fuste['dreq'] else '⚠️ NO CUMPLE'}
@@ -4566,76 +4152,6 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                         # Mostrar el reporte en formato expandible
                         with st.expander("📋 VER REPORTE TÉCNICO COMPLETO", expanded=True):
                             st.markdown(reporte_premium)
-            else:
-                st.warning("⚠️ No hay resultados disponibles. Realiza primero el análisis completo.")
-
-    elif opcion == "📈 Gráficos":
-        st.title("Gráficos y Visualizaciones")
-        
-        # Verificar qué métodos tienen resultados disponibles
-        resultados_rankine_disponibles = 'resultados_completos' in st.session_state
-        resultados_coulomb_disponibles = 'resultados_coulomb' in st.session_state
-        
-        # Mostrar opciones de métodos disponibles
-        st.subheader("🔬 Seleccionar Método de Análisis")
-        
-        if resultados_rankine_disponibles and resultados_coulomb_disponibles:
-            metodo_seleccionado = st.radio(
-                "Método de análisis para visualizar:",
-                ["📊 Análisis Rankine", "🔬 Análisis Coulomb"],
-                help="Selecciona el método cuyos gráficos deseas visualizar"
-            )
-        elif resultados_rankine_disponibles:
-            metodo_seleccionado = "📊 Análisis Rankine"
-            st.info("✅ Solo hay resultados disponibles para el método Rankine")
-        elif resultados_coulomb_disponibles:
-            metodo_seleccionado = "🔬 Análisis Coulomb"
-            st.info("✅ Solo hay resultados disponibles para el método Coulomb")
-        else:
-            st.warning("⚠️ No hay resultados disponibles. Ejecuta primero algún análisis completo.")
-            st.info("📊 Ve a 'Análisis Completo (Rankine)' o 'Análisis Coulomb' para generar resultados")
-            st.stop()
-        
-        if st.session_state['plan'] == "gratuito":
-            if 'resultados_basicos' in st.session_state:
-                resultados = st.session_state['resultados_basicos']
-                
-                # Gráfico básico gratuito
-                datos = pd.DataFrame({
-                    'Fuerza': ['Peso Muro', 'Empuje Suelo'],
-                    'Valor (kN)': [resultados['peso_muro'], resultados['empuje_suelo']]
-                })
-                
-                fig = px.bar(datos, x='Fuerza', y='Valor (kN)', 
-                            title="Comparación de Fuerzas - Plan Gratuito",
-                            color='Fuerza',
-                            color_discrete_map={'Peso Muro': '#2E8B57', 'Empuje Suelo': '#DC143C'})
-                
-                fig.update_layout(
-                    xaxis_title="Tipo de Fuerza",
-                    yaxis_title="Valor (kN)",
-                    height=400
-                )
-                
-                fig.update_traces(texttemplate='%{y:.1f}', textposition='outside')
-                st.plotly_chart(fig, use_container_width=True)
-                
-                # Gráfico de momentos
-                datos_momentos = pd.DataFrame({
-                    'Momento': ['Volcador', 'Estabilizador'],
-                    'Valor (kN·m)': [resultados['momento_volcador'], resultados['momento_estabilizador']]
-                })
-                
-                fig2 = px.pie(datos_momentos, values='Valor (kN·m)', names='Momento',
-                             title="Distribución de Momentos - Plan Gratuito",
-                             color_discrete_map={'Volcador': '#FF6B6B', 'Estabilizador': '#4ECDC4'})
-                
-                fig2.update_traces(textposition='inside', textinfo='percent+label+value')
-                st.plotly_chart(fig2, use_container_width=True)
-            else:
-                st.warning("⚠️ No hay resultados disponibles. Realiza primero los cálculos básicos.")
-        else:
-            # Gráficos premium
             if metodo_seleccionado == "📊 Análisis Rankine" and resultados_rankine_disponibles:
                 st.subheader("📊 Gráficos del Análisis Rankine")
                 resultados = st.session_state['resultados_completos']
