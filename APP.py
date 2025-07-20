@@ -1192,35 +1192,16 @@ def dibujar_muro_contrafuertes(dimensiones, resultados, datos_entrada):
     ax.add_patch(Rectangle((0, 0), B_total, h1, 
                           facecolor=color_concreto, edgecolor='#455A64', linewidth=2))
     
-    # Dibujar muro pantalla - Con gradiente para mejor visualización
-    for i in range(15):
-        alpha = min(0.9, 0.6 + (i * 0.02))  # Limitar alpha a máximo 0.9
-        ax.add_patch(Rectangle((0.3, h1 + i*(H-h1)/15), 0.3, (H-h1)/15, 
-                              facecolor=color_concreto, edgecolor='#455A64', 
-                              linewidth=1, alpha=alpha))
-    
-    # Borde destacado del muro pantalla
+    # Dibujar muro pantalla
     ax.add_patch(Rectangle((0.3, h1), 0.3, H-h1, 
-                          facecolor='none', edgecolor='#1565C0', linewidth=3))
+                          facecolor=color_concreto, edgecolor='#455A64', linewidth=2))
     
-    # Dibujar contrafuertes (3 contrafuertes para mejor visualización) - Más notables
+    # Dibujar contrafuertes (3 contrafuertes para mejor visualización)
     num_contrafuertes = 3
     for i in range(num_contrafuertes):
         x_pos = 0.3 + i * (S_tipico / num_contrafuertes)
-        # Contrafuerte principal con gradiente
-        for j in range(10):
-            alpha = min(0.95, 0.7 + (j * 0.025))  # Limitar alpha a máximo 0.95
-            ax.add_patch(Rectangle((x_pos, h1 + j*(H-h1)/10), t_contrafuerte, (H-h1)/10, 
-                                  facecolor=color_contrafuerte, edgecolor='#37474F', 
-                                  linewidth=2, alpha=alpha))
-        
-        # Borde destacado del contrafuerte
         ax.add_patch(Rectangle((x_pos, h1), t_contrafuerte, H-h1, 
-                              facecolor='none', edgecolor='#1A237E', linewidth=3))
-        
-        # Línea central del contrafuerte para destacarlo
-        ax.plot([x_pos + t_contrafuerte/2, x_pos + t_contrafuerte/2], [h1, H], 
-                color='#1A237E', linewidth=2, linestyle='--', alpha=0.8)
+                              facecolor=color_contrafuerte, edgecolor='#37474F', linewidth=1.5))
     
     # Dibujar relleno con patrón
     relleno_pts = [(0.6, h1), (B_total, h1), (B_total, H), (0.6, H)]
@@ -1294,12 +1275,11 @@ def dibujar_muro_contrafuertes(dimensiones, resultados, datos_entrada):
     for i in range(num_contrafuertes):
         x_pos = 0.3 + i * (S_tipico / num_contrafuertes)
         ax.text(x_pos+t_contrafuerte/2, h1+(H-h1)/2, 'CONTRAFUERTE', ha='center', va='center', 
-               fontsize=10, fontweight='bold', color='white', rotation=90,
-               bbox=dict(boxstyle="round,pad=0.3", facecolor='#1A237E', alpha=0.95, 
-                        edgecolor='#0D47A1', linewidth=2))
+               fontsize=8, fontweight='bold', color='white', rotation=90,
+               bbox=dict(boxstyle="round,pad=0.2", facecolor='#37474F', alpha=0.9))
     
-    # Configuración del gráfico - Aumentar espacio para datos técnicos
-    ax.set_xlim(-0.5, B_total+2.0)  # Aumentar límite derecho para datos técnicos
+    # Configuración del gráfico
+    ax.set_xlim(-0.5, B_total+0.5)
     ax.set_ylim(-0.5, H+1.0)
     ax.set_aspect('equal')
     
@@ -1308,11 +1288,11 @@ def dibujar_muro_contrafuertes(dimensiones, resultados, datos_entrada):
     subtitulo = f"Altura: {H:.2f}m | Separación contrafuertes: {S_tipico:.2f}m | Espesor: {t_contrafuerte:.2f}m"
     
     ax.set_title(f'{titulo}\n{subtitulo}', 
-                fontsize=16, fontweight='bold', pad=25, color='#1565C0')
-    ax.set_xlabel('Distancia (metros)', fontsize=12, fontweight='bold', color='#424242')
-    ax.set_ylabel('Altura (metros)', fontsize=12, fontweight='bold', color='#424242')
+                fontsize=14, fontweight='bold', pad=20, color='#1565C0')
+    ax.set_xlabel('Distancia (metros)', fontsize=10, fontweight='bold', color='#424242')
+    ax.set_ylabel('Altura (metros)', fontsize=10, fontweight='bold', color='#424242')
     
-    # Leyenda profesional - Mover a la esquina superior izquierda
+    # Leyenda profesional
     from matplotlib.patches import Patch
     legend_elements = [
         Patch(facecolor=color_concreto, edgecolor='#455A64', label='MURO PANTALLA'),
@@ -1322,48 +1302,36 @@ def dibujar_muro_contrafuertes(dimensiones, resultados, datos_entrada):
         Patch(facecolor=color_acero, edgecolor='#37474F', label='ARMADURA')
     ]
     
-    ax.legend(handles=legend_elements, loc='upper left', fontsize=10, 
+    ax.legend(handles=legend_elements, loc='upper right', fontsize=8, 
              frameon=True, fancybox=True, shadow=True, 
-             title='ELEMENTOS ESTRUCTURALES', title_fontsize=11,
-             bbox_to_anchor=(0.02, 0.98))
+             title='ELEMENTOS', title_fontsize=9)
     
-    # Información técnica - Mover a la derecha del muro con mejor formato
-    info_text = f"""DATOS TÉCNICOS DEL PROYECTO:
-
-📐 DIMENSIONES:
-   • Altura total (H): {H:.2f} m
-   • Espesor muro pantalla: 0.30 m
-   • Espesor contrafuertes: {t_contrafuerte:.2f} m
-   • Separación contrafuertes: {S_tipico:.2f} m
-
-⚖️ CARGAS Y EMPUJES:
-   • Sobrecarga aplicada: {datos_entrada['S_c']} kg/m²
-   • Empuje activo total: {resultados['Pa_total']:.2f} t/m
-
-🛡️ FACTORES DE SEGURIDAD:
-   • FS Volcamiento: {resultados['FS_volcamiento']:.2f}
-   • FS Deslizamiento: {resultados['FS_deslizamiento']:.2f}
-
-🏗️ ESPECIFICACIONES:
-   • Tipo: Muro pantalla con contrafuertes
-   • Material: Hormigón armado
-   • Referencia: Ortega García, UNI, Morales"""
+    # Información técnica
+    info_text = f"""
+    DATOS TÉCNICOS:
+    • Altura (H): {H:.2f} m
+    • Espesor muro: 0.30 m
+    • Espesor contrafuertes: {t_contrafuerte:.2f} m
+    • Separación contrafuertes: {S_tipico:.2f} m
+    • Sobrecarga: {datos_entrada['S_c']} kg/m²
+    • Empuje total: {resultados['Pa_total']:.2f} t/m
+    • FS Volcamiento: {resultados['FS_volcamiento']:.2f}
+    • FS Deslizamiento: {resultados['FS_deslizamiento']:.2f}
+    """
     
-    # Posicionar información técnica a la derecha sin superponerse
-    ax.text(B_total+0.3, H/2, info_text, fontsize=9, fontweight='bold',
-           bbox=dict(boxstyle="round,pad=0.4", facecolor='#E8F5E8', 
-                    edgecolor='#4CAF50', linewidth=2, alpha=0.95),
-           verticalalignment='center', horizontalalignment='left')
+    ax.text(B_total+0.1, H/2, info_text, fontsize=8, fontweight='bold',
+           bbox=dict(boxstyle="round,pad=0.3", facecolor='#E8F5E8', 
+                    edgecolor='#4CAF50', linewidth=1, alpha=0.9),
+           verticalalignment='center')
     
     # Agregar grid sutil
-    ax.grid(True, alpha=0.15, linestyle='--', linewidth=0.3)
+    ax.grid(True, alpha=0.2, linestyle='--', linewidth=0.5)
     
     # Configurar fondo
     ax.set_facecolor('#FAFAFA')
     fig.patch.set_facecolor('white')
     
-    # Ajustar layout para evitar superposiciones
-    plt.tight_layout(pad=2.0)
+    plt.tight_layout()
     return fig
 
 # Configuración de la página
@@ -4717,12 +4685,12 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                     })
                     
                     if PLOTLY_AVAILABLE:
-                    fig2 = px.pie(datos_momentos, values='Valor (tn·m/m)', names='Momento',
+                        fig2 = px.pie(datos_momentos, values='Valor (tn·m/m)', names='Momento',
                                      title="Distribución de Momentos - Rankine",
-                                 color_discrete_map={'Volcador': '#FF6B6B', 'Estabilizador': '#4ECDC4'})
-                    
-                    fig2.update_traces(textposition='inside', textinfo='percent+label+value')
-                    st.plotly_chart(fig2, use_container_width=True)
+                                     color_discrete_map={'Volcador': '#FF6B6B', 'Estabilizador': '#4ECDC4'})
+                        
+                        fig2.update_traces(textposition='inside', textinfo='percent+label+value')
+                        st.plotly_chart(fig2, use_container_width=True)
                 
                 # Gráfico de dimensiones
                 st.subheader("📏 Dimensiones del Muro - Rankine")
@@ -4962,7 +4930,7 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
                     # Calcular Ka de Rankine para comparación
                     if 'datos_entrada_coulomb' in st.session_state:
                         phi1_rankine = st.session_state['datos_entrada_coulomb']['phi1']
-            else:
+                    else:
                         phi1_rankine = 32  # Valor por defecto
                     
                     ka_rankine = math.tan(math.radians(45 - phi1_rankine/2))**2
