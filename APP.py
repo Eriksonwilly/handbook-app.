@@ -5157,7 +5157,8 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
         st.write("""
         ### 🏗️ CONSORCIO DEJ
         **Información de Contacto:**
-        
+        Cari Frisancho Diego
+        Florez Valdivia Erikson
         📧 Email: contacto@consorciodej.com  
         📱 Teléfono: +123 456 7890  
         🌐 Web: www.consorciodej.com  
