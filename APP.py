@@ -5157,12 +5157,12 @@ para mejorar los factores de seguridad y cumplir con las especificaciones.
         st.write("""
         ### 🏗️ CONSORCIO DEJ
         **Información de Contacto:**
-        Cari Frisancho Diego
-        Florez Valdivia Erikson
+        (Cari Frisancho Diego R.)
+        (Florez Valdivia Erikson W.)
         📧 Email: contacto@consorciodej.com  
-        📱 Teléfono: +123 456 7890  
+        📱 Teléfono: +51967573364  
         🌐 Web: www.consorciodej.com  
-        📍 Dirección: [Tu dirección aquí]
+        📍 Dirección: UNA - PUNO - Ing Civil
         
         **Horarios de Atención:**
         Lunes a Viernes: 8:00 AM - 6:00 PM
