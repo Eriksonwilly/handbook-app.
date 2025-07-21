@@ -581,8 +581,8 @@ Generado por: CONSORCIO DEJ
         
         # FIRMA Y DATOS DEL PROFESIONAL
         elements.append(Paragraph("Elaborado por:", styleN))
-        elements.append(Paragraph("[Tu Nombre]", styleN))
-        elements.append(Paragraph("Ing. Civil UNI, CIP N° [XXXXX]", styleN))
+        elements.append(Paragraph("Erikson Florez Valdivia, Diego Cari Frisancho", styleN))
+        elements.append(Paragraph("Ing. Civil UNA - Puno, CIP N° 241", styleN))
         elements.append(Paragraph("Especialista en Geotecnia y Muros de Contención", styleN))
         elements.append(Paragraph(f"Julio 2025, Puno, Perú", styleN))
         elements.append(Spacer(1, 10))
