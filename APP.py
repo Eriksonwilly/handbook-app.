@@ -3665,7 +3665,7 @@ else:
             M_volcador = Mv_relleno + Mv_sobrecarga
             
             # Factor de seguridad al volcamiento
-            FS_volcamiento = M_estabilizador / M_volcador if M_volcador > 0 else 0
+            FS_volcamiento = M_estabilizador / M_volcador if M_volcador 
             
             # Verificación al deslizamiento
             mu = math.tan(phi_cimentacion_rad)
